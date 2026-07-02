@@ -59,6 +59,7 @@ sl_spidrv_eusart_nanomatter1_config.h=713252770
 sl_spidrv_eusart_nanomatter_config.h=-1115348213
 sl_tflite_micro_config.h=2124154090
 sl_token_manager_config.h=889328474
+sl_zigbee_debug_print_config.h=847211325
 sl_zigbee_green_power_config.h=-462071270
 sl_zigbee_light_link_config.h=-1220925702
 sl_zigbee_pro_stack_config.h=-1129610874

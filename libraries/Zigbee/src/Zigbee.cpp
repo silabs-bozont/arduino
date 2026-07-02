@@ -36,6 +36,7 @@ extern "C" {
 #include "stack-info.h"
 #include "nvm3_default.h"
 #include "nvm3_generic.h"
+#include "sl_zigbee_debug_print.h"
 
 uint8_t sli_zigbee_get_local_capabilities(void);
 extern uint8_t sli_zigbee_dynamic_capabilities;
@@ -380,6 +381,12 @@ void ZigbeeClass::begin()
   if (!this->isConnectedToNetwork()) {
     sl_zigbee_af_network_steering_start();
   }
+
+  sl_zigbee_debug_print_enable_group(SL_ZIGBEE_DEBUG_PRINT_TYPE_STACK, true);
+  sl_zigbee_debug_print_enable_group(SL_ZIGBEE_DEBUG_PRINT_TYPE_CORE, true);
+  sl_zigbee_debug_print_enable_group(SL_ZIGBEE_DEBUG_PRINT_TYPE_APP, true);
+  sl_zigbee_debug_print_enable_group(SL_ZIGBEE_DEBUG_PRINT_TYPE_ZCL, true);
+  sl_zigbee_debug_print_enable_group(SL_ZIGBEE_DEBUG_PRINT_TYPE_LEGACY_AF_DEBUG, true);
 }
 
 uint32_t ZigbeeClass::channelToMask(uint8_t channel)

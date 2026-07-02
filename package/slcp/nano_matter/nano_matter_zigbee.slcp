@@ -20,6 +20,7 @@ component:
   - id: zigbee_source_route
   - id: zigbee_gp
   - id: zigbee_zcl_framework_core
+  - id: zigbee_debug_print
 
   # ZCL clusters
   - id: zigbee_basic
