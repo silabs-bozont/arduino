@@ -77,8 +77,9 @@ void setup()
     delay(1000);
     time_request_cnt++;
     if (time_request_cnt % 60 == 0) {
-      Serial.println("Re-requesting time from controller...");
-      matter_time.request_time();
+      if (matter_time.request_time()) {
+        Serial.println("Re-requesting time from controller...");
+      }
     }
   }
   Serial.printf("Time synchronized - Unix UTC: %lu\n", matter_time.get_unix_time());

@@ -43,8 +43,10 @@ namespace {
 constexpr uint64_t kPlaceholderUnixMs = static_cast<uint64_t>(CHIP_SYSTEM_CONFIG_VALID_REAL_TIME_THRESHOLD) * 1000ULL;
 constexpr uint64_t kMinValidUnixMs = kPlaceholderUnixMs + 86400000ULL;
 
-// Avoid flooding controllers with TimeFailure events from tight sketch loops.
-constexpr uint32_t kRequestTimeMinIntervalMs = 60000;
+// Trusted-source reads are regular Matter reads, so retry them more eagerly than
+// the minimum-hourly failure events controllers may subscribe to.
+constexpr uint32_t kTrustedTimeRequestMinIntervalMs = 60000;
+constexpr uint32_t kTimeSyncEventMinIntervalMs = 60UL * 60UL * 1000UL;
 
 MatterTimeSynchronization* g_active_time_sync = nullptr;
 
@@ -94,6 +96,11 @@ int32_t read_dst_offset_seconds(uint64_t chip_epoch_us)
   return dst.offset;
 }
 
+bool interval_elapsed(uint32_t last_ms, uint32_t interval_ms, uint32_t now_ms)
+{
+  return (last_ms == 0) || ((now_ms - last_ms) >= interval_ms);
+}
+
 class ArduinoMatterTimeSyncDelegate : public DefaultTimeSyncDelegate {
 public:
   // Never claim platform wall-clock time. FreeRTOS InitClock_RealTime only
@@ -133,7 +140,9 @@ MatterTimeSynchronization::MatterTimeSynchronization() :
   initialized(false),
   time_available(false),
   timezone_available(false),
-  last_request_time_ms(0),
+  last_trusted_time_request_ms(0),
+  last_time_failure_event_ms(0),
+  last_missing_trusted_time_source_event_ms(0),
   time_update_callback(nullptr),
   timezone_update_callback(nullptr)
 {
@@ -167,7 +176,9 @@ bool MatterTimeSynchronization::begin()
 
   this->time_available = false;
   this->timezone_available = false;
-  this->last_request_time_ms = 0;
+  this->last_trusted_time_request_ms = 0;
+  this->last_time_failure_event_ms = 0;
+  this->last_missing_trusted_time_source_event_ms = 0;
   this->initialized = true;
   return true;
 }
@@ -188,7 +199,9 @@ void MatterTimeSynchronization::end()
   this->timezone_update_callback = nullptr;
   this->time_available = false;
   this->timezone_available = false;
-  this->last_request_time_ms = 0;
+  this->last_trusted_time_request_ms = 0;
+  this->last_time_failure_event_ms = 0;
+  this->last_missing_trusted_time_source_event_ms = 0;
   this->initialized = false;
 }
 
@@ -268,18 +281,105 @@ bool MatterTimeSynchronization::has_timezone()
   return this->timezone_available;
 }
 
+bool MatterTimeSynchronization::has_trusted_time_source(bool lock_stack)
+{
+  if (lock_stack) {
+    PlatformMgr().LockChipStack();
+  }
+  const bool trusted_time_source_configured = !TimeSynchronizationServer::Instance().GetTrustedTimeSource().IsNull();
+  if (lock_stack) {
+    PlatformMgr().UnlockChipStack();
+  }
+  return trusted_time_source_configured;
+}
+
+bool MatterTimeSynchronization::request_trusted_time_source(bool force, bool lock_stack)
+{
+  const uint32_t now_ms = millis();
+  if (!force && !interval_elapsed(this->last_trusted_time_request_ms, kTrustedTimeRequestMinIntervalMs, now_ms)) {
+    return false;
+  }
+
+  if (lock_stack) {
+    PlatformMgr().LockChipStack();
+  }
+  CHIP_ERROR err = TimeSynchronizationServer::Instance().AttemptToGetTimeFromTrustedNode();
+  if (lock_stack) {
+    PlatformMgr().UnlockChipStack();
+  }
+
+  if (err != CHIP_NO_ERROR) {
+    return false;
+  }
+
+  this->last_trusted_time_request_ms = now_ms;
+  return true;
+}
+
+bool MatterTimeSynchronization::emit_time_failure_event(bool force, bool lock_stack)
+{
+  const uint32_t now_ms = millis();
+  if (!force && !interval_elapsed(this->last_time_failure_event_ms, kTimeSyncEventMinIntervalMs, now_ms)) {
+    return false;
+  }
+
+  Events::TimeFailure::Type event;
+  EventNumber event_number = 0;
+
+  if (lock_stack) {
+    PlatformMgr().LockChipStack();
+  }
+  CHIP_ERROR err = app::LogEvent(event, kRootEndpointId, event_number);
+  if (lock_stack) {
+    PlatformMgr().UnlockChipStack();
+  }
+
+  if (err != CHIP_NO_ERROR) {
+    return false;
+  }
+
+  this->last_time_failure_event_ms = now_ms;
+  return true;
+}
+
+bool MatterTimeSynchronization::emit_missing_trusted_time_source_event(bool force, bool lock_stack)
+{
+  const uint32_t now_ms = millis();
+  if (!force && !interval_elapsed(this->last_missing_trusted_time_source_event_ms, kTimeSyncEventMinIntervalMs, now_ms)) {
+    return false;
+  }
+
+  Events::MissingTrustedTimeSource::Type event;
+  EventNumber event_number = 0;
+
+  if (lock_stack) {
+    PlatformMgr().LockChipStack();
+  }
+  CHIP_ERROR err = app::LogEvent(event, kRootEndpointId, event_number);
+  if (lock_stack) {
+    PlatformMgr().UnlockChipStack();
+  }
+
+  if (err != CHIP_NO_ERROR) {
+    return false;
+  }
+
+  this->last_missing_trusted_time_source_event_ms = now_ms;
+  return true;
+}
+
 /***************************************************************************//**
  * Requests time synchronization from the Matter controller
  *
- * Emits a TimeFailure event on the root endpoint. Controllers that subscribe to
- * this event (for example matter.js TimeSyncManager) may respond with SetUTCTime
- * and timezone/DST commands. Rate-limited to once per 60 seconds.
+ * If a controller configured a TrustedTimeSource, this starts the standard
+ * TimeSyncClient read from that node. Otherwise it emits the standard
+ * MissingTrustedTimeSource and TimeFailure events on the root endpoint so a
+ * supporting controller can push time again. Trusted-source reads are
+ * rate-limited to once per minute; failure events are rate-limited to once per
+ * hour.
  *
- * Note: some controllers currently ignore TimeFailure during a cooldown window
- * after a prior sync; restarting the Matter Server clears that state today.
- *
- * @return true if the event was emitted, false if not initialized, rate-limited,
- *         or logging failed
+ * @return true if a trusted-source read was started or an event was emitted,
+ *         false if not initialized, rate-limited, or the request failed
  ******************************************************************************/
 bool MatterTimeSynchronization::request_time()
 {
@@ -288,23 +388,22 @@ bool MatterTimeSynchronization::request_time()
   }
 
   const uint32_t now_ms = millis();
-  if ((this->last_request_time_ms != 0) && ((now_ms - this->last_request_time_ms) < kRequestTimeMinIntervalMs)) {
-    return false;
+  SetDefaultDelegate(&g_time_sync_delegate);
+
+  const bool trusted_time_source_configured = this->has_trusted_time_source(true);
+  if (trusted_time_source_configured) {
+    if (!interval_elapsed(this->last_trusted_time_request_ms, kTrustedTimeRequestMinIntervalMs, now_ms)) {
+      return false;
+    }
+    if (this->request_trusted_time_source(true, true)) {
+      return true;
+    }
   }
 
-  Events::TimeFailure::Type event;
-  EventNumber event_number = 0;
-
-  PlatformMgr().LockChipStack();
-  CHIP_ERROR err = app::LogEvent(event, kRootEndpointId, event_number);
-  PlatformMgr().UnlockChipStack();
-
-  if (err != CHIP_NO_ERROR) {
-    return false;
-  }
-
-  this->last_request_time_ms = now_ms;
-  return true;
+  bool emitted = false;
+  emitted = this->emit_missing_trusted_time_source_event(false, true) || emitted;
+  emitted = this->emit_time_failure_event(false, true) || emitted;
+  return emitted;
 }
 
 /***************************************************************************//**

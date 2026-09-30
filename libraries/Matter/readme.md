@@ -492,7 +492,7 @@ Same as ```begin()```, but also adds the standard Matter Binding cluster to the 
 
 Receives UTC time (and optional timezone / DST offsets) from a Matter controller via the Time Synchronization cluster on the root endpoint (not a bridged appliance).
 
-The device does not pull time by itself. A Matter controller that supports time sync must push `SetUTCTime` (and, when the TimeZone feature is advertised, `SetTimeZone` / `SetDSTOffset`). Use `request_time()` to emit a `TimeFailure` event so a supporting controller can push time again.
+A Matter controller that supports time sync may push `SetUTCTime` directly, or configure a trusted time source with `SetTrustedTimeSource` so the device can read time from that node. When the TimeZone feature is advertised, controllers may also push `SetTimeZone` / `SetDSTOffset`. Use `request_time()` to try the configured trusted source or emit standard time-sync events so a supporting controller can push time again.
 
 ### Enabling time sync in Home Assistant
 
@@ -547,7 +547,7 @@ docker exec matterjs-server sh -c 'echo TZ=$TZ; date; node -e "console.log(Intl.
 `TZ` must be non-empty and resolve to your IANA zone (not `UTC`), or timezone/DST offsets pushed to the device will be zero.
 
 ```bool request_time();```
-Emits a `TimeFailure` event on the root endpoint so a supporting controller can push time again. Rate-limited to once per 60 seconds. Returns `false` if skipped by the rate limit or if logging fails. Controllers may still ignore the event during their own cooldown windows.
+Starts a trusted-time-source read when a controller has configured `TrustedTimeSource`. Trusted-source reads are rate-limited to once per minute. If no trusted source is available, emits `MissingTrustedTimeSource` and `TimeFailure` events on the root endpoint so a supporting controller can push time again; these fallback events are rate-limited to once per hour. Returns `false` if skipped by the rate limits or if the request fails. Controllers may still ignore the event during their own cooldown windows.
 
 ```bool has_time();```
 Returns whether a valid wall-clock time is available.

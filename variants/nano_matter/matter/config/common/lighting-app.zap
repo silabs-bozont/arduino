@@ -2614,12 +2614,38 @@
           "code": 56,
           "mfgCode": null,
           "define": "TIME_SYNCHRONIZATION_CLUSTER",
+          "side": "client",
+          "enabled": 1,
+          "commands": [
+            {
+              "name": "SetUTCTime",
+              "code": 0,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 0,
+              "isEnabled": 1
+            }
+          ]
+        },
+        {
+          "name": "Time Synchronization",
+          "code": 56,
+          "mfgCode": null,
+          "define": "TIME_SYNCHRONIZATION_CLUSTER",
           "side": "server",
           "enabled": 1,
           "commands": [
             {
               "name": "SetUTCTime",
               "code": 0,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
+              "isEnabled": 1
+            },
+            {
+              "name": "SetTrustedTimeSource",
+              "code": 1,
               "mfgCode": null,
               "source": "client",
               "isIncoming": 1,
@@ -2694,6 +2720,22 @@
               "singleton": 0,
               "bounded": 0,
               "defaultValue": "0x00",
+              "reportable": 1,
+              "minInterval": 1,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            },
+            {
+              "name": "TrustedTimeSource",
+              "code": 3,
+              "mfgCode": null,
+              "side": "server",
+              "type": "TrustedTimeSourceStruct",
+              "included": 1,
+              "storageOption": "External",
+              "singleton": 0,
+              "bounded": 0,
+              "defaultValue": null,
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -2805,7 +2847,7 @@
               "storageOption": "RAM",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "1",
+              "defaultValue": "9",
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,

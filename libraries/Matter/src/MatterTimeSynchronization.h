@@ -60,10 +60,17 @@ public:
   void notify_timezone_update();
 
 private:
+  bool request_trusted_time_source(bool force, bool lock_stack);
+  bool emit_time_failure_event(bool force, bool lock_stack);
+  bool emit_missing_trusted_time_source_event(bool force, bool lock_stack);
+  bool has_trusted_time_source(bool lock_stack);
+
   bool initialized;
   bool time_available;
   bool timezone_available;
-  uint32_t last_request_time_ms;
+  uint32_t last_trusted_time_request_ms;
+  uint32_t last_time_failure_event_ms;
+  uint32_t last_missing_trusted_time_source_event_ms;
   void (*time_update_callback)(void);
   void (*timezone_update_callback)(void);
 };
