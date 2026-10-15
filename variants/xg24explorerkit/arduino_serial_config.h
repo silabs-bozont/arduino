@@ -35,6 +35,12 @@ extern "C" {
   #include "em_eusart.h"
   #include "sl_iostream_handles.h"
   #include "sl_iostream_uart.h"
+  #include "sl_status.h"
+
+  // Per-instance iostream init helpers still exist in the prebuilt GSDK,
+  // but SLC 2026.x only exports sl_iostream_eusart_init_instances() publicly.
+  sl_status_t sl_iostream_eusart_init_vcom(void);
+  sl_status_t sl_iostream_eusart_init_xg24explorerkit1(void);
 }
 
 #define SL_SERIAL_PERIPHERAL SL_IOSTREAM_EUSART_VCOM_PERIPHERAL

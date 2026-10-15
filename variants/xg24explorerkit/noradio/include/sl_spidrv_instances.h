@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,11 +31,28 @@
 extern "C" {
 #endif
 
+#include "sl_status.h"
 #include "spidrv.h"
 extern SPIDRV_Handle_t sl_spidrv_usart_mikroe_handle;
 extern SPIDRV_Handle_t sl_spidrv_eusart_xg24explorerkit1_handle;
 
 void sl_spidrv_init_instances(void);
+
+/***************************************************************************//**
+ * Set the handle as the default SPIDRV handle.
+ *
+ * @param[in] handle SPIDRV handle to set as default.
+ *
+ * @return  Status result
+ ******************************************************************************/
+sl_status_t sl_spidrv_set_default(SPIDRV_Handle_t handle);
+
+/***************************************************************************//**
+ * Get the default SPIDRV handle configured.
+ *
+ * @return  SPIDRV handle
+ ******************************************************************************/
+SPIDRV_Handle_t sl_spidrv_get_default(void);
 
 #ifdef __cplusplus
 }
