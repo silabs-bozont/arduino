@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2025 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,14 +29,12 @@
 #ifdef ARDUINO_MATTER
 #include <MatterConfig.h>
 #endif
+extern "C" {
+#include "cmsis_os2.h"
+}
 
-void arduino_task(void *p_arg);
 inline static void handle_serial_events();
-static const uint32_t arduino_task_stack_size = ARDUINO_MAIN_TASK_STACK_SIZE;
-static const uint32_t arduino_task_priority = 1u;
-static StackType_t arduino_task_stack[arduino_task_stack_size] = { 0 };
-static StaticTask_t arduino_task_buffer;
-static TaskHandle_t arduino_task_handle;
+static const osPriority_t arduino_task_priority = osPriorityNormal;
 static bool system_init_finished = false;
 static uint32_t system_reset_cause = 0u;
 
@@ -49,41 +47,32 @@ int main()
   RMU_ResetCauseClear();
   #endif
 
-  sl_system_init();
+  sl_main_second_stage_init();
   init_arduino_variant();
   system_init_finished = true;
 
   escape_hatch();
   gpio_interrupt_handler_init();
 
-  arduino_task_handle = xTaskCreateStatic(arduino_task,
-                                          "arduino_task",
-                                          arduino_task_stack_size,
-                                          NULL,
-                                          arduino_task_priority,
-                                          arduino_task_stack,
-                                          &arduino_task_buffer);
-  app_assert(NULL != arduino_task_handle, "Arduino task creation failed");
-
   #ifdef ARDUINO_MATTER
-  // Initialize the Matter stack which also starts the FreeRTOS kernel
+  // Initialize the Matter stack
+  // ToDo: check and ensure to properly init Matter stack once the variant is ported to 2026.6.2
   SilabsMatterConfig::AppInit();
-  #else
-  sl_system_kernel_start();
   #endif
 
-  return 0;
-}
+  // Main task is osPriorityRealtime7 by default - drop to arduino_task_priority
+  // (below protocol tasks) and yield so they can finish init before setup()
+  osThreadSetPriority(osThreadGetId(), arduino_task_priority);
+  osThreadYield();
 
-void arduino_task(void *p_arg)
-{
-  (void)p_arg;
   setup();
   while (1) {
     loop();
     handle_serial_events();
-    taskYIELD();
+    osThreadYield();
   }
+
+  return 0;
 }
 
 inline static void handle_serial_events()

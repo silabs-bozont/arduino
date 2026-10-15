@@ -20,7 +20,7 @@ sdk_extension:
     version: 3.0.2
 
 component:
-  - id: sl_system
+  - id: sl_main
   - id: device_init
   - id: psa_crypto
   - id: power_manager
