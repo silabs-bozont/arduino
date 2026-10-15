@@ -20,7 +20,7 @@
 #if defined(SL_TRUSTZONE_NONSECURE)
 
 /* The NonSecure app must use the crypto_driver_contexts_primitives.h from the trusted-firmware-m repo. */
-#include "../../trusted-firmware-m/interface/include/psa/crypto_driver_contexts_primitives.h"
+#include "interface/include/psa/crypto_driver_contexts_primitives.h"
 
 #else /* SL_TRUSTZONE_NONSECURE */
 #ifndef PSA_CRYPTO_DRIVER_CONTEXTS_PRIMITIVES_H
@@ -107,6 +107,14 @@ typedef struct {
   #include "sli_hostcrypto_transparent_types.h"
 #endif
 
+#if defined(SLI_CIPHER_DEVICE_SI91X)
+  #include "sl_si91x_psa_aes.h"
+#endif
+
+#if defined(SLI_SHA_DEVICE_SI91X)
+  #include "sl_si91x_psa_sha.h"
+#endif
+
 #endif /* MBEDTLS_PSA_CRYPTO_DRIVERS */
 
 /* Define the context to be used for an operation that is executed through the
@@ -123,9 +131,9 @@ typedef union {
     mbedtls_transparent_test_driver_hash_operation_t test_driver_ctx;
 #endif
 #if defined(MBEDTLS_PSA_CRYPTO_DRIVERS)
-#if defined(SLI_MBEDTLS_DEVICE_HSE)
+#if defined(SLI_MBEDTLS_DEVICE_HSE) && !defined(SLI_EXCLUDE_PSA_SE_SYMCRYPTO_DRIVERS)
     sli_se_transparent_hash_operation_t sli_se_transparent_ctx;
-#endif /* SLI_MBEDTLS_DEVICE_HSE */
+#endif /* SLI_MBEDTLS_DEVICE_HSE  && ! SLI_EXCLUDE_PSA_SE_SYMCRYPTO_DRIVERS */
 #if defined(SLI_MBEDTLS_DEVICE_VSE)
     sli_cryptoacc_transparent_hash_operation_t sli_cryptoacc_transparent_ctx;
 #endif /* SLI_MBEDTLS_DEVICE_VSE */
@@ -135,6 +143,9 @@ typedef union {
 #if defined(SLI_MBEDTLS_DEVICE_HC)
     sli_hostcrypto_transparent_hash_operation_t sli_hostcrypto_transparent_ctx;
 #endif /* SLI_MBEDTLS_DEVICE_HC */
+#if defined(SLI_SHA_DEVICE_SI91X)
+    sli_si91x_crypto_sha_operation_t sli_si91x_crypto_sha_ctx;
+#endif /* SLI_SHA_DEVICE_SI91X */
 #endif
 } psa_driver_hash_context_t;
 
@@ -147,7 +158,9 @@ typedef union {
 #endif
 #if defined(MBEDTLS_PSA_CRYPTO_DRIVERS)
 #if defined(SLI_MBEDTLS_DEVICE_HSE)
+#if !defined(SLI_EXCLUDE_PSA_SE_SYMCRYPTO_DRIVERS)
     sli_se_transparent_cipher_operation_t sli_se_transparent_ctx;
+#endif /* ! SLI_EXCLUDE_PSA_SE_SYMCRYPTO_DRIVERS */
 #if defined(SLI_MBEDTLS_DEVICE_HSE) && defined(SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS)
     sli_se_opaque_cipher_operation_t sli_se_opaque_ctx;
 #endif /* SLI_MBEDTLS_DEVICE_HSE  && SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS */
@@ -161,6 +174,9 @@ typedef union {
 #if defined(SLI_MBEDTLS_DEVICE_HC)
     sli_hostcrypto_transparent_cipher_operation_t sli_hostcrypto_transparent_ctx;
 #endif /* SLI_MBEDTLS_DEVICE_HC */
+#if defined(SLI_CIPHER_DEVICE_SI91X)
+    sli_si91x_crypto_cipher_operation_t sli_si91x_crypto_cipher_ctx;
+#endif
 #endif
 } psa_driver_cipher_context_t;
 

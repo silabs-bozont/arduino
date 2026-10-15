@@ -1,4 +1,4 @@
-/* Copyright 2023 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2024 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,6 +25,12 @@ limitations under the License.
 #include "tensorflow/lite/micro/micro_common.h"
 #include "tensorflow/lite/micro/tflite_bridge/flatbuffer_conversions_bridge.h"
 #include "tensorflow/lite/schema/schema_generated.h"
+
+#ifdef USE_TFLM_COMPRESSION
+
+#include "tensorflow/lite/micro/compression.h"
+
+#endif  // USE_TFLM_COMPRESSION
 
 namespace tflite {
 
@@ -66,6 +72,13 @@ struct ScratchBufferRequest {
 
 }  // namespace internal
 
+// Enum used to keep track of which MemoryPlanner is being used for
+// MicroAllocater::Create();
+enum class MemoryPlannerType {
+  kGreedy,
+  kLinear,
+};
+
 struct NodeAndRegistration {
   TfLiteNode node;
   const TFLMRegistration* registration;
@@ -84,6 +97,9 @@ struct ScratchBufferHandle {
 struct SubgraphAllocations {
   NodeAndRegistration* node_and_registrations;
   TfLiteEvalTensor* tensors;
+#ifdef USE_TFLM_COMPRESSION
+  CompressedTensorList compressed;
+#endif  // USE_TFLM_COMPRESSION
 };
 
 // Allocator responsible for allocating memory for all intermediate tensors
@@ -117,7 +133,9 @@ class MicroAllocator {
   // Note: Please use alignas(16) to make sure tensor_arena is 16
   // bytes aligned, otherwise some head room will be wasted.
   // TODO(b/157615197): Cleanup constructor + factory usage.
-  static MicroAllocator* Create(uint8_t* tensor_arena, size_t arena_size);
+  static MicroAllocator* Create(
+      uint8_t* tensor_arena, size_t arena_size,
+      MemoryPlannerType memory_planner_type = MemoryPlannerType::kGreedy);
 
   // Creates a MicroAllocator instance from a given tensor arena and a given
   // MemoryPlanner. This arena will be managed by the created instance. Note:
@@ -137,13 +155,19 @@ class MicroAllocator {
   // SingleArenaBufferAllocator instance and the MemoryPlanner. This allocator
   // instance will use the SingleArenaBufferAllocator instance to manage
   // allocations internally.
-  static MicroAllocator* Create(uint8_t* persistent_tensor_arena,
-                                size_t persistent_arena_size,
-                                uint8_t* non_persistent_tensor_arena,
-                                size_t non_persistent_arena_size);
+  static MicroAllocator* Create(
+      uint8_t* persistent_tensor_arena, size_t persistent_arena_size,
+      uint8_t* non_persistent_tensor_arena, size_t non_persistent_arena_size,
+      MemoryPlannerType memory_planner_type = MemoryPlannerType::kGreedy);
 
   // Returns the fixed amount of memory overhead of MicroAllocator.
   static size_t GetDefaultTailUsage(bool is_memory_planner_given);
+
+  // Returns True if the MicroAllocator uses a LinearMemoryPlanner(is compatible
+  // with the PerserveAllTensors flag / feature ) and False otherwise.
+  bool preserves_all_tensor() const {
+    return memory_planner_->preserves_all_tensors();
+  };
 
   // Allocates internal resources required for model inference for each subgraph
   // from the arena.
@@ -235,13 +259,21 @@ class MicroAllocator {
 
   TfLiteBridgeBuiltinDataAllocator* GetBuiltinDataAllocator();
 
- protected:
   MicroAllocator(SingleArenaBufferAllocator* memory_allocator,
                  MicroMemoryPlanner* memory_planner);
   MicroAllocator(IPersistentBufferAllocator* persistent_buffer_allocator,
                  INonPersistentBufferAllocator* non_persistent_buffer_allocator,
                  MicroMemoryPlanner* memory_planner);
   virtual ~MicroAllocator();
+
+#ifdef USE_TFLM_COMPRESSION
+
+  // Allocates an array in the arena of pointers to the compressions data
+  // required to decompress tensors for each subgraph within the model.
+  virtual TfLiteStatus AllocateCompressedTensorsList(
+      const Model* model, SubgraphAllocations* subgraph_allocations);
+
+#endif  // USE_TFLM_COMPRESSION
 
   // Allocates an array in the arena to hold pointers to the node and
   // registration pointers required to represent the inference graph of the
@@ -276,7 +308,6 @@ class MicroAllocator {
                                                           int subgraph_idx,
                                                           bool allocate_temp);
 
- private:
   // Commits a memory plan for all non-persistent buffer allocations in the
   // 'head' section of the memory arena. The eval_tensors pointer is the list of
   // pre-allocated TfLiteEvalTensor structs that will point to the buffers that
@@ -302,12 +333,16 @@ class MicroAllocator {
   // the head section.
   internal::ScratchBufferRequest* GetScratchBufferRequests();
 
+  virtual void* allocate_planned_persistent_buffer(const char* tag, size_t size, bool* is_ref){ return nullptr; };
+
   // A simple memory allocator that always allocate from the arena tail or head.
   INonPersistentBufferAllocator* non_persistent_buffer_allocator_;
   IPersistentBufferAllocator* persistent_buffer_allocator_;
 
   // Allocator used to allocate persistent builtin data.
-  TfLiteBridgeBuiltinDataAllocator* builtin_data_allocator_;
+  TfLiteBridgeBuiltinDataAllocator* builtin_data_allocator_ =
+      nullptr;  // Initialized as nullptr to prevent any possible issues related
+                // to accessing uninitialized memory.
 
   // Activation buffer memory planner.
   MicroMemoryPlanner* memory_planner_;

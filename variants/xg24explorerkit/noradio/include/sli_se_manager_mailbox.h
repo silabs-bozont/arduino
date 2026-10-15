@@ -142,8 +142,16 @@ extern "C" {
   #define SLI_SE_COMMAND_SIGNATURE_VERIFY         0x06010000UL
   #define SLI_SE_COMMAND_EDDSA_SIGN               0x06020000UL
   #define SLI_SE_COMMAND_EDDSA_VERIFY             0x06030000UL
+#if defined(SLI_SE_SUPPORTS_RSA)
+  #define SLI_SE_COMMAND_RSA_SIGN                  0x06040000UL
+  #define SLI_SE_COMMAND_RSA_VERIFY                0x06050000UL
+#endif // SLI_SE_SUPPORTS_RSA
 
   #define SLI_SE_COMMAND_TRNG_GET_RANDOM          0x07000000UL
+#if defined(SLI_SE_SUPPORTS_SAE)
+  #define SLI_SE_COMMAND_SAE_PREPARE_COMMIT       0x07030000UL
+  #define SLI_SE_COMMAND_SAE_PROCESS_COMMIT       0x07040000UL
+#endif // SLI_SE_SUPPORTS_SAE
 
   #define SLI_SE_COMMAND_JPAKE_R1_GENERATE        0x0B000000UL
   #define SLI_SE_COMMAND_JPAKE_R1_VERIFY          0x0B000100UL
@@ -155,8 +163,10 @@ extern "C" {
 
   #define SLI_SE_COMMAND_STATUS_SE_VERSION        0x43080000UL
   #define SLI_SE_COMMAND_STATUS_OTP_VERSION       0x43080100UL
+  #if !defined(_SILICON_LABS_32B_SERIES_3)
   #define SLI_SE_COMMAND_WRITE_USER_DATA          0x43090000UL
   #define SLI_SE_COMMAND_ERASE_USER_DATA          0x430A0000UL
+  #endif
   #define SLI_SE_COMMAND_DBG_LOCK_ENABLE_SECURE   0x430D0000UL
   #define SLI_SE_COMMAND_DBG_LOCK_DISABLE_SECURE  0x430E0000UL
   #define SLI_SE_COMMAND_DEVICE_ERASE             0x430F0000UL
@@ -175,10 +185,15 @@ extern "C" {
   #define SLI_SE_COMMAND_READ_USER_CERT_SIZE      0x43FA0000UL
   #define SLI_SE_COMMAND_READ_USER_CERT           0x43FB0000UL
 
-  #if defined(_SILICON_LABS_32B_SERIES_3)
-    #define SLI_SE_COMMAND_GET_HOST_UPGRADE_FILE_VERSION 0x44000000UL
-    #define SLI_SE_COMMAND_SET_HOST_UPGRADE_FILE_VERSION 0x44010000UL
-  #endif // _SILICON_LABS_32B_SERIES_3
+#if defined(_SILICON_LABS_32B_SERIES_3)
+  #define SLI_SE_COMMAND_GET_USER_DATA              0x43FD0000UL
+  #define SLI_SE_COMMAND_WRITE_USER_DATA            0x43FD0001UL
+  #define SLI_SE_COMMAND_WRITE_USER_DATA_FORCE      0x43FD0002UL
+  #define SLI_SE_COMMAND_GET_USER_DATA_REMAINING    0x43FD0003UL
+
+  #define SLI_SE_COMMAND_GET_HOST_UPGRADE_FILE_VERSION 0x44000000UL
+  #define SLI_SE_COMMAND_SET_HOST_UPGRADE_FILE_VERSION 0x44010000UL
+#endif // _SILICON_LABS_32B_SERIES_3
 
   #define SLI_SE_COMMAND_ENTER_ACTIVE_MODE        0x45000000UL
   #define SLI_SE_COMMAND_EXIT_ACTIVE_MODE         0x45010000UL
@@ -199,15 +214,17 @@ extern "C" {
   #define SLI_SE_COMMAND_SET_UPGRADEFLAG_HOST     0xFE030001UL
   #define SLI_SE_COMMAND_READ_TAMPER_RESET_CAUSE  0xFE050000UL
 #if defined(_SILICON_LABS_32B_SERIES_3)
-  #define SLI_SE_COMMAND_READ_TRACE_FLAGS     0xFE060000UL
+  #define SLI_SE_COMMAND_READ_TRACE_FLAGS         0xFE060000UL
 #endif
   #define SLI_SE_COMMAND_INIT_PUBKEY_SIGNATURE    0xFF090001UL
-  #define SLI_SE_COMMAND_READ_PUBKEY_SIGNATURE    0xFF0A0001UL
   #define SLI_SE_COMMAND_INIT_AES_128_KEY         0xFF0B0001UL
   #if defined(_SILICON_LABS_32B_SERIES_3)
     #define SLI_SE_COMMAND_CONFIGURE_QSPI_REF_CLOCK       0xFF150000UL
     #define SLI_SE_COMMAND_CONFIGURE_QSPI_REGS            0xFF160000UL
     #define SLI_SE_COMMAND_GET_QSPI_FLPLL_CONFIG          0xFF170000UL
+    #define SLI_SE_COMMAND_GET_FLASH_STATUS               0xFF400000UL
+    #define SLI_SE_COMMAND_FLASH_PAUSE                    0xFF410000UL
+    #define SLI_SE_COMMAND_FLASH_RESUME                   0xFF420000UL
     #define SLI_SE_COMMAND_APPLY_CODE_REGION_CONFIG       0xFF500000UL
     #define SLI_SE_COMMAND_CLOSE_CODE_REGION              0xFF510000UL
     #define SLI_SE_COMMAND_ERASE_CODE_REGION              0xFF520000UL
@@ -215,9 +232,13 @@ extern "C" {
     #define SLI_SE_COMMAND_GET_CODE_REGION_VERSION        0xFF540000UL
     #define SLI_SE_COMMAND_SET_ACTIVE_BANKED_CODE_REGION  0xFF550000UL
     #define SLI_SE_COMMAND_WRITE_CODE_REGION              0xFF560000UL
+    #define SLI_SE_COMMAND_PARTIAL_ERASE_CODE_REGION      0xFF570000UL
     #define SLI_SE_COMMAND_ERASE_DATA_REGION              0xFF620000UL
     #define SLI_SE_COMMAND_WRITE_DATA_REGION              0xFF630000UL
     #define SLI_SE_COMMAND_GET_DATA_REGION_LOCATION       0xFF640000UL
+    #define SLI_SE_COMMAND_ERASE_HOST_FLASH               0xFF700000UL
+    #define SLI_SE_COMMAND_SPI_DEVICE_COMMAND             0xFF090000UL
+    #define SLI_SE_COMMAND_WRITE_SPI_REGISTERS            0xFF0C0000UL
   #endif
 #endif // SLI_MAILBOX_COMMAND_SUPPORTED
 
@@ -227,6 +248,9 @@ extern "C" {
   #define SLI_SE_COMMAND_UNWRAP_KEY               0x01020000UL
   #define SLI_SE_COMMAND_DELETE_KEY               0x01050000UL
   #define SLI_SE_COMMAND_TRANSFER_KEY             0x01060000UL
+#if defined(_SILICON_LABS_32B_SERIES_3)
+  #define SLI_SE_COMMAND_DISABLE_KSU              0x01100000UL
+#endif // _SILICON_LABS_32B_SERIES_3
 
   #define SLI_SE_COMMAND_DERIVE_KEY_PBKDF2_HMAC   0x02020002UL
   #define SLI_SE_COMMAND_DERIVE_KEY_HKDF          0x02020003UL
@@ -269,6 +293,10 @@ extern "C" {
   #define SLI_SE_COMMAND_OPTION_HASH_SHA224       0x00000300UL
 /// Use SHA256 as hash algorithm
   #define SLI_SE_COMMAND_OPTION_HASH_SHA256       0x00000400UL
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_11)
+/// Deterministic ECDSA: SE command word option1 (low byte).
+  #define SLI_SE_COMMAND_OPTION_DETERMINISTIC_ECDSA  0x00000001UL
+#endif // _SILICON_LABS_32B_SERIES_2_CONFIG_11
 #if defined(_SILICON_LABS_32B_SERIES_3)
 /// Use SHA1 as hash algorithm for HMAC streaming operation
   #define SLI_SE_COMMAND_OPTION_HMAC_HASH_SHA1      0x00000700UL
@@ -317,8 +345,30 @@ extern "C" {
   #define SLI_SE_COMMAND_OPTION_HMAC_HASH_SHA384  0x00000A00UL
 /// Use SHA512 as hash algorithm for HMAC streaming operation
   #define SLI_SE_COMMAND_OPTION_HMAC_HASH_SHA512  0x00000B00UL
+/// Use AES-MMO as hash algorithm for HMAC
+  #define SLI_SE_COMMAND_OPTION_HMAC_HASH_AES_MMO 0x00000C00UL
 #endif // _SILICON_LABS_32B_SERIES_3
 #endif // _SILICON_LABS_SECURITY_FEATURE_VAULT
+
+#if defined(_SILICON_LABS_32B_SERIES_3)
+/// Blocking command execution mode.
+  #define SLI_SE_COMMAND_OPTION_BLOCKING          0x00000000UL
+/// Non-blocking command execution mode.
+  #define SLI_SE_COMMAND_OPTION_NON_BLOCKING      0x00000100UL
+
+#endif // _SILICON_LABS_32B_SERIES_3
+
+#if defined(SLI_SE_SUPPORTS_RSA)
+/// RSA padding scheme options (encoded in option1, bits [7:0])
+  #define SLI_SE_COMMAND_OPTION_RSA_PADDING_PKCS1V15  0x00000003UL
+  #define SLI_SE_COMMAND_OPTION_RSA_PADDING_PSS       0x00000004UL
+#endif // SLI_SE_SUPPORTS_RSA
+
+#if defined(SLI_SE_SUPPORTS_SAE)
+/// Use H2E method for SAE
+  #define SLI_SE_COMMAND_OPTION_SAE_H2E             0x00000001UL
+#endif // SLI_SE_SUPPORTS_SAE
+
 #endif // SLI_MAILBOX_COMMAND_SUPPORTED
 
 // -----------------------------------------------------------------------------
@@ -340,7 +390,11 @@ extern "C" {
 
 /** Maximum amount of parameters for largest command in defined command set */
 #ifndef SLI_SE_COMMAND_MAX_PARAMETERS
-#define SLI_SE_COMMAND_MAX_PARAMETERS                   4U
+  #if defined(_SILICON_LABS_32B_SERIES_3) && (_SILICON_LABS_32B_SERIES_3_CONFIG >= 350)
+    #define SLI_SE_COMMAND_MAX_PARAMETERS           8U
+  #else
+    #define SLI_SE_COMMAND_MAX_PARAMETERS           5U
+  #endif
 #endif
 
 /* Sanity-check defines */
@@ -359,14 +413,14 @@ extern "C" {
  ******************************************************************************/
 typedef struct {
   volatile void* volatile data; /**< Data pointer */
-  void* volatile next;          /**< Next descriptor */
+  volatile void* volatile next; /**< Next descriptor */
   volatile uint32_t length;     /**< Length */
-} sli_se_datatransfer_t;
+} volatile sli_se_datatransfer_t;
 
 /** Default initialization of data transfer struct */
 #define SLI_SE_DATATRANSFER_DEFAULT(address, data_size)                                          \
   {                                                                                              \
-    .data = (void*)(address),                        /* Pointer to data block */                 \
+    .data = (void*)(address),                            /* Pointer to data block */             \
     .next = (void*)SLI_SE_DATATRANSFER_STOP,             /* This is the last block by default */ \
     .length = (data_size) | SLI_SE_DATATRANSFER_REALIGN  /* Add size, use realign by default */  \
   }
@@ -379,8 +433,8 @@ typedef struct {
  ******************************************************************************/
 typedef struct {
   uint32_t command;                                   /**< SE Command */
-  sli_se_datatransfer_t* data_in;                     /**< Input data */
-  sli_se_datatransfer_t* data_out;                    /**< Output data */
+  sli_se_datatransfer_t* volatile data_in;            /**< Input data */
+  sli_se_datatransfer_t* volatile data_out;           /**< Output data */
   uint32_t parameters[SLI_SE_COMMAND_MAX_PARAMETERS]; /**< Parameters */
   size_t num_parameters;                              /**< Number of parameters */
 } sli_se_mailbox_command_t;
@@ -391,7 +445,7 @@ typedef struct {
     .command = command_word,    /* Given command word */ \
     .data_in = NULL,            /* No data in */         \
     .data_out = NULL,           /* No data out */        \
-    .parameters = { 0, 0, 0, 0 }, /* No parameters */    \
+    .parameters = { 0, 0, 0, 0, 0 }, /* No parameters */ \
     .num_parameters = 0         /* No parameters */      \
   }
 

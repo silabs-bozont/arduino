@@ -14,6 +14,8 @@ slc_output_dir = None
 gsdk_version = None
 matter_extension_version = None
 aiml_extension_version = None
+aiml_extension_dir = None
+slc_cli = "slc"
 
 gsdk_cpp_empty_folder = "app/common/example/empty/"
 gsdk_bt_soc_empty_folder = "app/bluetooth/example/bt_soc_empty/"
@@ -129,25 +131,32 @@ def generate_gsdk(current_platform_config):
     is_matter = (protocol_stack == 'matter')
     is_zigbee = (protocol_stack == 'zigbee')
 
-    # If we're generating a GSDK with Matter then the example is at a different path
-    if is_matter:
-        slcp_folder = matter_lighting_app_folder
-        print("Copying ZAP file...")
-        shutil.copy(matter_project_zap_file, gsdk_dir + matter_zap_folder + "lighting-app.zap")
-    elif is_zigbee:
-        slcp_folder = gsdk_zigbee_z3_light_folder
-        print("Copying Zigbee ZAP file...")
-        os.makedirs(gsdk_dir + gsdk_zigbee_z3_light_folder + "config/zcl/", exist_ok=True)
-        shutil.copy(zigbee_project_zap_file, gsdk_dir + gsdk_zigbee_z3_light_folder + "config/zcl/zcl_config.zap")
-    elif is_ble_arduino:
-        slcp_folder = gsdk_cpp_empty_folder
-    elif is_ble_silabs:
-        slcp_folder = gsdk_bt_soc_empty_folder
-    elif is_noradio:
-        slcp_folder = gsdk_cpp_empty_folder
+    use_direct_slcp_generate = is_noradio
+    slcp_folder = None
 
-    copy_slcp_file(slcp_folder, project_slcp_file, additional_files)
-    generate_project_with_slc(slcp_folder, slcp_file_name, board_opn)
+    if use_direct_slcp_generate:
+        generate_project_with_slc_direct(project_slcp_file, board_opn, config_name)
+    else:
+        # If we're generating a GSDK with Matter then the example is at a different path
+        if is_matter:
+            slcp_folder = matter_lighting_app_folder
+            print("Copying ZAP file...")
+            shutil.copy(matter_project_zap_file, gsdk_dir + matter_zap_folder + "lighting-app.zap")
+        elif is_zigbee:
+            slcp_folder = gsdk_zigbee_z3_light_folder
+            print("Copying Zigbee ZAP file...")
+            os.makedirs(gsdk_dir + gsdk_zigbee_z3_light_folder + "config/zcl/", exist_ok=True)
+            shutil.copy(zigbee_project_zap_file, gsdk_dir + gsdk_zigbee_z3_light_folder + "config/zcl/zcl_config.zap")
+        elif is_ble_arduino:
+            slcp_folder = gsdk_cpp_empty_folder
+        elif is_ble_silabs:
+            slcp_folder = gsdk_bt_soc_empty_folder
+        else:
+            slcp_folder = gsdk_cpp_empty_folder
+
+        copy_slcp_file(slcp_folder, project_slcp_file, additional_files)
+        generate_project_with_slc(slcp_folder, slcp_file_name, board_opn)
+
     patch_peripheral_inits()
     if prebuild:
         patch_makefiles()
@@ -165,7 +174,10 @@ def generate_gsdk(current_platform_config):
         copy_output_files(output_dir, is_matter)
 
     keep_gen_folder = get_keep_gen_folder_parameter_from_arguments()
-    cleanup(slcp_folder, slcp_file_name, additional_files, keep_gen_folder)
+    if use_direct_slcp_generate:
+        cleanup_direct_generate(keep_gen_folder)
+    else:
+        cleanup(slcp_folder, slcp_file_name, additional_files, keep_gen_folder)
 
     print(f"Output location: {output_dir}")
     print("Finished!")
@@ -189,7 +201,7 @@ def copy_slcp_file(gsdk_soc_empty_folder, project_slcp_file, additional_files):
 
 def generate_project_with_slc(gsdk_soc_empty_folder, slcp_file_name, board_opn):
     """
-    Generate the project with slc
+    Generate the project with slc (legacy: SLCP already copied into the SDK tree)
     """
     print("Starting SLC generation...")
 
@@ -199,10 +211,62 @@ def generate_project_with_slc(gsdk_soc_empty_folder, slcp_file_name, board_opn):
 
     # Call slc to generate the project
     slc_process = subprocess.Popen(
-        ["slc", "generate", "-o", "makefile", "-tlcn", "gcc", "-cp", "--generator-timeout", "600",
+        [slc_cli, "generate", "-o", "makefile", "-tlcn", "gcc", "-cp", "--generator-timeout", "600",
          "-s", gsdk_dir, "-p", gsdk_dir+gsdk_soc_empty_folder+slcp_file_name, "-d", slc_output_dir, "--with", board_opn]
     )
     slc_process.communicate(timeout=600)
+    print("SLC generation finished")
+
+
+def trust_sdk():
+    """
+    Trust the configured SDK with the pinned slc-cli.
+    Sibling extensions are supplied via --sdk-package-path (auto-trusted for that command).
+    """
+    print("Trusting SDK...")
+    subprocess.run([slc_cli, "signature", "trust", "-s", gsdk_dir], check=False)
+
+
+def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name):
+    """
+    Generate directly from an SLCP under package/ without copying into the SDK.
+    Uses the 2026-era SLC flags (-cpsdk -np) and --sdk-package-path for sibling extensions.
+    """
+    print("Starting SLC generation (direct from package SLCP)...")
+
+    project_slcp_abs = os.path.abspath(project_slcp_file)
+    slc_output_abs = os.path.abspath(slc_output_dir)
+
+    if os.path.exists(slc_output_abs) and os.path.isdir(slc_output_abs):
+        shutil.rmtree(slc_output_abs)
+
+    trust_sdk()
+
+    sdk_package_paths = os.path.abspath(gsdk_dir.rstrip("/"))
+    if aiml_extension_dir:
+        sdk_package_paths = sdk_package_paths + "," + os.path.abspath(aiml_extension_dir.rstrip("/"))
+
+    cmd = [
+        slc_cli, "generate",
+        "-o", "makefile",
+        "-tlcn", "gcc",
+        "-cpsdk",
+        "-np",
+        "--overwrite-all",
+        "--force",
+        "--generator-timeout", "600",
+        "--sdk-package-path", sdk_package_paths,
+        "-p", project_slcp_abs,
+        "-d", slc_output_abs,
+        "-name", project_name,
+        "--with", board_opn,
+    ]
+    print("SLC command: " + " ".join(cmd))
+    slc_process = subprocess.Popen(cmd)
+    slc_process.communicate(timeout=600)
+    if slc_process.returncode != 0:
+        print(f"SLC generation failed with exit code {slc_process.returncode}")
+        exit(-1)
     print("SLC generation finished")
 
 
@@ -304,14 +368,18 @@ def patch_makefiles():
     with open(slc_output_dir + mak_file, "w") as out_file:
         for line in buf:
             # If we find the build recipe for these files, comment them out and the next 5 lines as well
+            aiml_tflite_init_recipe = (
+                f"$(OUTPUT_DIR)/project/aiml_{aiml_extension_version}/src/sl_tflite_micro_init.o: "
+                f"aiml_{aiml_extension_version}/src/sl_tflite_micro_init.cc"
+            )
             if (("$(OUTPUT_DIR)/project/main.o: main.c" in line) or
                 ("$(OUTPUT_DIR)/project/app.o: app.c" in line) or
                 ("$(OUTPUT_DIR)/project/src/main.o: src/main.cpp" in line) or
                 ("$(OUTPUT_DIR)/project/src/AppTask.o: src/AppTask.cpp" in line) or
                 ("$(OUTPUT_DIR)/project/src/LightingManager.o: src/LightingManager.cpp" in line) or
                 ("$(OUTPUT_DIR)/project/src/ZclCallbacks.o: src/ZclCallbacks.cpp" in line) or
-                ("$(OUTPUT_DIR)/project/src/ZclCallbacks.o: src/ZclCallbacks.cpp" in line) or
-                ("$(OUTPUT_DIR)/project/aiml_2.0.0/src/sl_tflite_micro_init.o: aiml_2.0.0/src/sl_tflite_micro_init.cc" in line)
+                (aiml_tflite_init_recipe in line) or
+                ("sl_tflite_micro_init.o:" in line and "sl_tflite_micro_init.cc" in line)
                ):
                 line = "#" + line
                 buf[linecnt + 1] = "#" + buf[linecnt + 1]
@@ -492,7 +560,7 @@ def apply_license_to_unlicensed_files(folder):
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -576,6 +644,58 @@ def copy_output_files(output_dir, is_matter):
     shutil.copy(gsdk_license_file, output_dir + "simplicity_sdk_" + gsdk_version + "/LICENSE")
 
 
+def copy_extra_sdk_headers(header_output_dir):
+    """
+    Copy headers that Arduino needs but SLC -cpsdk may not place in the project tree.
+    """
+    extra_headers = [
+        "platform_core/platform/common/toolchain/inc/sl_gcc_preinclude.h",
+        # Legacy SiSDK layout fallback
+        "platform/common/toolchain/gcc/inc/sl_gcc_preinclude.h",
+        "platform/common/toolchain/inc/sl_gcc_preinclude.h",
+    ]
+    copied = set()
+    for rel in extra_headers:
+        src = os.path.join(gsdk_dir, rel)
+        if os.path.exists(src):
+            dst_name = os.path.basename(src)
+            if dst_name in copied:
+                continue
+            shutil.copy(src, os.path.join(header_output_dir, dst_name))
+            print(f"Copying extra SDK header '{src}'")
+            copied.add(dst_name)
+    if "sl_gcc_preinclude.h" not in copied:
+        # Last-resort search under the SDK tree
+        for root, dirs, files in os.walk(gsdk_dir):
+            if "sl_gcc_preinclude.h" in files:
+                src = os.path.join(root, "sl_gcc_preinclude.h")
+                shutil.copy(src, os.path.join(header_output_dir, "sl_gcc_preinclude.h"))
+                print(f"Copying extra SDK header '{src}'")
+                copied.add("sl_gcc_preinclude.h")
+                break
+    if "sl_gcc_preinclude.h" not in copied:
+        print("Warning: sl_gcc_preinclude.h not found in SDK - Arduino builds may fail")
+
+
+def copy_cmsis_profile_headers(slc_output_dir, header_output_dir):
+    """
+    Preserve CMSIS profile subdirectories required by nested includes in cmsis_gcc.h.
+    """
+    for profile in ("m-profile", "a-profile", "r-profile"):
+        src = None
+        for root, dirs, files in os.walk(slc_output_dir):
+            if os.path.basename(root) == profile and ("cmsis" in root.lower() or "CMSIS" in root):
+                src = root
+                break
+        if src is None:
+            continue
+        dst = os.path.join(header_output_dir, profile)
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+        print(f"Copying CMSIS profile headers '{src}' -> '{dst}'")
+
+
 def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio, ai_capable, is_zigbee=False):
     """
     Get the built stuff in one place
@@ -615,9 +735,9 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
             for f in file:
                 filepath = os.path.join(root, f)
                 if f.endswith('.h'):
-                    # Skip the 'tflite-micro' headers
-                    if "tflite-micro/tensorflow" in filepath:
-                        print(f"Skipping '{f}' as it is in 'tflite-micro/tensorflow'")
+                    # Skip TFLite Micro headers (copied with structure below)
+                    if ("tflite-micro/tensorflow" in filepath) or ("tflite_micro/tensorflow" in filepath):
+                        print(f"Skipping '{f}' as it is in a tflite tensorflow tree")
                         continue
                     # Retain containing directory for 'psa' and 'mbedtls'
                     if "include/psa" in filepath:
@@ -637,7 +757,24 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
 
         if ai_capable:
             # Copy the headers from tflite-micro with preserving the structure
-            shutil.copytree(slc_output_dir + "aiml_" + aiml_extension_version + "/third_party/tflite-micro/tensorflow", header_output_dir + "tensorflow")
+            # AIML 2.x: third_party/tflite-micro/tensorflow
+            # AIML 3.x: compiled_model/third_party/tflite_micro/tensorflow
+            tflite_candidates = [
+                slc_output_dir + "aiml_" + aiml_extension_version + "/compiled_model/third_party/tflite_micro/tensorflow",
+                slc_output_dir + "aiml_" + aiml_extension_version + "/third_party/tflite-micro/tensorflow",
+                slc_output_dir + "aiml_" + aiml_extension_version + "/third_party/tflite_micro/tensorflow",
+            ]
+            tflite_src = next((p for p in tflite_candidates if os.path.exists(p)), None)
+            if tflite_src is None:
+                print("Could not find tflite tensorflow headers under AIML extension")
+                exit(-1)
+            shutil.copytree(tflite_src, header_output_dir + "tensorflow")
+
+        # Headers referenced by boards.txt (-imacros) but not always copied by -cpsdk
+        copy_extra_sdk_headers(header_output_dir)
+
+        # CMSIS 6.x uses nested includes like "m-profile/cmsis_gcc_m.h"
+        copy_cmsis_profile_headers(slc_output_dir, header_output_dir)
 
         # Remove 'cc' files
         for (root, dirs, file) in os.walk(header_output_dir):
@@ -748,9 +885,9 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
                 for f in file:
                     filepath = os.path.join(root, f)
                     if f.endswith('.h'):
-                        # Skip the 'tflite-micro' headers
-                        if "tflite-micro/tensorflow" in filepath:
-                            print(f"Skipping '{f}' as it is in 'tflite-micro/tensorflow'")
+                        # Skip TFLite Micro headers (copied with structure below)
+                        if ("tflite-micro/tensorflow" in filepath) or ("tflite_micro/tensorflow" in filepath):
+                            print(f"Skipping '{f}' as it is in a tflite tensorflow tree")
                             continue
                         if "include/flatbuffers" in filepath:
                             shutil.copyfile(filepath, header_output_dir + "flatbuffers/" + str(f))
@@ -762,7 +899,16 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
                             shutil.copyfile(filepath, header_output_dir + str(f))
                         print(f"Copying '{filepath}'")
             # Copy the headers from tflite-micro with preserving the structure
-            shutil.copytree(slc_output_dir + "aiml_" + aiml_extension_version + "/third_party/tflite-micro/tensorflow", header_output_dir + "tensorflow")
+            tflite_candidates = [
+                slc_output_dir + "aiml_" + aiml_extension_version + "/compiled_model/third_party/tflite_micro/tensorflow",
+                slc_output_dir + "aiml_" + aiml_extension_version + "/third_party/tflite-micro/tensorflow",
+                slc_output_dir + "aiml_" + aiml_extension_version + "/third_party/tflite_micro/tensorflow",
+            ]
+            tflite_src = next((p for p in tflite_candidates if os.path.exists(p)), None)
+            if tflite_src is None:
+                print("Could not find tflite tensorflow headers under AIML extension")
+                exit(-1)
+            shutil.copytree(tflite_src, header_output_dir + "tensorflow")
             # Remove 'cc' files
             for (root, dirs, file) in os.walk(header_output_dir):
                 for f in file:
@@ -790,7 +936,7 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
 
 def copy_generated_sdk_to_variants(output_dir, variant_target_folder):
     """
-    Copy the generated SDK to the variants folder
+    Copy the generated SDK to the variants folder (flat layout expected by boards.txt)
     """
     print("Copying generated SDK to variants folder...")
 
@@ -798,12 +944,12 @@ def copy_generated_sdk_to_variants(output_dir, variant_target_folder):
     if os.path.exists(variant_target_folder):
         shutil.rmtree(variant_target_folder)
 
-    shutil.copytree(output_dir, variant_target_folder + os.path.basename(output_dir))
+    shutil.copytree(output_dir, variant_target_folder)
     print("Finished copying to variants folder")
 
 def cleanup(gsdk_soc_empty_folder, slcp_file_name, additional_files, keep_gen_folder=False):
     """
-    Clean up
+    Clean up (legacy copy-into-SDK flow)
     """
     # Remove the slcp file
     print("Cleaning up...")
@@ -822,6 +968,18 @@ def cleanup(gsdk_soc_empty_folder, slcp_file_name, additional_files, keep_gen_fo
         print("Keeping the 'gen' folder")
     else:
         shutil.rmtree(slc_output_dir)
+
+
+def cleanup_direct_generate(keep_gen_folder=False):
+    """
+    Clean up after direct package/ SLCP generation (nothing was copied into the SDK)
+    """
+    print("Cleaning up...")
+    if keep_gen_folder:
+        print("Keeping the 'gen' folder")
+    else:
+        if os.path.exists(slc_output_dir):
+            shutil.rmtree(slc_output_dir)
 
 
 def get_platform_config_from_arguments():
@@ -871,6 +1029,8 @@ def read_config_file(config_file_path):
         global gsdk_version
         global matter_extension_version
         global aiml_extension_version
+        global aiml_extension_dir
+        global slc_cli
         lines = f.readlines()
         for line in lines:
             if line.startswith("#") or len(line) < 3:
@@ -887,8 +1047,15 @@ def read_config_file(config_file_path):
                 matter_extension_version = value
             if config == "aiml_extension_version":
                 aiml_extension_version = value
+            if config == "aiml_extension_dir":
+                aiml_extension_dir = value
+            if config == "slc_cli":
+                slc_cli = value
         if gsdk_dir is None or slc_output_dir is None or gsdk_version is None or matter_extension_version is None:
             print(f"Incomplete or incorrect config file ({config_file_path}), exiting...")
+            exit(-1)
+        if not os.path.exists(slc_cli):
+            print(f"slc_cli path does not exist: {slc_cli}")
             exit(-1)
 
 
@@ -1129,8 +1296,7 @@ xg24explorerkit_noradio_platform_config = {
     "prebuild": False,
     "protocol_stack": 'noradio',
     "slcp_file": "slcp/xg24explorerkit/xg24explorerkit_noradio.slcp",
-    "additional_files": ["slcp/xg24explorerkit/sl_spidrv_eusart_xg24explorerkit1_config.h",
-                         "slcp/xg24explorerkit/sl_iostream_eusart_xg24explorerkit1_config.h"]
+    "additional_files": []
 }
 
 xg24explorerkit_noradio_prebuilt_platform_config = {
@@ -1141,8 +1307,7 @@ xg24explorerkit_noradio_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'noradio',
     "slcp_file": "slcp/xg24explorerkit/xg24explorerkit_noradio.slcp",
-    "additional_files": ["slcp/xg24explorerkit/sl_spidrv_eusart_xg24explorerkit1_config.h",
-                         "slcp/xg24explorerkit/sl_iostream_eusart_xg24explorerkit1_config.h"]
+    "additional_files": []
 }
 
 xg24explorerkit_ble_arduino_platform_config = {

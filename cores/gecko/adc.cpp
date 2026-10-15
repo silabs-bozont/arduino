@@ -28,7 +28,10 @@
 
 using namespace arduino;
 
-static bool dma_transfer_finished_cb(unsigned int channel, unsigned int sequenceNo, void *userParam);
+static void dma_transfer_finished_cb(sl_dma_channel_handle_t *handle,
+                                     void *user_data,
+                                     bool error,
+                                     bool aborted);
 
 AdcClass::AdcClass() :
   initialized_single(false),
@@ -39,6 +42,8 @@ AdcClass::AdcClass() :
   current_adc_vref(3300),
   current_read_resolution(this->max_read_resolution_bits),
   current_adc_gain(iadcCfgAnalogGain1x),
+  dma_channel(0),
+  dma_channel_allocated(false),
   user_onsampling_finished_callback(nullptr),
   adc_mutex(nullptr)
 {
@@ -216,28 +221,51 @@ sl_status_t AdcClass::init_dma(uint32_t *buffer, uint32_t size)
     return SL_STATUS_NOT_INITIALIZED;
   }
 
-  // Initialize DMA with default parameters
-  DMADRV_Init();
+  // Allocate a DMA channel from the default DMA Manager instance
+  status = sl_dma_manager_allocate_channel(NULL, &this->dma_channel);
+  if (status != SL_STATUS_OK) {
+    return status;
+  }
+  this->dma_channel_allocated = true;
 
-  // Allocate DMA channel
-  status = DMADRV_AllocateChannel(&this->dma_channel, NULL);
-  if (status != ECODE_EMDRV_DMADRV_OK) {
-    return SL_STATUS_FAIL;
+  status = sl_dma_channel_init(&this->dma_channel_handle,
+                               NULL,
+                               this->dma_channel,
+                               dma_transfer_finished_cb,
+                               NULL);
+  if (status != SL_STATUS_OK) {
+    sl_dma_manager_free_channel(NULL, this->dma_channel);
+    this->dma_channel_allocated = false;
+    return status;
   }
 
-  // Trigger LDMA transfer on IADC scan completion
-  LDMA_TransferCfg_t transferCfg = LDMA_TRANSFER_CFG_PERIPHERAL(ldmaPeripheralSignal_IADC0_IADC_SCAN);
+  // Trigger transfers on IADC scan FIFO data availability
+  status = sl_dma_channel_set_peripheral_signal(&this->dma_channel_handle, SL_DMA_SIGNAL_IADC0_SCAN);
+  if (status != SL_STATUS_OK) {
+    sl_dma_channel_deinit(&this->dma_channel_handle);
+    sl_dma_manager_free_channel(NULL, this->dma_channel);
+    this->dma_channel_allocated = false;
+    return status;
+  }
 
   /*
-   * Set up a linked descriptor to save scan results to the
-   * user-specified buffer. By linking the descriptor to itself
-   * (the last argument is the relative jump in terms of the number of
-   * descriptors), transfers will run continuously.
+   * Continuous P2M into the user buffer. Ping-pong with the same destination
+   * twice replaces the legacy self-linked LDMA descriptor.
    */
-  #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-  this->ldma_descriptor = (LDMA_Descriptor_t)LDMA_DESCRIPTOR_LINKREL_P2M_WORD(&(IADC0->SCANFIFODATA), buffer, size, 0);
+  status = sl_dma_channel_submit_ping_pong_transfer_p2m(&this->dma_channel_handle,
+                                                        (void *)&(IADC0->SCANFIFODATA),
+                                                        buffer,
+                                                        buffer,
+                                                        size * sizeof(uint32_t),
+                                                        SL_DMA_CTRL_SIZE_WORD,
+                                                        NULL);
+  if (status != SL_STATUS_OK) {
+    sl_dma_channel_deinit(&this->dma_channel_handle);
+    sl_dma_manager_free_channel(NULL, this->dma_channel);
+    this->dma_channel_allocated = false;
+    return status;
+  }
 
-  DMADRV_LdmaStartTransfer((int)this->dma_channel, &transferCfg, &this->ldma_descriptor, dma_transfer_finished_cb, NULL);
   return SL_STATUS_OK;
 }
 
@@ -374,7 +402,7 @@ sl_status_t AdcClass::scan_start(PinName pin, uint32_t *buffer, uint32_t size, v
     status = this->init_dma(buffer, size);
   } else if (this->initialized_scan && this->paused_transfer) {
     // Resume DMA transfer if paused
-    status = DMADRV_ResumeTransfer(this->dma_channel);
+    status = sl_dma_channel_resume(&this->dma_channel_handle);
     this->paused_transfer = false;
   } else if (this->initialized_single) {
     // Initialize in scan mode if it was initialized in single mode
@@ -398,23 +426,25 @@ sl_status_t AdcClass::scan_start(PinName pin, uint32_t *buffer, uint32_t size, v
 void AdcClass::scan_stop()
 {
   // Pause sampling
-  DMADRV_PauseTransfer(this->dma_channel);
+  (void)sl_dma_channel_suspend(&this->dma_channel_handle);
   this->paused_transfer = true;
 }
 
 void AdcClass::deinit()
 {
-  // Stop sampling
-  DMADRV_StopTransfer(this->dma_channel);
-
-  // Free resources
-  DMADRV_FreeChannel(this->dma_channel);
+  if (this->dma_channel_allocated) {
+    (void)sl_dma_channel_abort(&this->dma_channel_handle);
+    (void)sl_dma_channel_deinit(&this->dma_channel_handle);
+    (void)sl_dma_manager_free_channel(NULL, this->dma_channel);
+    this->dma_channel_allocated = false;
+  }
 
   // Reset the ADC
   IADC_reset(IADC0);
 
   this->initialized_scan = false;
   this->initialized_single = false;
+  this->paused_transfer = false;
   this->current_adc_pin = PIN_NAME_NC;
 }
 
@@ -427,14 +457,17 @@ void AdcClass::handle_dma_finished_callback()
   this->user_onsampling_finished_callback();
 }
 
-bool dma_transfer_finished_cb(unsigned int channel, unsigned int sequenceNo, void *userParam)
+void dma_transfer_finished_cb(sl_dma_channel_handle_t *handle,
+                              void *user_data,
+                              bool error,
+                              bool aborted)
 {
-  (void)channel;
-  (void)sequenceNo;
-  (void)userParam;
+  (void)handle;
+  (void)user_data;
+  (void)error;
+  (void)aborted;
 
   ADC.handle_dma_finished_callback();
-  return false;
 }
 
 const IADC_PosInput_t AdcClass::GPIO_to_ADC_pin_map[64] = {

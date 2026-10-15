@@ -34,8 +34,9 @@
 #include <inttypes.h>
 #include "em_cmu.h"
 #include "em_iadc.h"
-#include "em_ldma.h"
-#include "dmadrv.h"
+#include "sl_dma_manager.h"
+#include "sl_dma_channel.h"
+#include "sl_device_dma.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "sl_status.h"
@@ -160,9 +161,9 @@ private:
   uint8_t current_read_resolution;
   IADC_CfgAnalogGain_t current_adc_gain;
 
-  LDMA_Descriptor_t ldma_descriptor;
-  unsigned int dma_channel;
-  unsigned int dma_sequence_number;
+  sl_dma_channel_handle_t dma_channel_handle;
+  uint8_t dma_channel;
+  bool dma_channel_allocated;
 
   void (*user_onsampling_finished_callback)(void);
 
