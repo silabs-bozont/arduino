@@ -1,0 +1,10 @@
+id: arduino_ble_hci
+version: 1.0.0
+description: >
+  Arduino Core helpers for BLE (Arduino) / HCI controller builds.
+  Exposes sl_btctrl_hci_reset without pulling the full bluetooth_hci RCP/UART stack.
+label: Arduino BLE HCI helpers
+supplier: Silicon Laboratories Inc.
+component_path:
+- path: component
+vendor: silabs

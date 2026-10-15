@@ -77,26 +77,46 @@
 // <<< sl:start pin_tool >>>
 // <usart signal=TX,RX,CLK,(CS)> SL_SPIDRV_USART_MIKROE
 // $[USART_SL_SPIDRV_USART_MIKROE]
+#ifndef SL_SPIDRV_USART_MIKROE_PERIPHERAL       
 #define SL_SPIDRV_USART_MIKROE_PERIPHERAL        USART0
+#endif
+#ifndef SL_SPIDRV_USART_MIKROE_PERIPHERAL_NO    
 #define SL_SPIDRV_USART_MIKROE_PERIPHERAL_NO     0
+#endif
 
 // USART0 TX on PC03
+#ifndef SL_SPIDRV_USART_MIKROE_TX_PORT          
 #define SL_SPIDRV_USART_MIKROE_TX_PORT           SL_GPIO_PORT_C
+#endif
+#ifndef SL_SPIDRV_USART_MIKROE_TX_PIN           
 #define SL_SPIDRV_USART_MIKROE_TX_PIN            3
+#endif
 
 // USART0 RX on PC02
+#ifndef SL_SPIDRV_USART_MIKROE_RX_PORT          
 #define SL_SPIDRV_USART_MIKROE_RX_PORT           SL_GPIO_PORT_C
+#endif
+#ifndef SL_SPIDRV_USART_MIKROE_RX_PIN           
 #define SL_SPIDRV_USART_MIKROE_RX_PIN            2
+#endif
 
 // USART0 CLK on PC01
+#ifndef SL_SPIDRV_USART_MIKROE_CLK_PORT         
 #define SL_SPIDRV_USART_MIKROE_CLK_PORT          SL_GPIO_PORT_C
+#endif
+#ifndef SL_SPIDRV_USART_MIKROE_CLK_PIN          
 #define SL_SPIDRV_USART_MIKROE_CLK_PIN           1
+#endif
 
 // USART0 CS on PC00
+#ifndef SL_SPIDRV_USART_MIKROE_CS_PORT          
 #define SL_SPIDRV_USART_MIKROE_CS_PORT           SL_GPIO_PORT_C
+#endif
+#ifndef SL_SPIDRV_USART_MIKROE_CS_PIN           
 #define SL_SPIDRV_USART_MIKROE_CS_PIN            0
-
+#endif
 // [USART_SL_SPIDRV_USART_MIKROE]$
 // <<< sl:end pin_tool >>>
 
 #endif // SL_SPIDRV_USART_MIKROE_CONFIG_H
+

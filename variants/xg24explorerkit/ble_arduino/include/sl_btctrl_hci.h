@@ -107,6 +107,8 @@ void sl_btctrl_hci_parser_init_conn(void);
 
 void sl_btctrl_hci_parser_init_subrate(void);
 
+void sl_btctrl_hci_parser_init_channel_classification(void);
+
 void sl_btctrl_hci_parser_init_adv(void);
 
 void sl_btctrl_hci_parser_init_phy(void);
@@ -117,9 +119,21 @@ void sl_btctrl_hci_parser_init_privacy(void);
 
 void sl_btctrl_hci_parser_init_cs(void);
 
+void sl_btctrl_hci_parser_init_cs_handover(void);
+
 void sl_btctrl_hci_parser_init_default(void);
 
 void sl_btctrl_hci_parser_init_iso(void);
+
+void sl_btctrl_hci_parser_init_iso_conn(void);
+
+/**
+ * Initialize legacy event code for vendor specific events
+ * When enabled (SL_BT_CONTROLLER_USE_LEGACY_VENDOR_SPECIFIC_EVENT_CODE = 1) vendor
+ * specific events will be using Meta Event event code 0x3e as event code for vendor
+ * specific events instead of default 0xff value.
+ */
+void sl_btctrl_init_hci_vs_legacy_event(void);
 
 /**
  * Create hardware error event and try to send it to the host.

@@ -45,3 +45,4 @@
 // <<< end of configuration section >>>
 
 #endif // SL_BT_PERIODIC_ADVERTISER_CONFIG_H
+
