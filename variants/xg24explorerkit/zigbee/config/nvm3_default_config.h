@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@
 // <i> should be equal to or higher than the number of NVM3 objects in the
 // <i> default NVM3 instance.
 // <i> Default: 200
-#define NVM3_DEFAULT_CACHE_SIZE  200
+#define NVM3_DEFAULT_CACHE_SIZE  600
 #endif
 
 #ifndef NVM3_DEFAULT_MAX_OBJECT_SIZE
@@ -69,3 +69,4 @@
 // <<< end of configuration section >>>
 
 #endif // NVM3_DEFAULT_CONFIG_H
+

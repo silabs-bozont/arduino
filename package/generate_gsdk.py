@@ -16,9 +16,9 @@ matter_extension_version = None
 aiml_extension_version = None
 aiml_extension_dir = None
 slc_cli = "slc"
+zap_cli = None
 
 gsdk_cpp_empty_folder = "app/common/example/empty/"
-gsdk_zigbee_z3_light_folder = "protocol/zigbee/app/projects/z3/zigbee_z3_light/"
 matter_lighting_app_folder = "extension/matter_extension/slc/sample-app/lighting-app/efr32/"
 matter_zap_folder = "extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/data_model/"
 gsdk_license_file = "gsdk_license"
@@ -130,25 +130,26 @@ def generate_gsdk(current_platform_config):
     is_matter = (protocol_stack == 'matter')
     is_zigbee = (protocol_stack == 'zigbee')
 
-    # noradio / ble_silabs / ble_arduino: generate from package SLCP (SiSDK 2026.x)
-    use_direct_slcp_generate = is_noradio or is_ble_silabs or is_ble_arduino
+    # noradio / ble_* / zigbee: generate from package SLCP (SiSDK 2026.x); never write into the SDK tree
+    use_direct_slcp_generate = is_noradio or is_ble_silabs or is_ble_arduino or is_zigbee
     slcp_folder = None
 
     if use_direct_slcp_generate:
+        if is_zigbee:
+            prepare_zigbee_zap_for_project(project_slcp_file, zigbee_project_zap_file)
         generate_project_with_slc_direct(
-            project_slcp_file, board_opn, config_name, is_ble_arduino=is_ble_arduino
+            project_slcp_file,
+            board_opn,
+            config_name,
+            is_ble_arduino=is_ble_arduino,
+            is_zigbee=is_zigbee,
         )
     else:
-        # Matter / Zigbee still use the copy-into-SDK example workflow
+        # Matter still uses the copy-into-SDK example workflow
         if is_matter:
             slcp_folder = matter_lighting_app_folder
             print("Copying ZAP file...")
             shutil.copy(matter_project_zap_file, gsdk_dir + matter_zap_folder + "lighting-app.zap")
-        elif is_zigbee:
-            slcp_folder = gsdk_zigbee_z3_light_folder
-            print("Copying Zigbee ZAP file...")
-            os.makedirs(gsdk_dir + gsdk_zigbee_z3_light_folder + "config/zcl/", exist_ok=True)
-            shutil.copy(zigbee_project_zap_file, gsdk_dir + gsdk_zigbee_z3_light_folder + "config/zcl/zcl_config.zap")
         else:
             slcp_folder = gsdk_cpp_empty_folder
 
@@ -158,6 +159,8 @@ def generate_gsdk(current_platform_config):
     patch_peripheral_inits()
     if is_ble_arduino:
         patch_ble_arduino_stack_init()
+    if is_zigbee:
+        patch_zigbee_includes()
     if prebuild:
         patch_makefiles()
     if is_matter:
@@ -201,7 +204,7 @@ def copy_slcp_file(gsdk_soc_empty_folder, project_slcp_file, additional_files):
 
 def generate_project_with_slc(gsdk_soc_empty_folder, slcp_file_name, board_opn):
     """
-    Generate with SLC after copying the SLCP into an SDK example tree (Matter / Zigbee).
+    Generate with SLC after copying the SLCP into an SDK example tree (Matter / Zigbee)
     """
     print("Starting SLC generation...")
 
@@ -227,10 +230,83 @@ def trust_sdk():
     subprocess.run([slc_cli, "signature", "trust", "-s", gsdk_dir], check=False)
 
 
-def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name, is_ble_arduino=False):
+def find_zap_adapter_pack_dir():
+    """
+    Resolve the ZAP adapter-pack root (directory containing apack.json) from zap_cli
+    """
+    if not zap_cli:
+        return None
+    zap_path = os.path.abspath(zap_cli)
+    candidates = [
+        os.path.dirname(zap_path),
+        os.path.abspath(os.path.join(os.path.dirname(zap_path), "..", "..", "..")),  # .../zap.app/Contents/MacOS -> .../zap
+        os.path.abspath(os.path.join(os.path.dirname(zap_path), "..")),
+    ]
+    for cand in candidates:
+        if os.path.isfile(os.path.join(cand, "apack.json")):
+            return cand
+    return None
+
+
+def rewrite_zigbee_zap_sdk_packages(zap_file_path):
+    """
+    Point .zap package entries at the configured SiSDK zigbee ZCL / gen-templates.
+    Does not modify the origin SDK — only the package-local .zap file.
+    """
+    import json
+
+    zcl_path = os.path.join(gsdk_dir, "zigbee", "app", "zcl", "zcl-zap.json")
+    gen_path = os.path.join(gsdk_dir, "zigbee", "app", "framework", "gen-template", "gen-templates.json")
+    if not os.path.exists(zcl_path) or not os.path.exists(gen_path):
+        print(f"Missing Zigbee ZAP metadata under SDK:\n  {zcl_path}\n  {gen_path}")
+        exit(-1)
+
+    with open(zap_file_path, "r") as f:
+        data = json.load(f)
+
+    for pkg in data.get("package", []):
+        ptype = pkg.get("type")
+        if ptype == "zcl-properties":
+            pkg["path"] = os.path.abspath(zcl_path)
+            pkg["pathRelativity"] = "absolute"
+        elif ptype == "gen-templates-json":
+            pkg["path"] = os.path.abspath(gen_path)
+            pkg["pathRelativity"] = "absolute"
+
+    with open(zap_file_path, "w") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+    print(f"Bound Zigbee ZAP packages to SDK {gsdk_version}: {zap_file_path}")
+
+
+def prepare_zigbee_zap_for_project(project_slcp_file, zigbee_zap_file):
+    """
+    Install the shared Arduino Zigbee .zap next to the board SLCP (config/zcl/zcl_config.zap)
+    and rebind its package paths to the configured SiSDK.
+    """
+    project_dir = os.path.dirname(os.path.abspath(project_slcp_file))
+    dest_dir = os.path.join(project_dir, "config", "zcl")
+    dest_zap = os.path.join(dest_dir, "zcl_config.zap")
+    os.makedirs(dest_dir, exist_ok=True)
+
+    src_zap = os.path.abspath(zigbee_zap_file)
+    if not os.path.exists(src_zap):
+        print(f"Zigbee ZAP file not found: {src_zap}")
+        exit(-1)
+
+    shutil.copy(src_zap, dest_zap)
+    rewrite_zigbee_zap_sdk_packages(dest_zap)
+    # Keep the shared source in sync with the board copy's feature level / schema
+    if os.path.abspath(src_zap) != os.path.abspath(dest_zap):
+        shutil.copy(dest_zap, src_zap)
+        print(f"Updated shared Zigbee ZAP: {src_zap}")
+
+
+def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name, is_ble_arduino=False, is_zigbee=False):
     """
     Generate directly from an SLCP under package/ (SiSDK 2026.x).
     Uses -cpsdk -np and --sdk-package-path for sibling extensions (AIML, arduino_ble_hci).
+    For Zigbee, passes --tool-path so SLC uses the configured ZAP adapter pack (not PATH).
     """
     print("Starting SLC generation (direct from package SLCP)...")
 
@@ -270,9 +346,26 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
         "-name", project_name,
         "--with", board_opn,
     ]
+
+    if is_zigbee:
+        if not zap_cli or not os.path.exists(zap_cli):
+            print(f"Zigbee generation requires zap_cli in generate_gsdk.cfg (got: {zap_cli})")
+            exit(-1)
+        zap_adapter = find_zap_adapter_pack_dir()
+        if not zap_adapter:
+            print(f"Could not find ZAP apack.json near zap_cli: {zap_cli}")
+            exit(-1)
+        cmd.extend(["--tool-path", zap_adapter])
+        print(f"Using ZAP adapter pack: {zap_adapter}")
+        print(f"Using zap_cli: {zap_cli}")
+
     print("SLC command: " + " ".join(cmd))
-    slc_process = subprocess.Popen(cmd)
-    slc_process.communicate(timeout=600)
+    env = os.environ.copy()
+    # Prefer configured ZAP over anything on PATH when SLC/post-gen invokes it
+    if zap_cli and os.path.exists(zap_cli):
+        env["PATH"] = os.path.dirname(os.path.abspath(zap_cli)) + os.pathsep + env.get("PATH", "")
+    slc_process = subprocess.Popen(cmd, env=env)
+    slc_process.communicate(timeout=1200)
     if slc_process.returncode != 0:
         print(f"SLC generation failed with exit code {slc_process.returncode}")
         exit(-1)
@@ -333,6 +426,32 @@ def patch_peripheral_inits():
                 line = "  //" + line
             out_file.write(line)
     print("Patched peripheral initialization calls")
+
+
+def patch_zigbee_includes():
+    """
+    Zigbee AF plugin token headers include \"config/<plugin>-config.h\"
+    SLC -cpsdk makefiles add -Iconfig but not -I. (project root); add it.
+    """
+    mak_file = find_type_of_file_in_dir(".mak", slc_output_dir)
+    if not mak_file:
+        return
+    mak_path = slc_output_dir + mak_file
+    with open(mak_path, "r") as in_file:
+        buf = in_file.readlines()
+
+    patched = False
+    with open(mak_path, "w") as out_file:
+        for line in buf:
+            # SLC emits either "INCLUDES +=" or "INCLUDES += \"
+            if (not patched) and line.lstrip().startswith("INCLUDES +="):
+                out_file.write(line)
+                out_file.write(" -I. \\\n")
+                patched = True
+                continue
+            out_file.write(line)
+    if patched:
+        print("Patched Zigbee includes: added -I. for config/<plugin>-config.h")
 
 
 def patch_ble_arduino_stack_init():
@@ -859,6 +978,27 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
             if os.path.exists(tflm_src):
                 shutil.copytree(tflm_src, aiml_output_path + "third_party/tflite-micro/tensorflow")
 
+        # SiSDK 2026.x: sl_gcc_preinclude.h lives under platform_core and is not always
+        # pulled into the -cpsdk tree; Arduino -imacros needs it on the include path.
+        toolchain_inc = os.path.join(
+            output_dir, "simplicity_sdk", "platform_core", "platform", "common", "toolchain", "inc"
+        )
+        os.makedirs(toolchain_inc, exist_ok=True)
+        preinclude_dst = os.path.join(toolchain_inc, "sl_gcc_preinclude.h")
+        if not os.path.exists(preinclude_dst):
+            for rel in (
+                "platform_core/platform/common/toolchain/inc/sl_gcc_preinclude.h",
+                "platform/common/toolchain/inc/sl_gcc_preinclude.h",
+                "platform/common/toolchain/gcc/inc/sl_gcc_preinclude.h",
+            ):
+                src = os.path.join(gsdk_dir, rel)
+                if os.path.exists(src):
+                    shutil.copy(src, preinclude_dst)
+                    print(f"Copying Zigbee toolchain header '{src}' -> '{preinclude_dst}'")
+                    break
+            else:
+                print("Warning: sl_gcc_preinclude.h not found for Zigbee variant")
+
         # Remove source files from the copied directories
         for (root, dirs, file) in os.walk(output_dir):
             for f in file:
@@ -1107,6 +1247,7 @@ def read_config_file(config_file_path):
         global aiml_extension_version
         global aiml_extension_dir
         global slc_cli
+        global zap_cli
         lines = f.readlines()
         for line in lines:
             if line.startswith("#") or len(line) < 3:
@@ -1127,11 +1268,16 @@ def read_config_file(config_file_path):
                 aiml_extension_dir = value
             if config == "slc_cli":
                 slc_cli = value
+            if config == "zap_cli":
+                zap_cli = value
         if gsdk_dir is None or slc_output_dir is None or gsdk_version is None or matter_extension_version is None:
             print(f"Incomplete or incorrect config file ({config_file_path}), exiting...")
             exit(-1)
         if not os.path.exists(slc_cli):
             print(f"slc_cli path does not exist: {slc_cli}")
+            exit(-1)
+        if zap_cli is not None and not os.path.exists(zap_cli):
+            print(f"zap_cli path does not exist: {zap_cli}")
             exit(-1)
 
 
@@ -1464,8 +1610,7 @@ xg24explorerkit_zigbee_platform_config = {
     "prebuild": False,
     "protocol_stack": 'zigbee',
     "slcp_file": "slcp/xg24explorerkit/xg24explorerkit_zigbee.slcp",
-    "additional_files": ["slcp/xg24explorerkit/sl_spidrv_eusart_xg24explorerkit1_config.h",
-                         "slcp/xg24explorerkit/sl_iostream_eusart_xg24explorerkit1_config.h"],
+    "additional_files": [],
     "zigbee_zap_file": "slcp/common/arduino_zigbee.zap"
 }
 
@@ -1477,8 +1622,7 @@ xg24explorerkit_zigbee_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'zigbee',
     "slcp_file": "slcp/xg24explorerkit/xg24explorerkit_zigbee.slcp",
-    "additional_files": ["slcp/xg24explorerkit/sl_spidrv_eusart_xg24explorerkit1_config.h",
-                         "slcp/xg24explorerkit/sl_iostream_eusart_xg24explorerkit1_config.h"],
+    "additional_files": [],
     "zigbee_zap_file": "slcp/common/arduino_zigbee.zap"
 }
 

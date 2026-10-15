@@ -1,6 +1,6 @@
 {
   "fileFormat": 2,
-  "featureLevel": 103,
+  "featureLevel": 110,
   "creator": "zap",
   "keyValuePairs": [
     {
@@ -18,16 +18,16 @@
   ],
   "package": [
     {
-      "pathRelativity": "relativeToZap",
-      "path": "../../../../../.silabs/slt/installs/conan/p/simpl965e19baece23/p/zigbee/app/zcl/zcl-zap.json",
+      "pathRelativity": "absolute",
+      "path": "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/zigbee/app/zcl/zcl-zap.json",
       "type": "zcl-properties",
       "category": "zigbee",
       "version": 1,
       "description": "Zigbee Silabs ZCL data"
     },
     {
-      "pathRelativity": "relativeToZap",
-      "path": "../../../../../.silabs/slt/installs/conan/p/simpl965e19baece23/p/zigbee/app/framework/gen-template/gen-templates.json",
+      "pathRelativity": "absolute",
+      "path": "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/zigbee/app/framework/gen-template/gen-templates.json",
       "type": "gen-templates-json",
       "category": "zigbee",
       "version": "zigbee-v0"
@@ -17402,7 +17402,7 @@
       ]
     },
     {
-      "id": 24,
+      "id": 22,
       "name": "OnOffPluginUnit_1",
       "deviceTypeRef": {
         "code": 266,
@@ -18451,7 +18451,7 @@
       ]
     },
     {
-      "id": 25,
+      "id": 23,
       "name": "OnOffPluginUnit_2",
       "deviceTypeRef": {
         "code": 266,
@@ -19500,7 +19500,7 @@
       ]
     },
     {
-      "id": 26,
+      "id": 24,
       "name": "OnOffPluginUnit_3",
       "deviceTypeRef": {
         "code": 266,
@@ -20549,7 +20549,7 @@
       ]
     },
     {
-      "id": 27,
+      "id": 25,
       "name": "ContactSensor_1",
       "deviceTypeRef": {
         "code": 1026,
@@ -20914,22 +20914,6 @@
               "isEnabled": 1
             },
             {
-              "name": "InitiateNormalOperationMode",
-              "code": 1,
-              "mfgCode": null,
-              "source": "client",
-              "isIncoming": 1,
-              "isEnabled": 1
-            },
-            {
-              "name": "InitiateTestMode",
-              "code": 2,
-              "mfgCode": null,
-              "source": "client",
-              "isIncoming": 1,
-              "isEnabled": 1
-            },
-            {
               "name": "ZoneStatusChangeNotification",
               "code": 0,
               "mfgCode": null,
@@ -20938,11 +20922,27 @@
               "isEnabled": 1
             },
             {
+              "name": "InitiateNormalOperationMode",
+              "code": 1,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
+              "isEnabled": 1
+            },
+            {
               "name": "ZoneEnrollRequest",
               "code": 1,
               "mfgCode": null,
               "source": "server",
               "isIncoming": 0,
+              "isEnabled": 1
+            },
+            {
+              "name": "InitiateTestMode",
+              "code": 2,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
               "isEnabled": 1
             }
           ],
@@ -21048,7 +21048,7 @@
       ]
     },
     {
-      "id": 28,
+      "id": 26,
       "name": "ContactSensor_2",
       "deviceTypeRef": {
         "code": 1026,
@@ -21413,22 +21413,6 @@
               "isEnabled": 1
             },
             {
-              "name": "InitiateNormalOperationMode",
-              "code": 1,
-              "mfgCode": null,
-              "source": "client",
-              "isIncoming": 1,
-              "isEnabled": 1
-            },
-            {
-              "name": "InitiateTestMode",
-              "code": 2,
-              "mfgCode": null,
-              "source": "client",
-              "isIncoming": 1,
-              "isEnabled": 1
-            },
-            {
               "name": "ZoneStatusChangeNotification",
               "code": 0,
               "mfgCode": null,
@@ -21437,11 +21421,27 @@
               "isEnabled": 1
             },
             {
+              "name": "InitiateNormalOperationMode",
+              "code": 1,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
+              "isEnabled": 1
+            },
+            {
               "name": "ZoneEnrollRequest",
               "code": 1,
               "mfgCode": null,
               "source": "server",
               "isIncoming": 0,
+              "isEnabled": 1
+            },
+            {
+              "name": "InitiateTestMode",
+              "code": 2,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
               "isEnabled": 1
             }
           ],
@@ -21547,7 +21547,7 @@
       ]
     },
     {
-      "id": 29,
+      "id": 27,
       "name": "ContactSensor_3",
       "deviceTypeRef": {
         "code": 1026,
@@ -21912,22 +21912,6 @@
               "isEnabled": 1
             },
             {
-              "name": "InitiateNormalOperationMode",
-              "code": 1,
-              "mfgCode": null,
-              "source": "client",
-              "isIncoming": 1,
-              "isEnabled": 1
-            },
-            {
-              "name": "InitiateTestMode",
-              "code": 2,
-              "mfgCode": null,
-              "source": "client",
-              "isIncoming": 1,
-              "isEnabled": 1
-            },
-            {
               "name": "ZoneStatusChangeNotification",
               "code": 0,
               "mfgCode": null,
@@ -21936,11 +21920,27 @@
               "isEnabled": 1
             },
             {
+              "name": "InitiateNormalOperationMode",
+              "code": 1,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
+              "isEnabled": 1
+            },
+            {
               "name": "ZoneEnrollRequest",
               "code": 1,
               "mfgCode": null,
               "source": "server",
               "isIncoming": 0,
+              "isEnabled": 1
+            },
+            {
+              "name": "InitiateTestMode",
+              "code": 2,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
               "isEnabled": 1
             }
           ],
@@ -22046,7 +22046,7 @@
       ]
     },
     {
-      "id": 30,
+      "id": 28,
       "name": "PowerSource_1",
       "deviceTypeRef": {
         "code": 5,
@@ -22319,6 +22319,48 @@
           ]
         },
         {
+          "name": "Power Configuration",
+          "code": 1,
+          "mfgCode": null,
+          "define": "POWER_CONFIG_CLUSTER",
+          "side": "server",
+          "enabled": 1,
+          "attributes": [
+            {
+              "name": "battery percentage remaining",
+              "code": 33,
+              "mfgCode": null,
+              "side": "server",
+              "type": "int8u",
+              "included": 1,
+              "storageOption": "RAM",
+              "singleton": 0,
+              "bounded": null,
+              "defaultValue": "0",
+              "reportable": 1,
+              "minInterval": 0,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            },
+            {
+              "name": "cluster revision",
+              "code": 65533,
+              "mfgCode": null,
+              "side": "server",
+              "type": "int16u",
+              "included": 1,
+              "storageOption": "RAM",
+              "singleton": 0,
+              "bounded": null,
+              "defaultValue": "2",
+              "reportable": 0,
+              "minInterval": 1,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            }
+          ]
+        },
+        {
           "name": "Identify",
           "code": 3,
           "mfgCode": null,
@@ -22393,53 +22435,11 @@
               "reportableChange": 0
             }
           ]
-        },
-        {
-          "name": "Power Configuration",
-          "code": 1,
-          "mfgCode": null,
-          "define": "POWER_CONFIG_CLUSTER",
-          "side": "server",
-          "enabled": 1,
-          "attributes": [
-            {
-              "name": "battery percentage remaining",
-              "code": 33,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int8u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": null,
-              "defaultValue": "0",
-              "reportable": 1,
-              "minInterval": 0,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "cluster revision",
-              "code": 65533,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int16u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": null,
-              "defaultValue": "2",
-              "reportable": 0,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            }
-          ]
         }
       ]
     },
     {
-      "id": 31,
+      "id": 29,
       "name": "PowerSource_2",
       "deviceTypeRef": {
         "code": 5,
@@ -22712,6 +22712,48 @@
           ]
         },
         {
+          "name": "Power Configuration",
+          "code": 1,
+          "mfgCode": null,
+          "define": "POWER_CONFIG_CLUSTER",
+          "side": "server",
+          "enabled": 1,
+          "attributes": [
+            {
+              "name": "battery percentage remaining",
+              "code": 33,
+              "mfgCode": null,
+              "side": "server",
+              "type": "int8u",
+              "included": 1,
+              "storageOption": "RAM",
+              "singleton": 0,
+              "bounded": null,
+              "defaultValue": "0",
+              "reportable": 1,
+              "minInterval": 0,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            },
+            {
+              "name": "cluster revision",
+              "code": 65533,
+              "mfgCode": null,
+              "side": "server",
+              "type": "int16u",
+              "included": 1,
+              "storageOption": "RAM",
+              "singleton": 0,
+              "bounded": null,
+              "defaultValue": "2",
+              "reportable": 0,
+              "minInterval": 1,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            }
+          ]
+        },
+        {
           "name": "Identify",
           "code": 3,
           "mfgCode": null,
@@ -22786,53 +22828,11 @@
               "reportableChange": 0
             }
           ]
-        },
-        {
-          "name": "Power Configuration",
-          "code": 1,
-          "mfgCode": null,
-          "define": "POWER_CONFIG_CLUSTER",
-          "side": "server",
-          "enabled": 1,
-          "attributes": [
-            {
-              "name": "battery percentage remaining",
-              "code": 33,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int8u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": null,
-              "defaultValue": "0",
-              "reportable": 1,
-              "minInterval": 0,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "cluster revision",
-              "code": 65533,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int16u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": null,
-              "defaultValue": "2",
-              "reportable": 0,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            }
-          ]
         }
       ]
     },
     {
-      "id": 32,
+      "id": 30,
       "name": "PowerSource_3",
       "deviceTypeRef": {
         "code": 5,
@@ -23105,6 +23105,48 @@
           ]
         },
         {
+          "name": "Power Configuration",
+          "code": 1,
+          "mfgCode": null,
+          "define": "POWER_CONFIG_CLUSTER",
+          "side": "server",
+          "enabled": 1,
+          "attributes": [
+            {
+              "name": "battery percentage remaining",
+              "code": 33,
+              "mfgCode": null,
+              "side": "server",
+              "type": "int8u",
+              "included": 1,
+              "storageOption": "RAM",
+              "singleton": 0,
+              "bounded": null,
+              "defaultValue": "0",
+              "reportable": 1,
+              "minInterval": 0,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            },
+            {
+              "name": "cluster revision",
+              "code": 65533,
+              "mfgCode": null,
+              "side": "server",
+              "type": "int16u",
+              "included": 1,
+              "storageOption": "RAM",
+              "singleton": 0,
+              "bounded": null,
+              "defaultValue": "2",
+              "reportable": 0,
+              "minInterval": 1,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            }
+          ]
+        },
+        {
           "name": "Identify",
           "code": 3,
           "mfgCode": null,
@@ -23179,53 +23221,11 @@
               "reportableChange": 0
             }
           ]
-        },
-        {
-          "name": "Power Configuration",
-          "code": 1,
-          "mfgCode": null,
-          "define": "POWER_CONFIG_CLUSTER",
-          "side": "server",
-          "enabled": 1,
-          "attributes": [
-            {
-              "name": "battery percentage remaining",
-              "code": 33,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int8u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": null,
-              "defaultValue": "0",
-              "reportable": 1,
-              "minInterval": 0,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "cluster revision",
-              "code": 65533,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int16u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": null,
-              "defaultValue": "2",
-              "reportable": 0,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            }
-          ]
         }
       ]
     },
     {
-      "id": 33,
+      "id": 31,
       "name": "Thermostat_1",
       "deviceTypeRef": {
         "code": 769,
@@ -23752,7 +23752,7 @@
               "reportableChange": 0
             },
             {
-              "name": "thermostat running state",
+              "name": "hvac relay state",
               "code": 41,
               "mfgCode": null,
               "side": "server",
@@ -23788,7 +23788,7 @@
       ]
     },
     {
-      "id": 34,
+      "id": 32,
       "name": "Thermostat_2",
       "deviceTypeRef": {
         "code": 769,
@@ -24315,7 +24315,7 @@
               "reportableChange": 0
             },
             {
-              "name": "thermostat running state",
+              "name": "hvac relay state",
               "code": 41,
               "mfgCode": null,
               "side": "server",
@@ -24351,7 +24351,7 @@
       ]
     },
     {
-      "id": 35,
+      "id": 33,
       "name": "Thermostat_3",
       "deviceTypeRef": {
         "code": 769,
@@ -24878,7 +24878,7 @@
               "reportableChange": 0
             },
             {
-              "name": "thermostat running state",
+              "name": "hvac relay state",
               "code": 41,
               "mfgCode": null,
               "side": "server",
@@ -24914,7 +24914,7 @@
       ]
     },
     {
-      "id": 22,
+      "id": 34,
       "name": "TimeClient",
       "deviceTypeRef": {
         "code": 5,
@@ -25439,7 +25439,7 @@
       ]
     },
     {
-      "id": 23,
+      "id": 35,
       "name": "GreenPower",
       "deviceTypeRef": {
         "code": 97,

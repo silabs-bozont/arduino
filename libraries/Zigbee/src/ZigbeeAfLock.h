@@ -29,6 +29,8 @@
 
 extern "C" {
 #include "af.h"
+#include "FreeRTOS.h"
+#include "task.h"
 }
 
 // Guard for application framework APIs called from outside AF callback context
@@ -38,6 +40,18 @@ class ZigbeeAfLock {
 public:
   ZigbeeAfLock()
   {
+    // SiSDK 2026 creates the AF mutex in the Zigbee AF RTOS task after the
+    // kernel starts. Arduino setup() (prio 1) can call Zigbee APIs before that
+    // task has finished init — acquire then asserts in util.c. SDK z3light
+    // avoids this via sl_main (app_init runs only after stack init). Until the
+    // Arduino core moves to sl_main, yield once so the AF task (prio 48) can
+    // complete init. Do not poll sli_zigbee_af_mutex_id — that deadlocks.
+    // ToDo: remove this workaround once the Arduino core moves to sl_main
+    static bool af_settle_done = false;
+    if (!af_settle_done) {
+      vTaskDelay(pdMS_TO_TICKS(2000));
+      af_settle_done = true;
+    }
     sl_zigbee_af_acquire_lock();
   }
 
