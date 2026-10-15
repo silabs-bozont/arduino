@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,12 @@
 #define PSA_WANT_ALG_ECDH 1
 #define MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 
+#if defined(KSU_MAX_KEY_SLOTS) && defined(SEMAILBOX_PRESENT)
+#include "sli_ksu_keyslots_config.h"
+#define MBEDTLS_PSA_KEY_SLOT_COUNT (2 + 1 + SL_PSA_KEY_USER_SLOT_COUNT + SLI_KSU_MAX_KEY_SLOTS - SLI_KSU_KEY_SLOT_USER_START + 1)
+#else
 #define MBEDTLS_PSA_KEY_SLOT_COUNT (2 + 1 + SL_PSA_KEY_USER_SLOT_COUNT + 1)
+#endif
 #ifndef SL_PSA_ITS_MAX_FILES
 #define SL_PSA_ITS_MAX_FILES (1 + SL_PSA_ITS_USER_MAX_FILES)
 #endif
