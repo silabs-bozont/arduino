@@ -240,6 +240,12 @@ public:
    ******************************************************************************/
   I2C_TypeDef* _get_i2c_peripheral();
 
+  /***************************************************************************//**
+   * True when this instance owns the I2C IRQ in follower mode.
+   * Leader mode uses the SiSDK sl_i2c IRQ handlers (via I2CSPM).
+   ******************************************************************************/
+  bool _is_follower() const;
+
   enum WireStatus {
     SUCCESS = 0,
     DATA_TOO_LONG,

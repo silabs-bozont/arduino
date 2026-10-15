@@ -17,6 +17,7 @@ aiml_extension_version = None
 aiml_extension_dir = None
 slc_cli = "slc"
 zap_cli = None
+arduino_gcc_dir = None
 
 gsdk_cpp_empty_folder = "app/common/example/empty/"
 matter_lighting_app_folder = "extension/matter_extension/slc/sample-app/lighting-app/efr32/"
@@ -802,7 +803,7 @@ def copy_output_files(output_dir, is_matter):
 
 def copy_extra_sdk_headers(header_output_dir):
     """
-    Copy headers that Arduino needs but SLC -cpsdk may not place in the project tree.
+    Copy headers that Arduino needs but SLC -cpsdk may not place in the project tree
     """
     extra_headers = [
         "platform_core/platform/common/toolchain/inc/sl_gcc_preinclude.h",
@@ -835,7 +836,7 @@ def copy_extra_sdk_headers(header_output_dir):
 
 def copy_cmsis_profile_headers(slc_output_dir, header_output_dir):
     """
-    Preserve CMSIS profile subdirectories required by nested includes in cmsis_gcc.h.
+    Preserve CMSIS profile subdirectories required by nested includes in cmsis_gcc.h
     """
     for profile in ("m-profile", "a-profile", "r-profile"):
         src = None
@@ -852,6 +853,95 @@ def copy_cmsis_profile_headers(slc_output_dir, header_output_dir):
         print(f"Copying CMSIS profile headers '{src}' -> '{dst}'")
 
 
+def _find_arm_gnu_tool(tool_name):
+    """
+    Locate an arm-none-eabi-* binary under arduino_gcc_dir from generate_gsdk.cfg
+    """
+    if arduino_gcc_dir is None or not os.path.isdir(arduino_gcc_dir):
+        return None
+    # Prefer <arduino_gcc_dir>/<version>/bin/<tool>
+    try:
+        versions = sorted(
+            (e for e in os.listdir(arduino_gcc_dir)
+             if os.path.isdir(os.path.join(arduino_gcc_dir, e))),
+            reverse=True,
+        )
+    except OSError:
+        versions = []
+    for version in versions:
+        candidate = os.path.join(arduino_gcc_dir, version, "bin", tool_name)
+        if os.path.isfile(candidate):
+            return candidate
+    # Also accept a direct bin/ under arduino_gcc_dir
+    candidate = os.path.join(arduino_gcc_dir, "bin", tool_name)
+    if os.path.isfile(candidate):
+        return candidate
+    return None
+
+
+def rename_sl_i2c_irq_handlers_in_archive(archive_path):
+    """
+    SiSDK 2026 i2cspm depends on i2c_core (sl_i2c.c), which defines strong
+    I2Cx_IRQHandler symbols that collide with Arduino Wire follower IRQs.
+    Rename the SDK handlers so Wire can own the vector and forward in leader mode.
+    """
+    ar_bin = _find_arm_gnu_tool("arm-none-eabi-ar")
+    objcopy_bin = _find_arm_gnu_tool("arm-none-eabi-objcopy")
+    nm_bin = _find_arm_gnu_tool("arm-none-eabi-nm")
+    if not ar_bin or not objcopy_bin:
+        print(f"Warning: arm-none-eabi-ar/objcopy not found; skipping I2C IRQ rename in {archive_path}")
+        return False
+
+    if not os.path.exists(archive_path):
+        return False
+
+    members = subprocess.check_output([ar_bin, "t", archive_path], text=True).splitlines()
+    if "sl_i2c.o" not in members:
+        return False
+
+    # Skip if already renamed
+    if nm_bin:
+        nm_sl = subprocess.check_output([nm_bin, archive_path], text=True, stderr=subprocess.DEVNULL)
+        in_sl_i2c = False
+        has_renamed = False
+        has_original = False
+        for line in nm_sl.splitlines():
+            if line.startswith("sl_i2c.o"):
+                in_sl_i2c = True
+                continue
+            if in_sl_i2c and line.endswith(":") and "sl_i2c.o" not in line:
+                in_sl_i2c = False
+            if not in_sl_i2c:
+                continue
+            if "sl_i2c_I2C0_IRQHandler" in line or "sl_i2c_I2C1_IRQHandler" in line:
+                has_renamed = True
+            elif (" I2C0_IRQHandler" in line or " I2C1_IRQHandler" in line) and "sl_i2c_I2C" not in line:
+                has_original = True
+        if has_renamed and not has_original:
+            print(f"I2C IRQ handlers already renamed in {archive_path}")
+            return True
+
+    work_dir = archive_path + ".i2c_irq_tmp"
+    if os.path.exists(work_dir):
+        shutil.rmtree(work_dir)
+    os.mkdir(work_dir)
+    try:
+        subprocess.check_call([ar_bin, "x", os.path.abspath(archive_path), "sl_i2c.o"], cwd=work_dir)
+        obj_path = os.path.join(work_dir, "sl_i2c.o")
+        redefine = [
+            "--redefine-sym", "I2C0_IRQHandler=sl_i2c_I2C0_IRQHandler",
+            "--redefine-sym", "I2C1_IRQHandler=sl_i2c_I2C1_IRQHandler",
+            "--redefine-sym", "I2C2_IRQHandler=sl_i2c_I2C2_IRQHandler",
+            "--redefine-sym", "I2C3_IRQHandler=sl_i2c_I2C3_IRQHandler",
+        ]
+        subprocess.check_call([objcopy_bin] + redefine + [obj_path, obj_path])
+        subprocess.check_call([ar_bin, "r", os.path.abspath(archive_path), "sl_i2c.o"], cwd=work_dir)
+        print(f"Renamed sl_i2c I2Cx_IRQHandler symbols in {archive_path}")
+        return True
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+
+
 def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio, ai_capable, is_zigbee=False):
     """
     Get the built stuff in one place
@@ -863,6 +953,9 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
     if not os.path.exists(prebuilt_core_archive_file):
         print("'gsdk.a' has not been created - build might've failed")
         exit(-1)
+
+    # Avoids Wire vs sl_i2c I2Cx_IRQHandler multiple definition
+    rename_sl_i2c_irq_handlers_in_archive(prebuilt_core_archive_file)
 
     # remove the output dir if it exists
     if os.path.exists(output_dir) and os.path.isdir(output_dir):
@@ -1248,6 +1341,7 @@ def read_config_file(config_file_path):
         global aiml_extension_dir
         global slc_cli
         global zap_cli
+        global arduino_gcc_dir
         lines = f.readlines()
         for line in lines:
             if line.startswith("#") or len(line) < 3:
@@ -1270,6 +1364,8 @@ def read_config_file(config_file_path):
                 slc_cli = value
             if config == "zap_cli":
                 zap_cli = value
+            if config == "arduino_gcc_dir":
+                arduino_gcc_dir = value
         if gsdk_dir is None or slc_output_dir is None or gsdk_version is None or matter_extension_version is None:
             print(f"Incomplete or incorrect config file ({config_file_path}), exiting...")
             exit(-1)
@@ -1278,6 +1374,9 @@ def read_config_file(config_file_path):
             exit(-1)
         if zap_cli is not None and not os.path.exists(zap_cli):
             print(f"zap_cli path does not exist: {zap_cli}")
+            exit(-1)
+        if arduino_gcc_dir is not None and not os.path.isdir(arduino_gcc_dir):
+            print(f"arduino_gcc_dir path does not exist: {arduino_gcc_dir}")
             exit(-1)
 
 
