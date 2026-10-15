@@ -503,45 +503,89 @@ I2C_TypeDef* TwoWire::_get_i2c_peripheral()
   return this->i2c_peripheral;
 }
 
+bool TwoWire::_is_follower() const
+{
+  return this->role == wire_role_t::FOLLOWER;
+}
+
+// SiSDK i2cspm wraps sl_i2c (which defines I2Cx_IRQHandler). generate_gsdk.py renames
+// those to sl_i2c_I2Cx_IRQHandler so Wire can own the vector and forward in leader mode.
+extern "C" {
+#if defined(I2C0)
+void sl_i2c_I2C0_IRQHandler(void);
+#endif
+#if defined(I2C1)
+void sl_i2c_I2C1_IRQHandler(void);
+#endif
+#if defined(I2C2)
+void sl_i2c_I2C2_IRQHandler(void);
+#endif
+}
+
+static bool wire_follower_owns_peripheral(I2C_TypeDef* peripheral)
+{
+  if (Wire._is_follower() && Wire._get_i2c_peripheral() == peripheral) {
+    return true;
+  }
+  #if (NUM_HW_I2C > 1)
+  if (Wire1._is_follower() && Wire1._get_i2c_peripheral() == peripheral) {
+    return true;
+  }
+  #endif
+  return false;
+}
+
 void I2C0_IRQHandler(void)
 {
   #if defined(I2C0)
-  if (Wire._get_i2c_peripheral() == I2C0) {
-    Wire._wire_irq_handler();
+  if (wire_follower_owns_peripheral(I2C0)) {
+    if (Wire._is_follower() && Wire._get_i2c_peripheral() == I2C0) {
+      Wire._wire_irq_handler();
+    }
+    #if (NUM_HW_I2C > 1)
+    if (Wire1._is_follower() && Wire1._get_i2c_peripheral() == I2C0) {
+      Wire1._wire_irq_handler();
+    }
+    #endif
+  } else {
+    sl_i2c_I2C0_IRQHandler();
   }
-  #if (NUM_HW_I2C > 1)
-  if (Wire1._get_i2c_peripheral() == I2C0) {
-    Wire1._wire_irq_handler();
-  }
-  #endif // (NUM_HW_I2C > 1)
   #endif // defined I2C0
 }
 
 void I2C1_IRQHandler(void)
 {
   #if defined(I2C1)
-  if (Wire._get_i2c_peripheral() == I2C1) {
-    Wire._wire_irq_handler();
+  if (wire_follower_owns_peripheral(I2C1)) {
+    if (Wire._is_follower() && Wire._get_i2c_peripheral() == I2C1) {
+      Wire._wire_irq_handler();
+    }
+    #if (NUM_HW_I2C > 1)
+    if (Wire1._is_follower() && Wire1._get_i2c_peripheral() == I2C1) {
+      Wire1._wire_irq_handler();
+    }
+    #endif
+  } else {
+    sl_i2c_I2C1_IRQHandler();
   }
-  #if (NUM_HW_I2C > 1)
-  if (Wire1._get_i2c_peripheral() == I2C1) {
-    Wire1._wire_irq_handler();
-  }
-  #endif // (NUM_HW_I2C > 1)
   #endif // defined I2C1
 }
 
 void I2C2_IRQHandler(void)
 {
   #if defined(I2C2)
-  if (Wire._get_i2c_peripheral() == I2C2) {
-    Wire._wire_irq_handler();
+  if (wire_follower_owns_peripheral(I2C2)) {
+    if (Wire._is_follower() && Wire._get_i2c_peripheral() == I2C2) {
+      Wire._wire_irq_handler();
+    }
+    #if (NUM_HW_I2C > 1)
+    if (Wire1._is_follower() && Wire1._get_i2c_peripheral() == I2C2) {
+      Wire1._wire_irq_handler();
+    }
+    #endif
+  } else {
+    sl_i2c_I2C2_IRQHandler();
   }
-  #if (NUM_HW_I2C > 1)
-  if (Wire1._get_i2c_peripheral() == I2C2) {
-    Wire1._wire_irq_handler();
-  }
-  #endif // (NUM_HW_I2C > 1)
   #endif // defined I2C2
 }
 
