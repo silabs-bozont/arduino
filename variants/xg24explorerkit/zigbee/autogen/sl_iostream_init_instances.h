@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,8 @@ extern "C" {
 #endif
 
 // Initialize iostream component(s) / instance(s)
-void sl_iostream_init_instances(void);
+void sl_iostream_init_instances_stage_1(void);
+void sl_iostream_init_instances_stage_2(void);
 
 #ifdef __cplusplus
 }

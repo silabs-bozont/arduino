@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -64,7 +64,7 @@
 // This is an array of sl_zigbee_af_attribute_min_max_value_t structures.
 
 #define ZCL_GENERATED_MIN_MAX_DEFAULT_COUNT (0)
-	#define ZCL_GENERATED_MIN_MAX_DEFAULTS { }
+	#define ZCL_GENERATED_MIN_MAX_DEFAULTS { { { .ptrToDefaultValue = (uint8_t*)0x00 }, { .ptrToDefaultValue = (uint8_t*)0x00 }, { .ptrToDefaultValue = (uint8_t*)0x00 } } }
 
 
 #define ZCL_GENERATED_ATTRIBUTE_COUNT (116)
@@ -768,96 +768,96 @@
 // Array of sl_zigbee_af_plugin_reporting_entry_t structures.
 #define SL_ZIGBEE_ZCL_GENERATED_REPORTING_CONFIG_DEFAULTS_TABLE_SIZE (90)
 #define SL_ZIGBEE_ZCL_GENERATED_REPORTING_CONFIG_DEFAULTS { \
-  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0001, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 1, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0002, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 2, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0003, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 3, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0004, 0x0402, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 4, Cluster: Temperature Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0004, 0x0402, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 4, Cluster: Temperature Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0004, 0x0402, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 4, Cluster: Temperature Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0004, 0x0402, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 4, Cluster: Temperature Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0005, 0x0402, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 5, Cluster: Temperature Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0005, 0x0402, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 5, Cluster: Temperature Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0005, 0x0402, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 5, Cluster: Temperature Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0005, 0x0402, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 5, Cluster: Temperature Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0006, 0x0402, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 6, Cluster: Temperature Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0006, 0x0402, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 6, Cluster: Temperature Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0006, 0x0402, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 6, Cluster: Temperature Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0006, 0x0402, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 6, Cluster: Temperature Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0007, 0x0405, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 7, Cluster: Relative Humidity Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0007, 0x0405, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 7, Cluster: Relative Humidity Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0007, 0x0405, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 7, Cluster: Relative Humidity Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0007, 0x0405, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 7, Cluster: Relative Humidity Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0008, 0x0405, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 8, Cluster: Relative Humidity Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0008, 0x0405, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 8, Cluster: Relative Humidity Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0008, 0x0405, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 8, Cluster: Relative Humidity Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0008, 0x0405, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 8, Cluster: Relative Humidity Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0009, 0x0405, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 9, Cluster: Relative Humidity Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0009, 0x0405, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 9, Cluster: Relative Humidity Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0009, 0x0405, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 9, Cluster: Relative Humidity Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0009, 0x0405, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 9, Cluster: Relative Humidity Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000D, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 13, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000D, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 13, Cluster: Level Control, Attribute: current level */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000E, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 14, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000E, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 14, Cluster: Level Control, Attribute: current level */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000F, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 15, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000F, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 15, Cluster: Level Control, Attribute: current level */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0010, 0x0400, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 16, Cluster: Illuminance Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0010, 0x0400, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 16, Cluster: Illuminance Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0010, 0x0400, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 16, Cluster: Illuminance Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0010, 0x0400, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 16, Cluster: Illuminance Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0011, 0x0400, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 17, Cluster: Illuminance Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0011, 0x0400, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 17, Cluster: Illuminance Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0011, 0x0400, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 17, Cluster: Illuminance Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0011, 0x0400, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 17, Cluster: Illuminance Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0012, 0x0400, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 18, Cluster: Illuminance Measurement, Attribute: measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0012, 0x0400, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 18, Cluster: Illuminance Measurement, Attribute: min measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0012, 0x0400, 0x0002, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 18, Cluster: Illuminance Measurement, Attribute: max measured value */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0012, 0x0400, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 18, Cluster: Illuminance Measurement, Attribute: cluster revision */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 19, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 19, Cluster: Level Control, Attribute: current level */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0300, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 19, Cluster: Color Control, Attribute: current hue */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0300, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 19, Cluster: Color Control, Attribute: current saturation */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0300, 0x0003, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 19, Cluster: Color Control, Attribute: current x */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0300, 0x0004, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 19, Cluster: Color Control, Attribute: current y */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 20, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 20, Cluster: Level Control, Attribute: current level */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0300, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 20, Cluster: Color Control, Attribute: current hue */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0300, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 20, Cluster: Color Control, Attribute: current saturation */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0300, 0x0003, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 20, Cluster: Color Control, Attribute: current x */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0300, 0x0004, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 20, Cluster: Color Control, Attribute: current y */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 21, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 21, Cluster: Level Control, Attribute: current level */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0300, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 21, Cluster: Color Control, Attribute: current hue */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0300, 0x0001, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 21, Cluster: Color Control, Attribute: current saturation */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0300, 0x0003, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 21, Cluster: Color Control, Attribute: current x */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0300, 0x0004, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 21, Cluster: Color Control, Attribute: current y */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0016, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 22, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0017, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 23, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0018, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 1, 65534, 0 }, /* Endpoint Id: 24, Cluster: On/off, Attribute: on/off */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001C, 0x0001, 0x0021, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 28, Cluster: Power Configuration, Attribute: battery percentage remaining */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001D, 0x0001, 0x0021, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 29, Cluster: Power Configuration, Attribute: battery percentage remaining */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001E, 0x0001, 0x0021, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 30, Cluster: Power Configuration, Attribute: battery percentage remaining */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: local temperature */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0012, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: occupied heating setpoint */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0015, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: min heat setpoint limit */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0016, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: max heat setpoint limit */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x001C, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: system mode */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x001E, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: thermostat running mode */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0029, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: hvac relay state */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: local temperature */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0012, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: occupied heating setpoint */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0015, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: min heat setpoint limit */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0016, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: max heat setpoint limit */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x001C, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: system mode */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x001E, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: thermostat running mode */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0029, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: hvac relay state */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0000, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: local temperature */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0012, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: occupied heating setpoint */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0015, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: min heat setpoint limit */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0016, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: max heat setpoint limit */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x001C, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: system mode */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x001E, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: thermostat running mode */ \
-	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0029, CLUSTER_MASK_SERVER, 0x0000, 0, 65534, 0 }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: hvac relay state */ \
+  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0001, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 1, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0002, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 2, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0003, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 3, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0004, 0x0402, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 4, Cluster: Temperature Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0004, 0x0402, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 4, Cluster: Temperature Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0004, 0x0402, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 4, Cluster: Temperature Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0004, 0x0402, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 4, Cluster: Temperature Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0005, 0x0402, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 5, Cluster: Temperature Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0005, 0x0402, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 5, Cluster: Temperature Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0005, 0x0402, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 5, Cluster: Temperature Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0005, 0x0402, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 5, Cluster: Temperature Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0006, 0x0402, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 6, Cluster: Temperature Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0006, 0x0402, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 6, Cluster: Temperature Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0006, 0x0402, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 6, Cluster: Temperature Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0006, 0x0402, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 6, Cluster: Temperature Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0007, 0x0405, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 7, Cluster: Relative Humidity Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0007, 0x0405, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 7, Cluster: Relative Humidity Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0007, 0x0405, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 7, Cluster: Relative Humidity Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0007, 0x0405, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 7, Cluster: Relative Humidity Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0008, 0x0405, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 8, Cluster: Relative Humidity Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0008, 0x0405, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 8, Cluster: Relative Humidity Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0008, 0x0405, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 8, Cluster: Relative Humidity Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0008, 0x0405, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 8, Cluster: Relative Humidity Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0009, 0x0405, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 9, Cluster: Relative Humidity Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0009, 0x0405, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 9, Cluster: Relative Humidity Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0009, 0x0405, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 9, Cluster: Relative Humidity Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0009, 0x0405, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 9, Cluster: Relative Humidity Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000D, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 13, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000D, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 13, Cluster: Level Control, Attribute: current level */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000E, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 14, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000E, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 14, Cluster: Level Control, Attribute: current level */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000F, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 15, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x000F, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 15, Cluster: Level Control, Attribute: current level */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0010, 0x0400, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 16, Cluster: Illuminance Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0010, 0x0400, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 16, Cluster: Illuminance Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0010, 0x0400, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 16, Cluster: Illuminance Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0010, 0x0400, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 16, Cluster: Illuminance Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0011, 0x0400, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 17, Cluster: Illuminance Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0011, 0x0400, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 17, Cluster: Illuminance Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0011, 0x0400, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 17, Cluster: Illuminance Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0011, 0x0400, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 17, Cluster: Illuminance Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0012, 0x0400, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 18, Cluster: Illuminance Measurement, Attribute: measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0012, 0x0400, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 18, Cluster: Illuminance Measurement, Attribute: min measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0012, 0x0400, 0x0002, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 18, Cluster: Illuminance Measurement, Attribute: max measured value */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0012, 0x0400, 0xFFFD, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 18, Cluster: Illuminance Measurement, Attribute: cluster revision */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 19, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 19, Cluster: Level Control, Attribute: current level */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0300, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 19, Cluster: Color Control, Attribute: current hue */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0300, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 19, Cluster: Color Control, Attribute: current saturation */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0300, 0x0003, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 19, Cluster: Color Control, Attribute: current x */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0013, 0x0300, 0x0004, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 19, Cluster: Color Control, Attribute: current y */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 20, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 20, Cluster: Level Control, Attribute: current level */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0300, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 20, Cluster: Color Control, Attribute: current hue */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0300, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 20, Cluster: Color Control, Attribute: current saturation */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0300, 0x0003, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 20, Cluster: Color Control, Attribute: current x */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0014, 0x0300, 0x0004, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 20, Cluster: Color Control, Attribute: current y */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 21, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0008, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 21, Cluster: Level Control, Attribute: current level */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0300, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 21, Cluster: Color Control, Attribute: current hue */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0300, 0x0001, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 21, Cluster: Color Control, Attribute: current saturation */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0300, 0x0003, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 21, Cluster: Color Control, Attribute: current x */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0015, 0x0300, 0x0004, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 21, Cluster: Color Control, Attribute: current y */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0016, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 22, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0017, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 23, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0018, 0x0006, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 1, 65534, 0 } }, /* Endpoint Id: 24, Cluster: On/off, Attribute: on/off */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001C, 0x0001, 0x0021, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 28, Cluster: Power Configuration, Attribute: battery percentage remaining */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001D, 0x0001, 0x0021, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 29, Cluster: Power Configuration, Attribute: battery percentage remaining */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001E, 0x0001, 0x0021, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 30, Cluster: Power Configuration, Attribute: battery percentage remaining */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: local temperature */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0012, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: occupied heating setpoint */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0015, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: min heat setpoint limit */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0016, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: max heat setpoint limit */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x001C, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: system mode */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x001E, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: thermostat running mode */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x001F, 0x0201, 0x0029, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 31, Cluster: Thermostat, Attribute: hvac relay state */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: local temperature */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0012, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: occupied heating setpoint */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0015, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: min heat setpoint limit */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0016, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: max heat setpoint limit */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x001C, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: system mode */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x001E, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: thermostat running mode */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0020, 0x0201, 0x0029, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 32, Cluster: Thermostat, Attribute: hvac relay state */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0000, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: local temperature */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0012, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: occupied heating setpoint */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0015, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: min heat setpoint limit */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0016, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: max heat setpoint limit */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x001C, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: system mode */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x001E, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: thermostat running mode */ \
+	  { SL_ZIGBEE_ZCL_REPORTING_DIRECTION_REPORTED, 0x0021, 0x0201, 0x0029, CLUSTER_MASK_SERVER, 0x0000, .data.reported={ 0, 65534, 0 } }, /* Endpoint Id: 33, Cluster: Thermostat, Attribute: hvac relay state */ \
 	 } 
 
 #define SL_ZIGBEE_ZCL_MANUFACTURER_CODE 0x1002
@@ -1026,79 +1026,6 @@
 #define ZCL_USING_ZLL_COMMISSIONING_CLUSTER_CLUSTER_REVISION_SERVER_ATTRIBUTE
 
 #define SL_ZIGBEE_AF_SUPPORT_COMMAND_DISCOVERY
-
-/* Format: Zigbee Cluster Code, Zigbee Cluster Mfg Code, Matter Cluster Code, Matter Cluster Mfg Code, Zigbee Attribute Code, Zigbee Attribute Mfg Code, Zigbee Attribute Type Identifier, Matter Attribute Code, Matter Attribute Mfg Code, Matter Attribute Type Identifier */
-#define GENERATED_MULTI_PROTOCOL_ATTRIBUTE_MAPPING \
-{ \
-  { 0x0006, 0x0000, 0x0006, 0x0000, 0x0000, 0x0000, 16, 0x0000, 0x0000, 16 }, /* 0, Zigbee Cluster: On/off, Matter Cluster: On/Off, Zigbee Attribute: on/off, Matter Attribute: OnOff */ \
-  { 0x0006, 0x0000, 0x0006, 0x0000, 0x4003, 0x0000, 48, 0x4003, 0x0000, 48 }, /* 1, Zigbee Cluster: On/off, Matter Cluster: On/Off, Zigbee Attribute: start up on off, Matter Attribute: StartUpOnOff */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0000, 0x0000, 32, 0x0000, 0x0000, 32 }, /* 2, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: current level, Matter Attribute: CurrentLevel */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0001, 0x0000, 33, 0x0001, 0x0000, 33 }, /* 3, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: remaining time, Matter Attribute: RemainingTime */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0002, 0x0000, 32, 0x0002, 0x0000, 32 }, /* 4, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: min level, Matter Attribute: MinLevel */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0003, 0x0000, 32, 0x0003, 0x0000, 32 }, /* 5, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: max level, Matter Attribute: MaxLevel */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0004, 0x0000, 33, 0x0004, 0x0000, 33 }, /* 6, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: current frequency, Matter Attribute: CurrentFrequency */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0005, 0x0000, 33, 0x0005, 0x0000, 33 }, /* 7, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: min frequency, Matter Attribute: MinFrequency */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0006, 0x0000, 33, 0x0006, 0x0000, 33 }, /* 8, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: max frequency, Matter Attribute: MaxFrequency */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x000F, 0x0000, 24, 0x000F, 0x0000, 24 }, /* 9, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: options, Matter Attribute: Options */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0010, 0x0000, 33, 0x0010, 0x0000, 33 }, /* 10, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: on off transition time, Matter Attribute: OnOffTransitionTime */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0011, 0x0000, 32, 0x0011, 0x0000, 32 }, /* 11, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: on level, Matter Attribute: OnLevel */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0012, 0x0000, 33, 0x0012, 0x0000, 33 }, /* 12, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: on transition time, Matter Attribute: OnTransitionTime */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0013, 0x0000, 33, 0x0013, 0x0000, 33 }, /* 13, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: off transition time, Matter Attribute: OffTransitionTime */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x0014, 0x0000, 32, 0x0014, 0x0000, 32 }, /* 14, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: default move rate, Matter Attribute: DefaultMoveRate */ \
-  { 0x0008, 0x0000, 0x0008, 0x0000, 0x4000, 0x0000, 32, 0x4000, 0x0000, 32 }, /* 15, Zigbee Cluster: Level Control, Matter Cluster: Level Control, Zigbee Attribute: start up current level, Matter Attribute: StartUpCurrentLevel */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0000, 0x0000, 32, 0x0000, 0x0000, 32 }, /* 16, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: current hue, Matter Attribute: CurrentHue */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0001, 0x0000, 32, 0x0001, 0x0000, 32 }, /* 17, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: current saturation, Matter Attribute: CurrentSaturation */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0002, 0x0000, 33, 0x0002, 0x0000, 33 }, /* 18, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: remaining time, Matter Attribute: RemainingTime */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0003, 0x0000, 33, 0x0003, 0x0000, 33 }, /* 19, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: current x, Matter Attribute: CurrentX */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0004, 0x0000, 33, 0x0004, 0x0000, 33 }, /* 20, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: current y, Matter Attribute: CurrentY */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0005, 0x0000, 48, 0x0005, 0x0000, 48 }, /* 21, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: drift compensation, Matter Attribute: DriftCompensation */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0006, 0x0000, 66, 0x0006, 0x0000, 66 }, /* 22, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: compensation text, Matter Attribute: CompensationText */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0007, 0x0000, 33, 0x0007, 0x0000, 33 }, /* 23, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color temperature, Matter Attribute: ColorTemperatureMireds */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0008, 0x0000, 48, 0x0008, 0x0000, 48 }, /* 24, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color mode, Matter Attribute: ColorMode */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x000F, 0x0000, 24, 0x000F, 0x0000, 24 }, /* 25, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color control options, Matter Attribute: Options */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0010, 0x0000, 32, 0x0010, 0x0000, 32 }, /* 26, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: number of primaries, Matter Attribute: NumberOfPrimaries */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0011, 0x0000, 33, 0x0011, 0x0000, 33 }, /* 27, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 1 x, Matter Attribute: Primary1X */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0012, 0x0000, 33, 0x0012, 0x0000, 33 }, /* 28, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 1 y, Matter Attribute: Primary1Y */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0013, 0x0000, 32, 0x0013, 0x0000, 32 }, /* 29, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 1 intensity, Matter Attribute: Primary1Intensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0015, 0x0000, 33, 0x0015, 0x0000, 33 }, /* 30, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 2 x, Matter Attribute: Primary2X */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0016, 0x0000, 33, 0x0016, 0x0000, 33 }, /* 31, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 2 y, Matter Attribute: Primary2Y */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0017, 0x0000, 32, 0x0017, 0x0000, 32 }, /* 32, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 2 intensity, Matter Attribute: Primary2Intensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0019, 0x0000, 33, 0x0019, 0x0000, 33 }, /* 33, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 3 x, Matter Attribute: Primary3X */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x001A, 0x0000, 33, 0x001A, 0x0000, 33 }, /* 34, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 3 y, Matter Attribute: Primary3Y */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x001B, 0x0000, 32, 0x001B, 0x0000, 32 }, /* 35, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 3 intensity, Matter Attribute: Primary3Intensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0020, 0x0000, 33, 0x0020, 0x0000, 33 }, /* 36, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 4 x, Matter Attribute: Primary4X */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0021, 0x0000, 33, 0x0021, 0x0000, 33 }, /* 37, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 4 y, Matter Attribute: Primary4Y */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0022, 0x0000, 32, 0x0022, 0x0000, 32 }, /* 38, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 4 intensity, Matter Attribute: Primary4Intensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0024, 0x0000, 33, 0x0024, 0x0000, 33 }, /* 39, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 5 x, Matter Attribute: Primary5X */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0025, 0x0000, 33, 0x0025, 0x0000, 33 }, /* 40, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 5 y, Matter Attribute: Primary5Y */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0026, 0x0000, 32, 0x0026, 0x0000, 32 }, /* 41, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 5 intensity, Matter Attribute: Primary5Intensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0028, 0x0000, 33, 0x0028, 0x0000, 33 }, /* 42, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 6 x, Matter Attribute: Primary6X */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0029, 0x0000, 33, 0x0029, 0x0000, 33 }, /* 43, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 6 y, Matter Attribute: Primary6Y */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x002A, 0x0000, 32, 0x002A, 0x0000, 32 }, /* 44, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: primary 6 intensity, Matter Attribute: Primary6Intensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0030, 0x0000, 33, 0x0030, 0x0000, 33 }, /* 45, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: white point x, Matter Attribute: WhitePointX */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0031, 0x0000, 33, 0x0031, 0x0000, 33 }, /* 46, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: white point y, Matter Attribute: WhitePointY */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0032, 0x0000, 33, 0x0032, 0x0000, 33 }, /* 47, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point r x, Matter Attribute: ColorPointRX */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0033, 0x0000, 33, 0x0033, 0x0000, 33 }, /* 48, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point r y, Matter Attribute: ColorPointRY */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0034, 0x0000, 32, 0x0034, 0x0000, 32 }, /* 49, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point r intensity, Matter Attribute: ColorPointRIntensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0036, 0x0000, 33, 0x0036, 0x0000, 33 }, /* 50, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point g x, Matter Attribute: ColorPointGX */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0037, 0x0000, 33, 0x0037, 0x0000, 33 }, /* 51, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point g y, Matter Attribute: ColorPointGY */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x0038, 0x0000, 32, 0x0038, 0x0000, 32 }, /* 52, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point g intensity, Matter Attribute: ColorPointGIntensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x003A, 0x0000, 33, 0x003A, 0x0000, 33 }, /* 53, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point b x, Matter Attribute: ColorPointBX */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x003B, 0x0000, 33, 0x003B, 0x0000, 33 }, /* 54, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point b y, Matter Attribute: ColorPointBY */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x003C, 0x0000, 32, 0x003C, 0x0000, 32 }, /* 55, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color point b intensity, Matter Attribute: ColorPointBIntensity */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x4000, 0x0000, 33, 0x4000, 0x0000, 33 }, /* 56, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: enhanced current hue, Matter Attribute: EnhancedCurrentHue */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x4001, 0x0000, 48, 0x4001, 0x0000, 48 }, /* 57, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: enhanced color mode, Matter Attribute: EnhancedColorMode */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x4002, 0x0000, 32, 0x4002, 0x0000, 32 }, /* 58, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color loop active, Matter Attribute: ColorLoopActive */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x4003, 0x0000, 32, 0x4003, 0x0000, 32 }, /* 59, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color loop direction, Matter Attribute: ColorLoopDirection */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x4004, 0x0000, 33, 0x4004, 0x0000, 33 }, /* 60, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color loop time, Matter Attribute: ColorLoopTime */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x4005, 0x0000, 33, 0x4005, 0x0000, 33 }, /* 61, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color loop start enhanced hue, Matter Attribute: ColorLoopStartEnhancedHue */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x4006, 0x0000, 33, 0x4006, 0x0000, 33 }, /* 62, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color loop stored enhanced hue, Matter Attribute: ColorLoopStoredEnhancedHue */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x400A, 0x0000, 25, 0x400A, 0x0000, 25 }, /* 63, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color capabilities, Matter Attribute: ColorCapabilities */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x400B, 0x0000, 33, 0x400B, 0x0000, 33 }, /* 64, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color temp physical min, Matter Attribute: ColorTempPhysicalMinMireds */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x400C, 0x0000, 33, 0x400C, 0x0000, 33 }, /* 65, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: color temp physical max, Matter Attribute: ColorTempPhysicalMaxMireds */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x400D, 0x0000, 33, 0x400D, 0x0000, 33 }, /* 66, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: couple color temp to level min-mireds, Matter Attribute: CoupleColorTempToLevelMinMireds */ \
-  { 0x0300, 0x0000, 0x0300, 0x0000, 0x4010, 0x0000, 33, 0x4010, 0x0000, 33 } /* 67, Zigbee Cluster: Color Control, Matter Cluster: Color Control, Zigbee Attribute: start up color temperature mireds, Matter Attribute: StartUpColorTemperatureMireds */ \
-}
 
 
 #endif // SILABS_AF_ENDPOINT_CONFIG

@@ -295,7 +295,7 @@ extern "C" void sl_zigbee_af_identify_stop_feedback_cb(uint8_t endpoint)
   }
 }
 
-// Called by the Zigbee framework once the stack is fully initialized
+// Called during AF init (before local data / events are fully ready)
 extern "C" void sl_zigbee_af_main_init_cb(void)
 {
   initNetworkSteeringRetryEvent();
