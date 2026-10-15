@@ -30,7 +30,7 @@
 #ifndef _SL_BTCTRL_LINKLAYER_H_
 #define _SL_BTCTRL_LINKLAYER_H_
 #include "sl_btctrl_linklayer_defs.h"
-/* ArduinoBLE compatibility (SiSDK 2026.x renamed these to sl_btctrl_*) */
+/* ArduinoBLE API names -> SiSDK sl_btctrl_* (arduino_ble_hci) */
 #include "sl_bt_controller_compat.h"
 
 

@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2025 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,15 +41,15 @@ using namespace arduino;
 
 extern "C" {
   #include "sl_component_catalog.h"
-  #include "sl_system_init.h"
+  #include "sl_main_init.h"
+  #if defined(SL_CATALOG_KERNEL_PRESENT)
+    #include "sl_main_kernel.h"
+  #else // SL_CATALOG_KERNEL_PRESENT
+    #include "sl_main_process_action.h"
+  #endif // SL_CATALOG_KERNEL_PRESENT
   #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
     #include "sl_power_manager.h"
   #endif // SL_CATALOG_POWER_MANAGER_PRESENT
-  #if defined(SL_CATALOG_KERNEL_PRESENT)
-    #include "sl_system_kernel.h"
-  #else // SL_CATALOG_KERNEL_PRESENT
-    #include "sl_system_process_action.h"
-  #endif // SL_CATALOG_KERNEL_PRESENT
 
   #if defined(SL_CATALOG_BLUETOOTH_PRESENT)
     #include "sl_bluetooth.h"

@@ -11,7 +11,7 @@ sdk_extension:
 
 component:
   # System
-  - id: sl_system
+  - id: sl_main
   - id: device_init
   - id: clock_manager
 

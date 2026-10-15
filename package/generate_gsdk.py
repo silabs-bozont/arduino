@@ -1129,7 +1129,7 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
                 ll_text = f.read()
             if "sl_bt_controller_compat.h" not in ll_text:
                 compat_block = (
-                    "\n/* ArduinoBLE API names → SiSDK sl_btctrl_* (arduino_ble_hci) */\n"
+                    "\n/* ArduinoBLE API names -> SiSDK sl_btctrl_* (arduino_ble_hci) */\n"
                     "#include \"sl_bt_controller_compat.h\"\n"
                 )
                 needle = '#include "sl_btctrl_linklayer_defs.h"'

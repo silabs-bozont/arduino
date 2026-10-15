@@ -22,7 +22,7 @@ sdk_extension:
     version: 1.0.0
 
 component:
-  - id: sl_system
+  - id: sl_main
   - id: clock_manager
   - id: device_init
   - id: psa_crypto

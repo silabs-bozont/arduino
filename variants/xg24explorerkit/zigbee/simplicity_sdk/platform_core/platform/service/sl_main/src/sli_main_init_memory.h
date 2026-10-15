@@ -1,6 +1,6 @@
 /***************************************************************************//**
  * @file
- * @brief System Kernel Initialization.
+ * @brief Main memory Initialization.
  *******************************************************************************
  * # License
  * <b>Copyright 2025 Silicon Laboratories Inc. www.silabs.com</b>
@@ -27,33 +27,22 @@
  * 3. This notice may not be removed or altered from any source distribution.
  *
  ******************************************************************************/
-#ifndef SL_SYSTEM_KERNEL_H
-#define SL_SYSTEM_KERNEL_H
-
-#include "sl_common.h"
-
-/***************************************************************************//**
- * @addtogroup system System Setup (sl_system) (deprecated)
- * @{
- ******************************************************************************/
+#ifndef SLI_MAIN_INIT_MEMORY_H
+#define SLI_MAIN_INIT_MEMORY_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * Start the kernel
- *
- * API was deprecated in version 2025.6. Please migrate to the new sl_main API.
- * See the sl_main migration guide: https://docs.silabs.com/gecko-platform/latest/platform-service-sl-system-to-sl-main-migration-guide/
- */
-SL_DEPRECATED_API_SDK_2025_6
-void sl_system_kernel_start(void);
+/******************************************************************************
+ * @brief Template function called during the system initialization process when
+ *        the memory layout is established and permanent memory allocation can
+ *        take place.
+ *****************************************************************************/
+void sli_allocate_permanent_memory(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-/** @} (end addtogroup system) */
-
-#endif // SL_SYSTEM_KERNEL_H
+#endif // SLI_MAIN_INIT_MEMORY_H

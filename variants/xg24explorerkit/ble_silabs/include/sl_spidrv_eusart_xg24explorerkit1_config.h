@@ -90,10 +90,6 @@
 // [EUSART_SL_SPIDRV_EUSART_XG24EXPLORERKIT1]$
 // <<< sl:end pin_tool >>>
 
-// Pin routing kept outside the pin-tool block: SLC 6.x clears invalid
-// EUSART1 SPI locations during generation, but Arduino still needs these
-// macros so the prebuilt gsdk.a can compile (peripheral init is patched out).
-// Use SL_GPIO_PORT_* (SiSDK 2026.x / sl_hal_gpio), not legacy gpioPort*.
 #define SL_SPIDRV_EUSART_XG24EXPLORERKIT1_TX_PORT       SL_GPIO_PORT_D
 #define SL_SPIDRV_EUSART_XG24EXPLORERKIT1_TX_PIN        4
 #define SL_SPIDRV_EUSART_XG24EXPLORERKIT1_RX_PORT       SL_GPIO_PORT_D
