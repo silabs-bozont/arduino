@@ -28,7 +28,7 @@
 #if defined(SL_TRUSTZONE_NONSECURE)
 
 /* The NonSecure app must use the crypto_sizes.h from the trusted-firmware-m repo. */
-#include "../../trusted-firmware-m/interface/include/psa/crypto_sizes.h"
+#include "interface/include/psa/crypto_sizes.h"
 
 #else /* SL_TRUSTZONE_NONSECURE */
 
@@ -64,21 +64,22 @@
  * \return The hash size for the specified hash algorithm.
  *         If the hash algorithm is not recognized, return 0.
  */
-#define PSA_HASH_LENGTH(alg)                                        \
-    (                                                               \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_MD5 ? 16u :           \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_RIPEMD160 ? 20u :     \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_1 ? 20u :         \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_224 ? 28u :       \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_256 ? 32u :       \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_384 ? 48u :       \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_512 ? 64u :       \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_512_224 ? 28u :   \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_512_256 ? 32u :   \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA3_224 ? 28u :      \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA3_256 ? 32u :      \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA3_384 ? 48u :      \
-        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA3_512 ? 64u :      \
+#define PSA_HASH_LENGTH(alg)                                              \
+    (                                                                     \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_MD5 ? 16u :                 \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_RIPEMD160 ? 20u :           \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_1 ? 20u :               \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_224 ? 28u :             \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_256 ? 32u :             \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_384 ? 48u :             \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_512 ? 64u :             \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_512_224 ? 28u :         \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA_512_256 ? 32u :         \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA3_224 ? 28u :            \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA3_256 ? 32u :            \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA3_384 ? 48u :            \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_SHA3_512 ? 64u :            \
+        PSA_ALG_HMAC_GET_HASH(alg) == PSA_ALG_AES_MMO_ZIGBEE ? 16u :      \
         0u)
 
 /** The input block size of a hash algorithm, in bytes.
@@ -1045,6 +1046,10 @@
     PSA_KEY_EXPORT_FFDH_PUBLIC_KEY_MAX_SIZE(PSA_VENDOR_FFDH_MAX_KEY_BITS)
 #endif
 
+#define PSA_EXPORT_KEY_PAIR_OR_PUBLIC_MAX_SIZE \
+    ((PSA_EXPORT_KEY_PAIR_MAX_SIZE > PSA_EXPORT_PUBLIC_KEY_MAX_SIZE) ? \
+     PSA_EXPORT_KEY_PAIR_MAX_SIZE : PSA_EXPORT_PUBLIC_KEY_MAX_SIZE)
+
 /** Sufficient output buffer size for psa_raw_key_agreement().
  *
  * This macro returns a compile-time constant if its arguments are
@@ -1090,6 +1095,27 @@
     (PSA_BITS_TO_BYTES(PSA_VENDOR_FFDH_MAX_KEY_BITS) > PSA_RAW_KEY_AGREEMENT_OUTPUT_MAX_SIZE)
 #undef PSA_RAW_KEY_AGREEMENT_OUTPUT_MAX_SIZE
 #define PSA_RAW_KEY_AGREEMENT_OUTPUT_MAX_SIZE    PSA_BITS_TO_BYTES(PSA_VENDOR_FFDH_MAX_KEY_BITS)
+#endif
+
+/** Maximum key length for ciphers.
+ *
+ * Since there is no additional PSA_WANT_xxx symbol to specifiy the size of
+ * the key once a cipher is enabled (as it happens for asymmetric keys for
+ * example), the maximum key length is taken into account for each cipher.
+ * The resulting value will be the maximum cipher's key length given depending
+ * on which ciphers are enabled.
+ *
+ * Note: max value for AES used below would be doubled if XTS were enabled, but
+ *       this mode is currently not supported in Mbed TLS implementation of PSA
+ *       APIs.
+ */
+#if (defined(PSA_WANT_KEY_TYPE_AES) || defined(PSA_WANT_KEY_TYPE_ARIA) || \
+    defined(PSA_WANT_KEY_TYPE_CAMELLIA) || defined(PSA_WANT_KEY_TYPE_CHACHA20))
+#define PSA_CIPHER_MAX_KEY_LENGTH       32u
+#elif defined(PSA_WANT_KEY_TYPE_DES)
+#define PSA_CIPHER_MAX_KEY_LENGTH       24u
+#else
+#define PSA_CIPHER_MAX_KEY_LENGTH       0u
 #endif
 
 /** The default IV size for a cipher algorithm, in bytes.

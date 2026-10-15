@@ -131,7 +131,7 @@ def generate_gsdk(current_platform_config):
     is_matter = (protocol_stack == 'matter')
     is_zigbee = (protocol_stack == 'zigbee')
 
-    use_direct_slcp_generate = is_noradio
+    use_direct_slcp_generate = is_noradio or is_ble_silabs
     slcp_folder = None
 
     if use_direct_slcp_generate:
@@ -548,6 +548,8 @@ def build_project():
         ["make", "-f", makefile, "-j", "20"], cwd=slc_output_dir
     )
     build_process.communicate(timeout=360)
+    if build_process.returncode != 0:
+        raise RuntimeError(f"Build failed with exit code {build_process.returncode}")
     print("Build finished")
 
 
@@ -1344,8 +1346,7 @@ xg24explorerkit_ble_silabs_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_silabs',
     "slcp_file": "slcp/xg24explorerkit/xg24explorerkit_ble_silabs.slcp",
-    "additional_files": ["slcp/xg24explorerkit/sl_spidrv_eusart_xg24explorerkit1_config.h",
-                         "slcp/xg24explorerkit/sl_iostream_eusart_xg24explorerkit1_config.h"]
+    "additional_files": []
 }
 
 xg24explorerkit_ble_silabs_prebuilt_platform_config = {
@@ -1356,8 +1357,7 @@ xg24explorerkit_ble_silabs_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_silabs',
     "slcp_file": "slcp/xg24explorerkit/xg24explorerkit_ble_silabs.slcp",
-    "additional_files": ["slcp/xg24explorerkit/sl_spidrv_eusart_xg24explorerkit1_config.h",
-                         "slcp/xg24explorerkit/sl_iostream_eusart_xg24explorerkit1_config.h"]
+    "additional_files": []
 }
 
 xg24explorerkit_matter_platform_config = {

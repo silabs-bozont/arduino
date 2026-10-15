@@ -17,7 +17,7 @@ filter:
 
 sdk_extension:
   - id: aiml
-    version: 2.0.0
+    version: 3.0.2
 
 component:
   - id: bluetooth_stack
@@ -78,7 +78,6 @@ component:
     from: aiml
 
 source:
-  - path: main.c
   - path: app.c
 
 include:

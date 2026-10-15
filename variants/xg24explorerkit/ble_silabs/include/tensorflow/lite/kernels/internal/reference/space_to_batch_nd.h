@@ -96,7 +96,11 @@ inline void SpaceToBatchND(const SpaceToBatchParams& params,
               Offset(input1_shape, input_batch,
                      (out_h * block_shape_height + shift_h) - padding_top,
                      (out_w * block_shape_width + shift_w) - padding_left, 0);
+          #pragma GCC diagnostic push
+          #pragma GCC diagnostic ignored "-Wstringop-overflow"
+          #pragma GCC diagnostic ignored "-Wrestrict"
           memcpy(out, in, depth * sizeof(T));
+          #pragma GCC diagnostic pop
         }
       }
     }

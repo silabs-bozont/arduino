@@ -54,18 +54,30 @@
 // <<< sl:start pin_tool >>>
 // <i2c signal=SCL,SDA> SL_I2CSPM_MIKROE
 // $[I2C_SL_I2CSPM_MIKROE]
+#ifndef SL_I2CSPM_MIKROE_PERIPHERAL             
 #define SL_I2CSPM_MIKROE_PERIPHERAL              I2C0
+#endif
+#ifndef SL_I2CSPM_MIKROE_PERIPHERAL_NO          
 #define SL_I2CSPM_MIKROE_PERIPHERAL_NO           0
+#endif
 
 // I2C0 SCL on PB04
+#ifndef SL_I2CSPM_MIKROE_SCL_PORT               
 #define SL_I2CSPM_MIKROE_SCL_PORT                SL_GPIO_PORT_B
+#endif
+#ifndef SL_I2CSPM_MIKROE_SCL_PIN                
 #define SL_I2CSPM_MIKROE_SCL_PIN                 4
+#endif
 
 // I2C0 SDA on PB05
+#ifndef SL_I2CSPM_MIKROE_SDA_PORT               
 #define SL_I2CSPM_MIKROE_SDA_PORT                SL_GPIO_PORT_B
+#endif
+#ifndef SL_I2CSPM_MIKROE_SDA_PIN                
 #define SL_I2CSPM_MIKROE_SDA_PIN                 5
-
+#endif
 // [I2C_SL_I2CSPM_MIKROE]$
 // <<< sl:end pin_tool >>>
 
 #endif // SL_I2CSPM_MIKROE_CONFIG_H
+

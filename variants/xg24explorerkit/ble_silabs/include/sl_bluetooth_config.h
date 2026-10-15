@@ -66,6 +66,9 @@
 // <i> advertising and scanning. The default value is an estimation for achieving adequate throughput
 // <i> and supporting multiple simultaneous connections. Consider increasing this value for
 // <i> higher data throughput over connections, advertising or scanning long advertisement data.
+// <i> NOTE: SL_BT_CONFIG_BUFFER_SIZE is deprecated in Simplicity SDK Suite v2026.6.0 and marked
+// <i> for removal in Simplicity SDK Suite v2027.6.0. SL_BT_CONFIG_BUFFER_SIZE is replaced by
+// <i> SL_BLUETOOTH_COMMON_BUFFER_MEMORY_SIZE in the Bluetooth Common Component.
 #define SL_BT_CONFIG_BUFFER_SIZE    (3150)
 
 // <e SL_BT_CONFIG_SET_CUSTOM_ADDRESS_FROM_NVM3> Enable using a custom Bluetooth address stored in NVM3
@@ -99,6 +102,7 @@
 // <i> if the LE Power Control feature is enabled.
 // <i> When this configuration is passed into stack initialization, the stack
 // <i> will select the closest value that the device supports.
+// <i> API sl_bt_system_set_tx_power() can be used to set the minimum TX power at runtime.
 // <i> API sl_bt_system_get_tx_power_setting() can be used to query the selected value.
 #define SL_BT_CONFIG_MIN_TX_POWER     (-30)
 
@@ -108,6 +112,7 @@
 // <i> advertising, scanning and DTM testing.
 // <i> When this configuration is passed into stack initialization, the stack
 // <i> will select the closest value that the device supports.
+// <i> API sl_bt_system_set_tx_power() can be used to set the maximum TX power at runtime.
 // <i> API sl_bt_system_get_tx_power_setting() can be used to query the selected value.
 #define SL_BT_CONFIG_MAX_TX_POWER     (80)
 
@@ -122,11 +127,23 @@
 // <i> A negative value indicates some power loss in the path. For example,
 // <i> with radiated TX power set to +10 dBm and this configuration to -10
 // <i> (i.e., 1 dBm loss), the transmitter output power will be set to +11 dBm.
+// <i> NOTE: This configuration is deprecated in Simplicity SDK Suite v2026.6.0 and marked for
+// <i> removal in Simplicity SDK Suite v2027.6.0.
+// <i> During the deprecation period, SL_BT_CONFIG_RF_PATH_GAIN_TX will be applied if set to
+// <i> a non-zero value. If SL_BT_CONFIG_RF_PATH_GAIN_TX is set to zero, the value from the
+// <i> Bluetooth Low Energy Controller Component configuration
+// <i> (SL_BT_CONTROLLER_RF_TX_PATH_GAIN_DECI_DB) will be used.
 #define SL_BT_CONFIG_RF_PATH_GAIN_TX     (0)
 
 // <o SL_BT_CONFIG_RF_PATH_GAIN_RX> RF RX path gain in 0.1dBm unit
 // <i> Default: 0
 // <i> RX RF path gain is used to compensate the RSSI reports from the Bluetooth Stack.
+// <i> NOTE: This configuration is deprecated in Simplicity SDK Suite v2026.6.0 and marked for
+// <i> removal in Simplicity SDK Suite v2027.6.0.
+// <i> During the deprecation period, SL_BT_CONFIG_RF_PATH_GAIN_RX will be applied if set to
+// <i> a non-zero value. If SL_BT_CONFIG_RF_PATH_GAIN_RX is set to zero, the value from the
+// <i> Bluetooth Low Energy Controller Component configuration
+// <i> (SL_BT_CONTROLLER_RF_RX_PATH_GAIN_DECI_DB) will be used.
 #define SL_BT_CONFIG_RF_PATH_GAIN_RX     (0)
 
 // </h> End RF Path
@@ -157,6 +174,7 @@
 #endif // SL_CATALOG_KERNEL_PRESENT
 
 #include "sl_bt_stack_config.h"
+#include "sl_bgapi_config.h" // For SL_BGAPI_MAX_PAYLOAD_SIZE
 
 #define SL_BT_CONFIG_DEFAULT                                 \
   {                                                          \
@@ -170,6 +188,8 @@
     .rf.rx_gain = SL_BT_CONFIG_RF_PATH_GAIN_RX,              \
     .rf.tx_min_power = SL_BT_CONFIG_MIN_TX_POWER,            \
     .rf.tx_max_power = SL_BT_CONFIG_MAX_TX_POWER,            \
+    .max_bgapi_payload_size = SL_BGAPI_MAX_PAYLOAD_SIZE,     \
   }
 
 #endif // SL_BLUETOOTH_CONFIG_H
+
