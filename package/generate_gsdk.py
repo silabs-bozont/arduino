@@ -18,7 +18,6 @@ aiml_extension_dir = None
 slc_cli = "slc"
 
 gsdk_cpp_empty_folder = "app/common/example/empty/"
-gsdk_bt_soc_empty_folder = "app/bluetooth/example/bt_soc_empty/"
 gsdk_zigbee_z3_light_folder = "protocol/zigbee/app/projects/z3/zigbee_z3_light/"
 matter_lighting_app_folder = "extension/matter_extension/slc/sample-app/lighting-app/efr32/"
 matter_zap_folder = "extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/data_model/"
@@ -131,13 +130,16 @@ def generate_gsdk(current_platform_config):
     is_matter = (protocol_stack == 'matter')
     is_zigbee = (protocol_stack == 'zigbee')
 
-    use_direct_slcp_generate = is_noradio or is_ble_silabs
+    # noradio / ble_silabs / ble_arduino: generate from package SLCP (SiSDK 2026.x)
+    use_direct_slcp_generate = is_noradio or is_ble_silabs or is_ble_arduino
     slcp_folder = None
 
     if use_direct_slcp_generate:
-        generate_project_with_slc_direct(project_slcp_file, board_opn, config_name)
+        generate_project_with_slc_direct(
+            project_slcp_file, board_opn, config_name, is_ble_arduino=is_ble_arduino
+        )
     else:
-        # If we're generating a GSDK with Matter then the example is at a different path
+        # Matter / Zigbee still use the copy-into-SDK example workflow
         if is_matter:
             slcp_folder = matter_lighting_app_folder
             print("Copying ZAP file...")
@@ -147,10 +149,6 @@ def generate_gsdk(current_platform_config):
             print("Copying Zigbee ZAP file...")
             os.makedirs(gsdk_dir + gsdk_zigbee_z3_light_folder + "config/zcl/", exist_ok=True)
             shutil.copy(zigbee_project_zap_file, gsdk_dir + gsdk_zigbee_z3_light_folder + "config/zcl/zcl_config.zap")
-        elif is_ble_arduino:
-            slcp_folder = gsdk_cpp_empty_folder
-        elif is_ble_silabs:
-            slcp_folder = gsdk_bt_soc_empty_folder
         else:
             slcp_folder = gsdk_cpp_empty_folder
 
@@ -158,6 +156,8 @@ def generate_gsdk(current_platform_config):
         generate_project_with_slc(slcp_folder, slcp_file_name, board_opn)
 
     patch_peripheral_inits()
+    if is_ble_arduino:
+        patch_ble_arduino_stack_init()
     if prebuild:
         patch_makefiles()
     if is_matter:
@@ -201,7 +201,7 @@ def copy_slcp_file(gsdk_soc_empty_folder, project_slcp_file, additional_files):
 
 def generate_project_with_slc(gsdk_soc_empty_folder, slcp_file_name, board_opn):
     """
-    Generate the project with slc (legacy: SLCP already copied into the SDK tree)
+    Generate with SLC after copying the SLCP into an SDK example tree (Matter / Zigbee).
     """
     print("Starting SLC generation...")
 
@@ -227,10 +227,10 @@ def trust_sdk():
     subprocess.run([slc_cli, "signature", "trust", "-s", gsdk_dir], check=False)
 
 
-def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name):
+def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name, is_ble_arduino=False):
     """
-    Generate directly from an SLCP under package/ without copying into the SDK.
-    Uses the 2026-era SLC flags (-cpsdk -np) and --sdk-package-path for sibling extensions.
+    Generate directly from an SLCP under package/ (SiSDK 2026.x).
+    Uses -cpsdk -np and --sdk-package-path for sibling extensions (AIML, arduino_ble_hci).
     """
     print("Starting SLC generation (direct from package SLCP)...")
 
@@ -245,6 +245,15 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name)
     sdk_package_paths = os.path.abspath(gsdk_dir.rstrip("/"))
     if aiml_extension_dir:
         sdk_package_paths = sdk_package_paths + "," + os.path.abspath(aiml_extension_dir.rstrip("/"))
+    if is_ble_arduino:
+        # HCI reset + ArduinoBLE name/compat without bluetooth_hci RCP/UART
+        arduino_ble_hci_ext = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "slcp", "common", "arduino_ble_hci")
+        )
+        if not os.path.isdir(arduino_ble_hci_ext):
+            print(f"Missing arduino_ble_hci extension at {arduino_ble_hci_ext}")
+            exit(-1)
+        sdk_package_paths = sdk_package_paths + "," + arduino_ble_hci_ext
 
     cmd = [
         slc_cli, "generate",
@@ -324,6 +333,32 @@ def patch_peripheral_inits():
                 line = "  //" + line
             out_file.write(line)
     print("Patched peripheral initialization calls")
+
+
+def patch_ble_arduino_stack_init():
+    """
+    For BLE (Arduino)/HCI: leave controller init to ArduinoBLE's HCISilabsTransport.
+    Keep sl_btctrl_rtos_init() so the link-layer task exists; skip sl_btctrl_init()
+    here so feature/HCI init is not done twice before HCI reset.
+    """
+    event_handler_file_path = slc_output_dir + "/autogen/sl_event_handler.c"
+    if not os.path.exists(event_handler_file_path):
+        return
+
+    with open(event_handler_file_path, "r") as in_file:
+        buf = in_file.readlines()
+
+    patched = False
+    with open(event_handler_file_path, "w") as out_file:
+        for line in buf:
+            # Match sl_btctrl_init(); but not sl_btctrl_init_*(feature) or rtos_init
+            stripped = line.strip()
+            if stripped == "sl_btctrl_init();" or stripped == "sl_bt_controller_init();":
+                line = "  // ArduinoBLE owns controller init (HCISilabsTransport::begin)\n  //" + line.lstrip()
+                patched = True
+            out_file.write(line)
+    if patched:
+        print("Patched ble_arduino stack init: deferred sl_btctrl_init to ArduinoBLE")
 
 
 def patch_makefiles():
@@ -918,16 +953,55 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
                     if f.endswith('.cc'):
                         os.remove(filepath)
 
-    # Copy BLE HCI header files if the variant is 'BLE (Arduino)'
+    # BLE (Arduino): HCI headers from SiSDK 2026.x bluetooth_le_controller
     if is_ble_arduino:
-        ble_hci_header_dir = gsdk_dir + "/protocol/bluetooth/bgstack/ll/inc/"
-        ble_hci_headers = ["sl_btctrl_hci_handler.h", "sl_btctrl_hci.h", "sl_hci_common_transport.h"]
-        for header in ble_hci_headers:
-            src_path = os.path.join(ble_hci_header_dir, header)
-            if os.path.exists(src_path):
+        ble_hci_headers = [
+            (os.path.join(gsdk_dir, "bluetooth_le_controller", "inc"),
+             ["sl_btctrl_hci_handler.h", "sl_btctrl_hci.h", "sl_hci_common_transport.h"]),
+            (os.path.join(gsdk_dir, "bluetooth_le_controller", "utils", "hci_packet", "inc"),
+             ["sl_btctrl_reset.h"]),
+        ]
+        copied = 0
+        for header_dir, headers in ble_hci_headers:
+            for header in headers:
+                src_path = os.path.join(header_dir, header)
+                if not os.path.exists(src_path):
+                    print(f"Warning: missing BLE HCI header '{src_path}'")
+                    continue
                 shutil.copy(src_path, output_dir + "/include/")
-                print(f"Copying '{header}'")
-        print(f"Copied BLE HCI header files")
+                print(f"Copying '{header}' from {header_dir}")
+                copied += 1
+        # ArduinoBLE includes sl_btctrl_hci_reset.h; SiSDK renamed it to sl_btctrl_reset.h
+        reset_hdr = os.path.join(output_dir, "include", "sl_btctrl_reset.h")
+        reset_alias = os.path.join(output_dir, "include", "sl_btctrl_hci_reset.h")
+        if os.path.exists(reset_hdr) and not os.path.exists(reset_alias):
+            with open(reset_alias, "w") as f:
+                f.write(
+                    "/* ArduinoBLE expects this name; SiSDK provides sl_btctrl_reset.h */\n"
+                    "#include \"sl_btctrl_reset.h\"\n"
+                )
+            print("Wrote ArduinoBLE alias header sl_btctrl_hci_reset.h")
+            copied += 1
+        # ArduinoBLE calls sl_bt_controller_init/deinit; wrappers live in arduino_ble_hci
+        linklayer_hdr = os.path.join(output_dir, "include", "sl_btctrl_linklayer.h")
+        if os.path.exists(linklayer_hdr):
+            with open(linklayer_hdr, "r") as f:
+                ll_text = f.read()
+            if "sl_bt_controller_compat.h" not in ll_text:
+                compat_block = (
+                    "\n/* ArduinoBLE API names → SiSDK sl_btctrl_* (arduino_ble_hci) */\n"
+                    "#include \"sl_bt_controller_compat.h\"\n"
+                )
+                needle = '#include "sl_btctrl_linklayer_defs.h"'
+                if needle in ll_text:
+                    ll_text = ll_text.replace(needle, needle + compat_block, 1)
+                else:
+                    ll_text = ll_text + compat_block
+                with open(linklayer_hdr, "w") as f:
+                    f.write(ll_text)
+                print("Patched sl_btctrl_linklayer.h with ArduinoBLE controller compat include")
+                copied += 1
+        print(f"Copied {copied} BLE HCI header file(s)")
 
     # Get the linkerfile
     shutil.copy(slc_output_dir + "autogen/linkerfile.ld", output_dir)
@@ -951,7 +1025,7 @@ def copy_generated_sdk_to_variants(output_dir, variant_target_folder):
 
 def cleanup(gsdk_soc_empty_folder, slcp_file_name, additional_files, keep_gen_folder=False):
     """
-    Clean up (legacy copy-into-SDK flow)
+    Clean up after the copy-into-SDK generate flow (Matter / Zigbee).
     """
     # Remove the slcp file
     print("Cleaning up...")
@@ -1122,9 +1196,7 @@ thingplusmatter_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/thingplusmatter/thingplusmatter_ble_arduino.slcp",
-    "additional_files": ["slcp/thingplusmatter/sl_spidrv_eusart_thingplus1_config.h",
-                         "slcp/thingplusmatter/sl_iostream_eusart_thingplus1_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 thingplusmatter_ble_arduino_prebuilt_platform_config = {
@@ -1135,9 +1207,7 @@ thingplusmatter_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/thingplusmatter/thingplusmatter_ble_arduino.slcp",
-    "additional_files": ["slcp/thingplusmatter/sl_spidrv_eusart_thingplus1_config.h",
-                         "slcp/thingplusmatter/sl_iostream_eusart_thingplus1_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 thingplusmatter_ble_silabs_platform_config = {
@@ -1252,8 +1322,7 @@ xg27devkit_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xg27devkit/xg27devkit_ble_arduino.slcp",
-    "additional_files": ["slcp/xg27devkit/sl_iostream_usart_xg27devkit1_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 xg27devkit_ble_arduino_prebuilt_platform_config = {
@@ -1264,8 +1333,7 @@ xg27devkit_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xg27devkit/xg27devkit_ble_arduino.slcp",
-    "additional_files": ["slcp/xg27devkit/sl_iostream_usart_xg27devkit1_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 xg27devkit_ble_silabs_platform_config = {
@@ -1320,9 +1388,7 @@ xg24explorerkit_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xg24explorerkit/xg24explorerkit_ble_arduino.slcp",
-    "additional_files": ["slcp/xg24explorerkit/sl_spidrv_eusart_xg24explorerkit1_config.h",
-                         "slcp/xg24explorerkit/sl_iostream_eusart_xg24explorerkit1_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 xg24explorerkit_ble_arduino_prebuilt_platform_config = {
@@ -1333,9 +1399,7 @@ xg24explorerkit_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xg24explorerkit/xg24explorerkit_ble_arduino.slcp",
-    "additional_files": ["slcp/xg24explorerkit/sl_spidrv_eusart_xg24explorerkit1_config.h",
-                         "slcp/xg24explorerkit/sl_iostream_eusart_xg24explorerkit1_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 xg24explorerkit_ble_silabs_platform_config = {
@@ -1448,7 +1512,7 @@ xg24devkit_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xg24devkit/xg24devkit_ble_arduino.slcp",
-    "additional_files": [["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 xg24devkit_ble_arduino_prebuilt_platform_config = {
@@ -1459,7 +1523,7 @@ xg24devkit_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xg24devkit/xg24devkit_ble_arduino.slcp",
-    "additional_files": [["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 xg24devkit_ble_silabs_platform_config = {
@@ -1548,11 +1612,7 @@ wio_mg24_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/wio_mg24/wio_mg24_ble_arduino.slcp",
-    "additional_files": ["slcp/wio_mg24/sl_spidrv_eusart_wio_mg24_config.h",
-                         "slcp/wio_mg24/sl_iostream_eusart_wio_mg24_config.h",
-                         ["slcp/wio_mg24/brd2907a.slcc", "hardware/board/component/"],
-                         ["slcp/wio_mg24/brd2907a_config.slcc", "hardware/board/config/component/"],
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 wio_mg24_ble_arduino_prebuilt_platform_config = {
@@ -1563,11 +1623,7 @@ wio_mg24_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/wio_mg24/wio_mg24_ble_arduino.slcp",
-    "additional_files": ["slcp/wio_mg24/sl_spidrv_eusart_wio_mg24_config.h",
-                         "slcp/wio_mg24/sl_iostream_eusart_wio_mg24_config.h",
-                         ["slcp/wio_mg24/brd2907a.slcc", "hardware/board/component/"],
-                         ["slcp/wio_mg24/brd2907a_config.slcc", "hardware/board/config/component/"],
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 wio_mg24_ble_silabs_platform_config = {
@@ -1628,7 +1684,7 @@ bgm220explorerkit_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/bgm220explorerkit/bgm220explorerkit_ble_arduino.slcp",
-    "additional_files": [["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 bgm220explorerkit_ble_arduino_prebuilt_platform_config = {
@@ -1639,7 +1695,7 @@ bgm220explorerkit_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/bgm220explorerkit/bgm220explorerkit_ble_arduino.slcp",
-    "additional_files": [["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 bgm220explorerkit_ble_silabs_platform_config = {
@@ -1708,15 +1764,7 @@ nanomatter_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/nano_matter/nano_matter_ble_arduino.slcp",
-    "additional_files": ["slcp/nano_matter/sl_spidrv_eusart_nanomatter_config.h",
-                         "slcp/nano_matter/sl_spidrv_eusart_nanomatter1_config.h",
-                         "slcp/nano_matter/sl_iostream_usart_nanomatter_config.h",
-                         "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"],
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 nanomatter_ble_arduino_prebuilt_platform_config = {
@@ -1727,15 +1775,7 @@ nanomatter_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/nano_matter/nano_matter_ble_arduino.slcp",
-    "additional_files": ["slcp/nano_matter/sl_spidrv_eusart_nanomatter_config.h",
-                         "slcp/nano_matter/sl_spidrv_eusart_nanomatter1_config.h",
-                         "slcp/nano_matter/sl_iostream_usart_nanomatter_config.h",
-                         "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"],
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 nanomatter_ble_silabs_platform_config = {
@@ -1888,9 +1928,7 @@ lyra24p20_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/lyra24p20/lyra24p20_ble_arduino.slcp",
-    "additional_files": ["slcp/lyra24p20/sl_spidrv_eusart_lyra24p20_config.h",
-                         "slcp/lyra24p20/sl_iostream_eusart_lyra24p20_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 lyra24p20_ble_arduino_prebuilt_platform_config = {
@@ -1901,9 +1939,7 @@ lyra24p20_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/lyra24p20/lyra24p20_ble_arduino.slcp",
-    "additional_files": ["slcp/lyra24p20/sl_spidrv_eusart_lyra24p20_config.h",
-                         "slcp/lyra24p20/sl_iostream_eusart_lyra24p20_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 lyra24p20_ble_silabs_platform_config = {
@@ -1970,13 +2006,7 @@ xiao_mg24_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xiao_mg24/xiao_mg24_ble_arduino.slcp",
-    "additional_files": ["slcp/xiao_mg24/sl_spidrv_eusart_xiao_mg24_config.h",
-                         "slcp/xiao_mg24/sl_spidrv_eusart_xiao_mg24_1_config.h",
-                         "slcp/xiao_mg24/sl_iostream_usart_xiao_mg24_config.h",
-                         "slcp/xiao_mg24/sl_iostream_eusart_xiao_mg24_1_config.h",
-                         "slcp/xiao_mg24/sl_i2cspm_xiao_mg24_config.h",
-                         "slcp/xiao_mg24/sl_i2cspm_xiao_mg24_1_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 xiao_mg24_ble_arduino_prebuilt_platform_config = {
@@ -1987,13 +2017,7 @@ xiao_mg24_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xiao_mg24/xiao_mg24_ble_arduino.slcp",
-    "additional_files": ["slcp/xiao_mg24/sl_spidrv_eusart_xiao_mg24_config.h",
-                         "slcp/xiao_mg24/sl_spidrv_eusart_xiao_mg24_1_config.h",
-                         "slcp/xiao_mg24/sl_iostream_usart_xiao_mg24_config.h",
-                         "slcp/xiao_mg24/sl_iostream_eusart_xiao_mg24_1_config.h",
-                         "slcp/xiao_mg24/sl_i2cspm_xiao_mg24_config.h",
-                         "slcp/xiao_mg24/sl_i2cspm_xiao_mg24_1_config.h",
-                         ["slcp/common/bluetooth_hci_reset.slcc", "protocol/bluetooth/bgstack/ll/component/"]]
+    "additional_files": []
 }
 
 xiao_mg24_ble_silabs_platform_config = {

@@ -1,0 +1,35 @@
+id: "bluetooth_hci_reset"
+label: Bluetooth Controller HCI reset (Arduino)
+package: arduino_ble_hci
+description: >
+  Provides sl_btctrl_hci_reset() for ArduinoBLE HCI without selecting the
+  full bluetooth_hci RCP component (which requires a UART/CPC transport).
+  Sources are vendored from SiSDK bluetooth_le_controller/utils/hci_packet.
+
+category: Bluetooth|Host Controller Interface (HCI)
+quality: production
+root_path: .
+source:
+  - path: src/sl_btctrl_reset.c
+  - path: src/sl_bt_controller_compat.c
+include:
+  - path: inc
+    file_list:
+      - path: sl_btctrl_reset.h
+      - path: sl_btctrl_hci_reset.h
+      - path: sl_bt_controller_compat.h
+provides:
+  - name: "bluetooth_hci_reset"
+requires:
+  - name: bluetooth_controller
+  - name: emlib_rmu
+    condition:
+      - device_series_2
+  - name: hal_emu
+    condition:
+      - device_series_3
+conflicts:
+  - name: bluetooth_stack
+metadata:
+  sbom:
+    license: Zlib

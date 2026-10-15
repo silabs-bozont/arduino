@@ -3,7 +3,7 @@ package: Bluetooth
 label: Bluetooth - Arduino GSDK config for the xG24 Explorer Kit (brd2703a) (Based on SoC Empty)
 description: >
   This slcp can be used in place of SoC Empty to generate the
-  SDK files needed for the Arduino Core.
+  SDK files needed for the Arduino Core (BLE Arduino / HCI controller).
 category: Bluetooth Examples
 quality: production
 
@@ -17,12 +17,14 @@ filter:
 
 sdk_extension:
   - id: aiml
-    version: 2.0.0
+    version: 3.0.2
+  - id: arduino_ble_hci
+    version: 1.0.0
 
 component:
   - id: sl_system
+  - id: clock_manager
   - id: device_init
-  - id: device_init_nvic
   - id: psa_crypto
   - id: power_manager
   - id: bootloader_interface
@@ -62,14 +64,20 @@ component:
   - id: nvm3_lib
   - id: bluetooth_controller
   - id: bluetooth_feature_connection
+  - id: bluetooth_feature_connection_role_central
+  - id: bluetooth_feature_connection_role_peripheral
   - id: bluetooth_feature_connection_phy_update
   - id: bluetooth_feature_extended_advertiser
   - id: bluetooth_feature_extended_scanner
   - id: bluetooth_feature_legacy_advertiser
   - id: bluetooth_feature_legacy_scanner
   - id: bluetooth_feature_periodic_advertiser
-  # Added as a custom Arduino-specific component, missing from SDK
+  # Local extension (slcp/common/arduino_ble_hci): HCI reset + ArduinoBLE
+  # name compat (sl_bt_controller_*), without selecting bluetooth_hci RCP (that
+  # pulls UART/CPC transport and fights Arduino Serial/VCOM). Compat also calls
+  # sl_btctrl_configure_le_buffer_size() so ACL/GATT works without RCP catalog.
   - id: bluetooth_hci_reset
+    from: arduino_ble_hci
   - id: memory_manager_cpp
   # AI/ML components
   - id: tensorflow_lite_micro
@@ -80,7 +88,6 @@ component:
     from: aiml
 
 source:
-  - path: main.c
   - path: app.c
 
 include:
@@ -116,6 +123,12 @@ configuration:
   - name: SL_SPIDRV_EUSART_XG24EXPLORERKIT1_CS_CONTROL
     value: "spidrvCsControlApplication"
   - name: SL_TFLITE_MICRO_ARENA_SIZE
+    value: "8192"
+  - name: SL_BT_CONFIG_CONNECTION_DATA_LENGTH
+    value: "27"
+  - name: SL_BLUETOOTH_COMMON_BUFFER_MEMORY_SIZE
+    value: "8192"
+  - name: SL_BT_CONTROLLER_BUFFER_MEMORY
     value: "8192"
 
 tag:
