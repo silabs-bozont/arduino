@@ -42,6 +42,7 @@ extern char arduino_matter_hardware_version_string[kArduinoMatterHardwareVersion
 extern uint16_t arduino_matter_hardware_version;
 extern char arduino_matter_software_version_string[kArduinoMatterSoftwareVersionStringCapacity];
 extern uint32_t arduino_matter_software_version;
+extern volatile bool arduino_matter_server_ready;
 }
 #endif // ARDUINO_MATTER
 

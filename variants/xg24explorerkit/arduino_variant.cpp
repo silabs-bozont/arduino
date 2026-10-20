@@ -30,10 +30,9 @@
 #ifdef ARDUINO_MATTER
 
 #include "AppTask.h"
-using namespace ::chip;
 
-AppTask AppTask::sAppTask;
-
+// Matter 2.9 lighting-app StartAppTask starts AppTaskMain; Arduino uses setup()/loop()
+// instead. gsdk.a's StartAppTask is weakened at package time so this strong stub wins.
 CHIP_ERROR AppTask::StartAppTask()
 {
   return CHIP_NO_ERROR;

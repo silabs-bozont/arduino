@@ -21,3 +21,4 @@
 // <<< end of configuration section >>>
 
 #endif // __CIRCULAR_QUEUE_CONFIG_H__
+

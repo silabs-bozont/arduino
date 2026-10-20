@@ -62,8 +62,76 @@
 #include SL_OPENTHREAD_STACK_FEATURES_CONFIG_FILE
 #endif
 
+#if !defined(SL_CATALOG_OT_SL_LOG_PRESENT)
+#include "sl_openthread_log_config.h"
+#endif
+
 #include "board_config.h"
 #include "em_device.h"
+
+/**
+ * @def OPENTHREAD_CONFIG_NET_DIAG_VENDOR_NAME
+ *
+ * Specifies the default Vendor Name string.
+ *
+ * If `OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE` is enabled, the Vendor Name string MUST start with the "RD:" prefix
+ * to ensure reference devices are identifiable. This is checked and enforced at build-time (`static_assert`).
+ *
+ * Set to a non-empty default to satisfy certification features, but can be changed at run time.
+ * See `OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE`
+ */
+#ifndef OPENTHREAD_CONFIG_NET_DIAG_VENDOR_NAME
+#if OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_NAME "RD:Silicon Labs"
+#else
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_NAME "Silicon Labs"
+#endif
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_NET_DIAG_VENDOR_MODEL
+ *
+ * Specifies the default Vendor Model string.
+ *
+ * Set to a non-empty default to satisfy certification features, but can be changed at run time.
+ * See `OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE`
+ */
+#ifndef OPENTHREAD_CONFIG_NET_DIAG_VENDOR_MODEL
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_MODEL "OpenThread"
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_NET_DIAG_VENDOR_SW_VERSION
+ *
+ * Specifies the default Vendor SW Version string.
+ *
+ * Set to a non-empty default to satisfy certification features, but can be changed at run time.
+ * See `OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE`
+ */
+#ifndef OPENTHREAD_CONFIG_NET_DIAG_VENDOR_SW_VERSION
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_SW_VERSION "3.1.2.0"
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_NET_DIAG_VENDOR_APP_URL
+ *
+ * Specifies the default Vendor App URL string.
+ *
+ * Set to a non-empty default to satisfy certification features, but can be changed at run time.
+ * See `OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE`
+ */
+#ifndef OPENTHREAD_CONFIG_NET_DIAG_VENDOR_APP_URL
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_APP_URL "www.silabs.com"
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE
+ *
+ * Define as 1 to add APIs to allow Vendor Name, Model, SW Version to change at run-time.
+ */
+#ifndef OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE
+#define OPENTHREAD_CONFIG_NET_DIAG_VENDOR_INFO_SET_API_ENABLE 1
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_BOOTLOADER_MODE_ENABLE
@@ -195,11 +263,11 @@
 /**
  * @def OPENTHREAD_CONFIG_UPTIME_ENABLE
  *
- * (For FTDs only) Define to 1 to enable tracking the uptime of OpenThread instance.
+ * (For FTDs/MTDs only) Define to 1 to enable tracking the uptime of OpenThread instance.
  *
  */
 #ifndef OPENTHREAD_CONFIG_UPTIME_ENABLE
-#define OPENTHREAD_CONFIG_UPTIME_ENABLE OPENTHREAD_FTD
+#define OPENTHREAD_CONFIG_UPTIME_ENABLE (OPENTHREAD_FTD || OPENTHREAD_MTD)
 #endif
 
 /**
@@ -225,6 +293,9 @@
  *
  * Define how many microseconds ahead should MAC deliver CSL frame to SubMac.
  *
+ * For Series-3, we need to account for more ahead time; even though the EnhAck path is entirely in RAM,
+ * LPWCRYPTO executes from flash, adding non-deterministic latency on the critical path
+ * from MAC timer fire to RAIL scheduled TX submission.
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
 #if defined(_SILICON_LABS_32B_SERIES_3)
@@ -247,6 +318,45 @@
 #define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD 600
 #endif
 #endif // OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+
+/**
+ * @def RADIO_CONFIG_MAX_SRC_MATCH_ENTRIES
+ *
+ * Define maximum total source match table entries for both OT and Zigbee.
+ * In multi-instance builds (SoC or RCP/host), table must support all OT instances + Zigbee.
+ * For single instance (default), table sized to just OT children.
+ * This value is used to size all source match tables in both OT and Zigbee code.
+ *
+ */
+#ifndef RADIO_CONFIG_MAX_SRC_MATCH_ENTRIES
+#if OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE
+#if SL_ZIGBEE_MAX_END_DEVICE_CHILDREN
+// Multipan / DMP case: OT + Zigbee
+#define RADIO_CONFIG_MAX_SRC_MATCH_ENTRIES                                                \
+    ((OPENTHREAD_CONFIG_MLE_MAX_CHILDREN * (OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM - 1)) \
+     + SL_ZIGBEE_MAX_END_DEVICE_CHILDREN)
+#else
+// Multi-instance OT-only case
+#define RADIO_CONFIG_MAX_SRC_MATCH_ENTRIES \
+    (OPENTHREAD_CONFIG_MLE_MAX_CHILDREN * OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM)
+#endif
+#else
+// Single-instance OT (SoC / NCP / non-multipan RCP)
+#define RADIO_CONFIG_MAX_SRC_MATCH_ENTRIES OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
+#endif
+#endif
+
+/**
+ * @def OPENTHREAD_SPINEL_CONFIG_MAX_SRC_MATCH_ENTRIES
+ *
+ * Maximum number of spinel source match table entries.
+ * Ensure that this value is the total of the number of openthread children times the number of
+ * openthread instances plus the number of Zigbee children.
+ *
+ */
+#ifndef OPENTHREAD_SPINEL_CONFIG_MAX_SRC_MATCH_ENTRIES
+#define OPENTHREAD_SPINEL_CONFIG_MAX_SRC_MATCH_ENTRIES RADIO_CONFIG_MAX_SRC_MATCH_ENTRIES
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AHEAD
@@ -451,23 +561,6 @@
 #define OPENTHREAD_CONFIG_PSA_ITS_NVM_OFFSET 0x20000
 
 /**
- * @def OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
- *
- * This config enables key references to be used in Openthread stack instead of
- * literal keys.
- *
- * Platform needs to support PSA Crypto to enable this option.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
-#if OPENTHREAD_RADIO
-#define OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE 0
-#else
-#define OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE 1
-#endif
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_CRYPTO_LIB
  *
  * Selects the crypto backend library for OpenThread.
@@ -480,8 +573,23 @@
  * - @sa OPENTHREAD_CONFIG_CRYPTO_LIB_PLATFORM
  *
  */
-#if OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+#ifndef OPENTHREAD_CONFIG_CRYPTO_LIB
+#if OPENTHREAD_RADIO
+#define OPENTHREAD_CONFIG_CRYPTO_LIB OPENTHREAD_CONFIG_CRYPTO_LIB_MBEDTLS
+#else
 #define OPENTHREAD_CONFIG_CRYPTO_LIB OPENTHREAD_CONFIG_CRYPTO_LIB_PSA
+#endif
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_CRYPTO_PLATFORM_ALLOCS_CONTEXT
+ *
+ * Define to 1 to enable platform allocation of crypto operation contexts (via `otPlatCrypto*` init APIs).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_CRYPTO_PLATFORM_ALLOCS_CONTEXT
+#define OPENTHREAD_CONFIG_CRYPTO_PLATFORM_ALLOCS_CONTEXT \
+    (OPENTHREAD_CONFIG_CRYPTO_LIB == OPENTHREAD_CONFIG_CRYPTO_LIB_PSA)
 #endif
 
 /**
@@ -559,7 +667,7 @@
  *
  */
 #ifndef SL_OPENTHREAD_RADIO_CCA_MODE
-#define SL_OPENTHREAD_RADIO_CCA_MODE RAIL_IEEE802154_CCA_MODE_RSSI
+#define SL_OPENTHREAD_RADIO_CCA_MODE SL_RAIL_IEEE802154_CCA_MODE_RSSI
 #endif
 
 /**
@@ -625,5 +733,50 @@
  *
  */
 #define OPENTHREAD_CONFIG_PLATFORM_POWER_CALIBRATION_ENABLE OPENTHREAD_CONFIG_POWER_CALIBRATION_ENABLE
+
+/**
+ * @def OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
+ *
+ * Set to 1 to enable support for Thread Radio Encapsulation Link (TREL).
+ *
+ * @note Only valid for NCP devices
+ */
+#if !defined(SL_CATALOG_OPENTHREAD_NCP_PRESENT) || defined(SL_CATALOG_OPENTHREAD_STACK_RCP_PRESENT)
+#ifdef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
+#undef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
+#endif
+#define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_LOG_LEVEL
+ *
+ * When `ot_sl_log` is present, derive OpenThread's compile-time log level from the Silicon Labs Log
+ * component only (`SL_LOG_CONFIG_LEVEL_COMPILE_TIME` in `sl_log_common_config.h`). The OpenThread
+ * log config wizard does not set `OPENTHREAD_CONFIG_LOG_LEVEL` in that case (see `sl_openthread_log_config.h`).
+ */
+#if defined(SL_CATALOG_OT_SL_LOG_PRESENT)
+#include "sl_log_common_config.h"
+#include <openthread/platform/logging.h>
+
+#undef OPENTHREAD_CONFIG_LOG_LEVEL
+
+#if SL_LOG_CONFIG_LEVEL_COMPILE_TIME == SL_LOG_CONFIG_LEVEL_NONE
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_NONE
+#elif SL_LOG_CONFIG_LEVEL_COMPILE_TIME == SL_LOG_CONFIG_LEVEL_CRASH
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_CRIT
+#elif SL_LOG_CONFIG_LEVEL_COMPILE_TIME == SL_LOG_CONFIG_LEVEL_ERROR
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_CRIT
+#elif SL_LOG_CONFIG_LEVEL_COMPILE_TIME == SL_LOG_CONFIG_LEVEL_WARN
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_WARN
+#elif SL_LOG_CONFIG_LEVEL_COMPILE_TIME == SL_LOG_CONFIG_LEVEL_INFO
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_INFO
+#elif SL_LOG_CONFIG_LEVEL_COMPILE_TIME == SL_LOG_CONFIG_LEVEL_DEBUG
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
+#else
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
+#endif
+
+#endif // SL_CATALOG_OT_SL_LOG_PRESENT
 
 #endif // OPENTHREAD_CORE_EFR32_CONFIG_H_

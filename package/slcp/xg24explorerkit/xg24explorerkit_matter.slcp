@@ -7,13 +7,14 @@ package: Matter
 
 sdk_extension:
   - id: matter
-    version: "2.5.1"
+    version: "2.9.2"
+    vendor: silabs
   - id: aiml
-    version: 2.0.0
+    version: 3.0.2
 
 component:
   - id: device_init
-  - id: sl_system
+  - id: sl_main
   - id: clock_manager
   - id: ot_stack_ftd
   - id: fem_util
@@ -21,105 +22,52 @@ component:
     instance: [led0]
 
   - id: matter_leds
-    from: matter
-
   - id: matter
-    from: matter
   - id: matter_platform_mg
-    from: matter
   - id: matter_ble
-    from: matter
   - id: matter_thread
-    from: matter
   - id: rail_util_pti
   - id: matter_ota_support
-    from: matter
   - id: matter_crypto
-    from: matter
-  #- id: matter_shell
-  #  from: matter
-  - id: matter_gatt
-    from: matter
+  - id: matter_gatt_static
   - id: matter_provision_default
-    from: matter
   - id: matter_log_rtt
-    from: matter
-  #- id: matter_log_uart
-  #  from: matter
-
   - id: matter_lighting
-    from: matter
   - id: app_common
-    from: matter
+  - id: matter_codegen_dm
 
   - id: matter_access_control
-    from: matter
   - id: matter_administrator_commissioning
-    from: matter
   - id: matter_basic_information
-    from: matter
+  - id: matter_bindings
   - id: matter_color_control
-    from: matter
   - id: matter_descriptor
-    from: matter
   - id: matter_diagnostic_logs
-    from: matter
   - id: matter_fixed_label
-    from: matter
   - id: matter_general_commissioning
-    from: matter
   - id: matter_general_diagnostics
-    from: matter
   - id: matter_group_key_mgmt
-    from: matter
   - id: matter_groups
-    from: matter
   - id: matter_identify
-    from: matter
   - id: matter_level_control
-    from: matter
   - id: matter_localization_configuration
-    from: matter
   - id: matter_network_commissioning
-    from: matter
   - id: matter_on_off
-    from: matter
   - id: matter_operational_credentials
-    from: matter
-  - id: matter_ota_support
-    from: matter
   - id: matter_ota_requestor
-    from: matter
   - id: matter_scenes
-    from: matter
   - id: matter_software_diagnostics
-    from: matter
   - id: matter_thread_network_diagnostics
-    from: matter
   - id: matter_time_format_localization
-    from: matter
   - id: matter_time_synchronization
-    from: matter
   - id: matter_user_label
-    from: matter
   - id: matter_switch
-    from: matter
   - id: matter_occupancy_sensor
-    from: matter
   - id: matter_door_lock
-    from: matter
   - id: matter_thermostat
-    from: matter
   - id: matter_fan_control
-    from: matter
-  #- id: matter_window_covering
-  #  from: matter
-  # Override configuration for JTAG use
-  #- id: matter_configuration_over_swo
-  #  from: matter
-  # Override RTT
+  - id: matter_configuration_over_swo
   - id: matter_segger_rtt
-    from: matter
   - id: bluetooth_feature_dynamic_gattdb
 
   # Additional stuff required by the Arduino platform
@@ -154,8 +102,6 @@ component:
   - id: emlib_rmu
   - id: emlib_wdog
   - id: memory_manager_cpp
-  # - id: ot_cert_libs
-  # AI/ML components
   - id: tensorflow_lite_micro
     from: aiml
   - id: tensorflow_debug_log_none
@@ -164,8 +110,6 @@ component:
     from: aiml
 
 requires:
-# On Series 2 LCD and external flash run over USART, VCOM runs over EUSART
-# Select UART/EUART drivers based on device series
   - name: matter_drivers_series_1
     condition:
      - device_series_1
@@ -175,9 +119,10 @@ requires:
   - name: brd2703a
 
 config_file:
-  - path: ../../../../third_party/matter_sdk/examples/lighting-app/silabs/data_model/lighting-app.zap
+  # Local Arduino ZAP (upgraded/bound by generate_gsdk.py before SLC generate)
+  # No 'directory:' — path is inside the project tree
+  - path: config/zcl/zcl_config.zap
     file_id: zap_config
-    directory: common
   - path: sl_spidrv_eusart_xg24explorerkit1_config.h
     override:
       component: spidrv_eusart
@@ -190,24 +135,25 @@ config_file:
       file_id: iostream_eusart_config
 
 include:
+  # Resolved relative to staged SLCP under matter_workspace/slc/apps/arduino/
   - path: ../../../../third_party/matter_sdk/examples/lighting-app/silabs/include
     file_list:
       - path: AppConfig.h
       - path: AppEvent.h
-      - path: AppTask.h
       - path: CHIPProjectConfig.h
-      - path: LightingManager.h
-      - path: MatterBLE.h
     directory: include
+  - path: ../../../../third_party/matter_sdk/examples/platform/silabs/customer
+    file_list:
+      - path: CustomerAppTask.h
+    directory: include
+  - path: .
+    file_list:
+      - path: MatterBLE.h
 
 source:
-  - path: ../../../../third_party/matter_sdk/examples/lighting-app/silabs/src/AppTask.cpp
+  - path: ../../../../third_party/matter_sdk/examples/platform/silabs/customer/CustomerAppTask.cpp
     directory: src
-  - path: ../../../../third_party/matter_sdk//examples/lighting-app/silabs/src/LightingManager.cpp
-    directory: src
-  - path: ../../../../third_party/matter_sdk/examples/lighting-app/silabs/src/main.cpp
-    directory: src
-  - path: ../../../../third_party/matter_sdk/examples/lighting-app/silabs/src/ZclCallbacks.cpp
+  - path: ../../../../third_party/matter_sdk/examples/platform/silabs/main.cpp
     directory: src
 
 define:
@@ -227,12 +173,9 @@ define:
     value: 0
   - name: configNUM_THREAD_LOCAL_STORAGE_POINTERS
     value: 2
-  # - name: SL_OPENTHREAD_CERT_LIB
-  #   value: 1
-  #   condition:
-  #     - ot_cert_libs
   - name: TF_LITE_STATIC_MEMORY
     value: "1"
+
 configuration:
   - name: SL_OPENTHREAD_ENABLE_APP_TASK
     value: 0
@@ -254,8 +197,10 @@ configuration:
   - name: OPENTHREAD_CONFIG_COAP_SECURE_API_ENABLE
     value: 1
     condition: [matter_thread_coap_cert_libs]
-  - {name: SL_STACK_SIZE, value: '4608'}
-  - {name: SL_BT_RTOS_EVENT_HANDLER_STACK_SIZE, value: '1536'}
+  - name: SL_STACK_SIZE
+    value: '4608'
+  - name: SL_BT_RTOS_EVENT_HANDLER_STACK_SIZE
+    value: '1536'
   - name: SL_BOARD_ENABLE_VCOM
     value: "1"
   - name: SL_SPIDRV_EUSART_MIKROE_CS_CONTROL
@@ -275,10 +220,13 @@ configuration:
     value: 1
   - name: SL_TFLITE_MICRO_ARENA_SIZE
     value: "8192"
+  - name: configUSE_NEWLIB_REENTRANT
+    value: 0
 
 toolchain_settings:
-  - option: gcc_c++_compiler_option
-    value: -std=gnu++17
+  - option: cxx_standard
+    value: gnu++17
+
 template_contribution:
   - name: bluetooth_on_event
     value:
@@ -297,11 +245,8 @@ template_contribution:
     value: 0x00178000
     condition: [device_series_2]
 
-readme:
-  - path: ./README.md
-ui_hints:
-  highlight:
-    - path: README.md
-      focus: false
+tag:
+  - hardware:rf:band:2400
+
 post_build:
   profile: application

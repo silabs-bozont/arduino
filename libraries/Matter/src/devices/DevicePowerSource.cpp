@@ -26,6 +26,8 @@
 
 #include "DevicePowerSource.h"
 
+#include <lib/support/CodeUtils.h>
+
 using namespace ::chip;
 using namespace ::chip::app::Clusters;
 
@@ -256,7 +258,7 @@ CHIP_ERROR DevicePowerSource::HandleReadEmberAfAttribute(ClusterId clusterId,
     memcpy(buffer, &order, sizeof(order));
   } else if ((attributeId == Description::Id) && (maxReadLength >= kDescriptionSize)) {
     MutableByteSpan zclDescriptionSpan(buffer, kDescriptionSize);
-    MakeZclCharString(zclDescriptionSpan, this->GetDescription());
+    ReturnErrorOnFailure(MakeZclCharString(zclDescriptionSpan, this->GetDescription()));
   } else if ((attributeId == BatVoltage::Id) && (maxReadLength >= 4)) {
     uint32_t batVoltage = this->GetBatVoltage();
     memcpy(buffer, &batVoltage, sizeof(batVoltage));

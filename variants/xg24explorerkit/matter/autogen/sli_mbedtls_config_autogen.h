@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,8 +41,6 @@
 #define MBEDTLS_CIPHER_C
 #define MBEDTLS_CMAC_C
 #define MBEDTLS_ECP_C
-#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
-#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
 #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
 #define MBEDTLS_ECDSA_C
 #define MBEDTLS_ECDSA_DETERMINISTIC
@@ -65,16 +63,15 @@
 #define MBEDTLS_NO_PLATFORM_ENTROPY
 #define MBEDTLS_CTR_DRBG_C
 #define MBEDTLS_SHA256_C
-#define MBEDTLS_SHA224_C
 #define MBEDTLS_THREADING_C
 #define MBEDTLS_THREADING_ALT
-#define MBEDTLS_X509_USE_C
 #define MBEDTLS_X509_CREATE_C
+#define MBEDTLS_X509_CRL_PARSE_C
 #define MBEDTLS_X509_CRT_PARSE_C
 #define MBEDTLS_X509_CRT_WRITE_C
-#define MBEDTLS_X509_CRL_PARSE_C
 #define MBEDTLS_X509_CSR_PARSE_C
 #define MBEDTLS_X509_CSR_WRITE_C
+#define MBEDTLS_X509_USE_C
 #define MBEDTLS_USE_PSA_CRYPTO
 #define MBEDTLS_PSA_CRYPTO_C
 #define MBEDTLS_PSA_CRYPTO_CONFIG

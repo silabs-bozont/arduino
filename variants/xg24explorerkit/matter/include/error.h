@@ -20,7 +20,7 @@
 // because our driver implementations only uses error codes that already exist
 // in crypto_values.h.
 #if defined(TFM_CONFIG_SL_SECURE_LIBRARY)
-  #include "trusted-firmware-m/interface/include/psa/error.h"
+  #include "interface/include/psa/error.h"
 #endif
 
 #endif // __SL_PSA_ERROR_H__

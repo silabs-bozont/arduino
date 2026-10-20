@@ -175,12 +175,20 @@ bool MatterWaterValve::begin()
   this->device_endpoint = new_endpoint;
   this->endpoint_dataversion_storage = new_sensor_data_version;
 
+  // After members are assigned, any failure can reuse end() for teardown.
+  auto abort_begin = [this]() -> bool {
+    this->initialized = true;
+    end();
+    return false;
+  };
+
   // Register the Valve Configuration and Control cluster's Open/Close command handler -
   // this can't be serviced through the plain ember external-attribute mechanism.
   EndpointId assigned_endpoint_id = new_water_valve_device->GetEndpointId();
   this->command_handler = new (std::nothrow)WaterValveCommandHandler(assigned_endpoint_id, new_water_valve_device);
-  if (this->command_handler != nullptr) {
-    app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->command_handler);
+  if (this->command_handler == nullptr
+      || app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->command_handler) != CHIP_NO_ERROR) {
+    return abort_begin();
   }
 
   this->initialized = true;
@@ -204,6 +212,10 @@ void MatterWaterValve::end()
   free(this->device_endpoint);
   free(this->endpoint_dataversion_storage);
   delete(this->water_valve_device);
+  this->water_valve_device = nullptr;
+  this->device_endpoint = nullptr;
+  this->endpoint_dataversion_storage = nullptr;
+  this->base_matter_device = nullptr;
   this->initialized = false;
 }
 

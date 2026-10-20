@@ -28,10 +28,13 @@
 
 #include <app/EventLogging.h>
 #include <app/clusters/time-synchronization-server/DefaultTimeSyncDelegate.h>
+#include <app/clusters/time-synchronization-server/TimeSyncDataProvider.h>
 #include <app/clusters/time-synchronization-server/time-synchronization-server.h>
+#include <app/server/Server.h>
 #include <lib/support/TimeUtils.h>
 
 using namespace chip;
+using namespace chip::app;
 using namespace chip::app::Clusters::TimeSynchronization;
 using namespace chip::DeviceLayer;
 using namespace chip::System;
@@ -48,6 +51,10 @@ constexpr uint32_t kRequestTimeMinIntervalMs = 60000;
 
 MatterTimeSynchronization* g_active_time_sync = nullptr;
 
+// Cached from Delegate::TimeZoneListChanged (Matter 2.9 keeps cluster getters private).
+int32_t g_cached_timezone_offset_seconds = 0;
+bool g_cached_timezone_valid = false;
+
 bool read_valid_unix_time_ms(uint64_t& out_unix_ms)
 {
   Clock::Milliseconds64 utc_time_ms;
@@ -61,33 +68,45 @@ bool read_valid_unix_time_ms(uint64_t& out_unix_ms)
   return true;
 }
 
-int32_t read_timezone_offset_seconds()
+TimeSyncDataProvider make_time_sync_data_provider()
 {
-  auto& tz_list = TimeSynchronizationServer::Instance().GetTimeZone();
-  if (tz_list.size() == 0) {
-    return 0;
+  TimeSyncDataProvider provider;
+  provider.Init(chip::Server::GetInstance().GetPersistentStorage());
+  return provider;
+}
+
+// Fallback when TimeZoneListChanged was missed (e.g. begin() after commission).
+bool load_timezone_offset_from_storage(int32_t& out_offset_seconds)
+{
+  TimeSyncDataProvider::TimeZoneStore tz_buf[CHIP_CONFIG_TIME_ZONE_LIST_MAX_SIZE];
+  TimeSyncDataProvider::TimeZoneObj tz_obj{ Span<TimeSyncDataProvider::TimeZoneStore>(tz_buf), 0 };
+  if (make_time_sync_data_provider().LoadTimeZone(tz_obj) != CHIP_NO_ERROR || tz_obj.validSize == 0) {
+    return false;
   }
-  return tz_list[0].timeZone.offset;
+  out_offset_seconds = tz_obj.timeZoneList[0].timeZone.offset;
+  return true;
 }
 
 int32_t read_dst_offset_seconds(uint64_t chip_epoch_us)
 {
-  auto& dst_list = TimeSynchronizationServer::Instance().GetDSTOffset();
-  if (dst_list.size() == 0) {
+  using DSTStruct = Structs::DSTOffsetStruct::Type;
+  DSTStruct dst_buf[CHIP_CONFIG_DST_OFFSET_LIST_MAX_SIZE];
+  TimeSyncDataProvider::DSTOffsetObj dst_obj{ DataModel::List<DSTStruct>(dst_buf), 0 };
+  if (make_time_sync_data_provider().LoadDSTOffset(dst_obj) != CHIP_NO_ERROR || dst_obj.validSize == 0) {
     return 0;
   }
 
-  size_t active_index = dst_list.size();
-  for (size_t i = 0; i < dst_list.size(); i++) {
-    if (dst_list[i].validStarting <= chip_epoch_us) {
+  size_t active_index = dst_obj.validSize;
+  for (size_t i = 0; i < dst_obj.validSize; i++) {
+    if (dst_obj.dstOffsetList[i].validStarting <= chip_epoch_us) {
       active_index = i;
     }
   }
-  if (active_index >= dst_list.size()) {
+  if (active_index >= dst_obj.validSize) {
     return 0;
   }
 
-  const auto& dst = dst_list[active_index];
+  const auto& dst = dst_obj.dstOffsetList[active_index];
   if (!dst.validUntil.IsNull() && dst.validUntil.Value() <= chip_epoch_us) {
     return 0;
   }
@@ -116,7 +135,13 @@ public:
 
   void TimeZoneListChanged(const Span<TimeSyncDataProvider::TimeZoneStore> timeZoneList) override
   {
-    (void)timeZoneList;
+    if (timeZoneList.size() > 0) {
+      g_cached_timezone_offset_seconds = timeZoneList[0].timeZone.offset;
+      g_cached_timezone_valid = true;
+    } else {
+      g_cached_timezone_offset_seconds = 0;
+      g_cached_timezone_valid = false;
+    }
     if (g_active_time_sync != nullptr) {
       g_active_time_sync->notify_timezone_update();
     }
@@ -163,6 +188,8 @@ bool MatterTimeSynchronization::begin()
   }
 
   g_active_time_sync = this;
+  g_cached_timezone_offset_seconds = 0;
+  g_cached_timezone_valid = false;
   SetDefaultDelegate(&g_time_sync_delegate);
 
   this->time_available = false;
@@ -265,7 +292,19 @@ bool MatterTimeSynchronization::has_timezone()
     return false;
   }
 
-  return this->timezone_available;
+  if (this->timezone_available || g_cached_timezone_valid) {
+    return true;
+  }
+
+  // Timezone may already be in NVM if begin() ran after commissioning.
+  int32_t offset = 0;
+  if (!load_timezone_offset_from_storage(offset)) {
+    return false;
+  }
+  g_cached_timezone_offset_seconds = offset;
+  g_cached_timezone_valid = true;
+  this->timezone_available = true;
+  return true;
 }
 
 /***************************************************************************//**
@@ -317,7 +356,7 @@ int32_t MatterTimeSynchronization::get_timezone_offset_seconds()
   if (!this->has_timezone()) {
     return 0;
   }
-  return read_timezone_offset_seconds();
+  return g_cached_timezone_offset_seconds;
 }
 
 /***************************************************************************//**
@@ -442,7 +481,8 @@ void MatterTimeSynchronization::notify_time_update()
  ******************************************************************************/
 void MatterTimeSynchronization::notify_timezone_update()
 {
-  this->timezone_available = true;
+  // g_cached_timezone_* already updated in TimeZoneListChanged before this runs.
+  this->timezone_available = g_cached_timezone_valid;
   if (this->timezone_update_callback != nullptr) {
     this->timezone_update_callback();
   }

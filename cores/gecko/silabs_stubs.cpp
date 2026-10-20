@@ -29,6 +29,8 @@
 #include "silabs_stubs.h"
 #include "sl_common.h"
 #include <app/CommandHandler.h>
+#include <app/ConcreteAttributePath.h>
+#include <app/util/af-types.h>
 #include <app/util/attribute-storage.h>
 #include <app/reporting/reporting.h>
 #include <MatterBLE.h>
@@ -46,6 +48,8 @@ char arduino_matter_hardware_version_string[kArduinoMatterHardwareVersionStringC
 uint16_t arduino_matter_hardware_version = 1;
 char arduino_matter_software_version_string[kArduinoMatterSoftwareVersionStringCapacity] = "v1.0";
 uint32_t arduino_matter_software_version = 1;
+// Set true at the end of SilabsMatterConfig::InitMatter after Server::Init
+volatile bool arduino_matter_server_ready = false;
 }
 
 using namespace ::chip;
@@ -297,6 +301,42 @@ bool SL_WEAK emberAfTemperatureControlClusterSetTemperatureCallback(app::Command
   (void)commandPath;
   (void)commandData;
   return false;
+}
+
+// CodeDrivenInitShutdown references cluster Init/Shutdown callbacks for
+// ZAP endpoints whose CodegenIntegration objects are not linked into gsdk.a.
+// Provide empty weak stubs so Arduino sketches link; real cluster logic for
+// dynamic endpoints lives in the Arduino Matter library.
+#define ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(name)                                                                            \
+  void SL_WEAK Matter##name##ClusterInitCallback(EndpointId endpointId)                                                            \
+  {                                                                                                                                \
+    (void)endpointId;                                                                                                              \
+  }                                                                                                                                \
+  void SL_WEAK Matter##name##ClusterShutdownCallback(EndpointId endpointId, MatterClusterShutdownType shutdownType)                \
+  {                                                                                                                                \
+    (void)endpointId;                                                                                                              \
+    (void)shutdownType;                                                                                                            \
+  }
+
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(Binding)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(BridgedDeviceBasicInformation)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(TemperatureControl)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(AirQuality)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(MicrowaveOvenControl)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(ElectricalPowerMeasurement)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(EnergyEvse)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(IlluminanceMeasurement)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(TemperatureMeasurement)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(PressureMeasurement)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(FlowMeasurement)
+ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN(RelativeHumidityMeasurement)
+
+#undef ARDUINO_MATTER_WEAK_CLUSTER_INIT_SHUTDOWN
+
+void SL_WEAK MatterBridgedDeviceBasicInformationClusterServerAttributeChangedCallback(
+  const app::ConcreteAttributePath & attributePath)
+{
+  (void)attributePath;
 }
 
 #endif // ARDUINO_MATTER

@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@
 // <SL_MATTER_STACK_LOCK_TRACKING_LOG=> Log
 // <SL_MATTER_STACK_LOCK_TRACKING_FATAL=> Fatal
 // <i> Default: SL_MATTER_STACK_LOCK_TRACKING_FATAL
+// <i> Controls how Matter stack lock violations are handled during development
 #define SL_MATTER_STACK_LOCK_TRACKING_MODE SL_MATTER_STACK_LOCK_TRACKING_FATAL
 
 // <o SL_MATTER_LOG_LEVEL> Log Level
@@ -42,25 +43,29 @@
 // <SL_MATTER_LOG_PROGRESS=> Progress
 // <SL_MATTER_LOG_DETAIL=> Detailed log (debug)
 // <SL_MATTER_LOG_AUTOMATION=> Automation
-// <i> Default: SL_MATTER_LOG_DETAIL
+// <i> Default: SL_MATTER_LOG_PROGRESS
+// <i> Sets the verbosity of Matter stack logging output
 #ifndef SL_MATTER_LOG_LEVEL
-#define SL_MATTER_LOG_LEVEL SL_MATTER_LOG_DETAIL
+#define SL_MATTER_LOG_LEVEL SL_MATTER_LOG_PROGRESS
 #endif
 
 // <q SILABS_LOG_ENABLED> Enable Silabs specific log used in matter
 // <i> Default: 1
+// <i> Enables Silicon Labs platform-specific logging within the Matter stack
 #ifndef SILABS_LOG_ENABLED
 #define SILABS_LOG_ENABLED 1
 #endif
 
 // <q HARD_FAULT_LOG_ENABLE> Enable hard fault logging
 // <i> Default: 1
+// <i> Enables detailed logging when a hard fault (crash) occurs
 #ifndef HARD_FAULT_LOG_ENABLE
 #define HARD_FAULT_LOG_ENABLE 1
 #endif
 
 // <o CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION> Device software version
 // <i> Default: 1
+// <i> Must be incremented for each OTA firmware update
 /* Arduino Matter library runtime-overridable properties */
 #include <stdint.h>
 #ifdef __cplusplus
@@ -78,6 +83,7 @@ extern uint32_t arduino_matter_software_version;
 #define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION arduino_matter_software_version
 
 // <s.128 CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING> Device software version string
+// <i> Human-readable software version string
 #define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING arduino_matter_software_version_string
 
 // <o CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION> Device hardware version
@@ -86,17 +92,21 @@ extern uint32_t arduino_matter_software_version;
 
 // <q SL_MATTER_CLI_ARG_PARSER> Enable CLI Argument Parser
 // <i> Default: 1
+// <i> Enables command-line interface argument parsing for Matter shell commands
+// <i> Allows interactive debugging and testing via UART/RTT console
 #ifndef SL_MATTER_CLI_ARG_PARSER
 #define SL_MATTER_CLI_ARG_PARSER 1
 #endif
 
 // <o CHIP_DEVICE_CONFIG_MAX_DISCOVERED_IP_ADDRESSES> Define the default number of ip addresses to discover
 // <i> Default: 5
+// <i> Maximum number of IP addresses that can be discovered during device commissioning
 #define CHIP_DEVICE_CONFIG_MAX_DISCOVERED_IP_ADDRESSES 5
 
 // <o KVS_MAX_ENTRIES> Maximum amount of KVS Entries
-// <i> Default: 255
-#define KVS_MAX_ENTRIES 255
+// <i> Default: 511
+// <i> Maximum number of Key-Value Store (KVS) entries for persistent storage
+#define KVS_MAX_ENTRIES 511
 
 // <q CHIP_CONFIG_SYNCHRONOUS_REPORTS_ENABLED> Synchronous Reports
 // <i> Default: 0
@@ -111,3 +121,4 @@ extern uint32_t arduino_matter_software_version;
 // <<< end of configuration section >>>
 
 #endif // SL_MATTER_CONFIG_H
+

@@ -36,11 +36,23 @@
 #include "MatterEndpoint.h"
 #include <platform/CHIPDeviceLayer.h>
 #include <app-common/zap-generated/attributes/Accessors.h>
-#include <app/server/OnboardingCodesUtil.h>
+#include <setup_payload/OnboardingCodesUtil.h>
 #include <setup_payload/QRCodeSetupPayloadGenerator.h>
 #include <app/clusters/identify-server/identify-server.h>
+#include <app/util/attribute-metadata.h>
+#include <lib/support/CodeUtils.h>
 
+// New Matter SDK versions renamed attribute mask / ArraySize helpers used by dynamic endpoints
+#ifndef ATTRIBUTE_MASK_WRITABLE
+#define ATTRIBUTE_MASK_WRITABLE MATTER_ATTRIBUTE_FLAG_WRITABLE
+#endif
+#ifndef ATTRIBUTE_MASK_NULLABLE
+#define ATTRIBUTE_MASK_NULLABLE MATTER_ATTRIBUTE_FLAG_NULLABLE
+#endif
 #define ATTRIBUTE_MASK_WRITABLE_NULLABLE (ATTRIBUTE_MASK_WRITABLE | ATTRIBUTE_MASK_NULLABLE)
+#ifndef ArraySize
+#define ArraySize MATTER_ARRAY_SIZE
+#endif
 
 using ::chip::CommandId;
 

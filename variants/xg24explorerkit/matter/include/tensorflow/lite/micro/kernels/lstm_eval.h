@@ -62,7 +62,7 @@ class LstmTensors {
   }
   const TfLiteTensor* OutputTensor() const { return output_tensor_; }
 
- private:
+  public:
   // see lstm_shared.h for tensor names
   MicroContext* micro_context_;
   TfLiteTensor* internal_tensors_[24];

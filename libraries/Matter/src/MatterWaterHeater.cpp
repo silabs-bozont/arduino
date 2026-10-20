@@ -287,57 +287,32 @@ bool MatterWaterHeater::begin()
   this->device_endpoint = new_endpoint;
   this->endpoint_dataversion_storage = new_sensor_data_version;
 
+  // After members are assigned, any failure can reuse end() for teardown
+  auto abort_begin = [this]() -> bool {
+    this->initialized = true;
+    end();
+    return false;
+  };
+
   // Register the Water Heater Mode cluster's list attribute and command handler -
   // these can't be serviced through the plain ember external-attribute mechanism.
   EndpointId assigned_endpoint_id = new_water_heater_device->GetEndpointId();
   this->mode_attribute_access = new (std::nothrow)WaterHeaterModeAttributeAccess(assigned_endpoint_id);
   if (this->mode_attribute_access == nullptr) {
-    (void)RemoveDeviceEndpoint(new_water_heater_device);
-    delete(new_water_heater_device);
-    free(new_endpoint);
-    free(new_sensor_data_version);
-    this->water_heater_device = nullptr;
-    this->device_endpoint = nullptr;
-    this->endpoint_dataversion_storage = nullptr;
-    return false;
+    return abort_begin();
   }
   app::AttributeAccessInterfaceRegistry::Instance().Register(this->mode_attribute_access);
 
   this->mode_command_handler = new (std::nothrow)WaterHeaterModeCommandHandler(assigned_endpoint_id, new_water_heater_device);
-  if (this->mode_command_handler == nullptr) {
-    app::AttributeAccessInterfaceRegistry::Instance().Unregister(this->mode_attribute_access);
-    delete(this->mode_attribute_access);
-    this->mode_attribute_access = nullptr;
-    (void)RemoveDeviceEndpoint(new_water_heater_device);
-    delete(new_water_heater_device);
-    free(new_endpoint);
-    free(new_sensor_data_version);
-    this->water_heater_device = nullptr;
-    this->device_endpoint = nullptr;
-    this->endpoint_dataversion_storage = nullptr;
-    return false;
+  if (this->mode_command_handler == nullptr || app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->mode_command_handler) != CHIP_NO_ERROR) {
+    return abort_begin();
   }
-  app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->mode_command_handler);
 
   // Register the Water Heater Management cluster's Boost/CancelBoost command handler.
   this->management_command_handler = new (std::nothrow)WaterHeaterManagementCommandHandler(assigned_endpoint_id, new_water_heater_device);
-  if (this->management_command_handler == nullptr) {
-    (void)app::CommandHandlerInterfaceRegistry::Instance().UnregisterCommandHandler(this->mode_command_handler);
-    delete(this->mode_command_handler);
-    this->mode_command_handler = nullptr;
-    app::AttributeAccessInterfaceRegistry::Instance().Unregister(this->mode_attribute_access);
-    delete(this->mode_attribute_access);
-    this->mode_attribute_access = nullptr;
-    (void)RemoveDeviceEndpoint(new_water_heater_device);
-    delete(new_water_heater_device);
-    free(new_endpoint);
-    free(new_sensor_data_version);
-    this->water_heater_device = nullptr;
-    this->device_endpoint = nullptr;
-    this->endpoint_dataversion_storage = nullptr;
-    return false;
+  if (this->management_command_handler == nullptr || app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->management_command_handler) != CHIP_NO_ERROR) {
+    return abort_begin();
   }
-  app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->management_command_handler);
 
   this->initialized = true;
   return true;
@@ -370,6 +345,10 @@ void MatterWaterHeater::end()
   free(this->device_endpoint);
   free(this->endpoint_dataversion_storage);
   delete(this->water_heater_device);
+  this->water_heater_device = nullptr;
+  this->device_endpoint = nullptr;
+  this->endpoint_dataversion_storage = nullptr;
+  this->base_matter_device = nullptr;
   this->initialized = false;
 }
 
