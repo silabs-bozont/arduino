@@ -27,6 +27,8 @@
 #include "MatterEndpointHandler.h"
 #include <util/endpoint-config-api.h>
 #include <platform/PlatformManager.h>
+#include <silabs_stubs.h>
+#include <Arduino.h>
 
 using namespace ::chip;
 using namespace chip::DeviceLayer;
@@ -35,17 +37,37 @@ EndpointId gCurrentEndpointId;
 EndpointId gFirstDynamicEndpointId;
 Device* gDevices[CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT + 1];
 
+// ZAP placeholder endpoint that exists only so cluster codegen is emitted
+static constexpr EndpointId kZapPlaceholderEndpoint = 2;
+
+static void WaitForMatterServerReady()
+{
+  // InitMatter (ApplicationStart task) disables the ZAP placeholder and then
+  // sets arduino_matter_server_ready. Waiting on the flag avoids racing
+  // emberAfEndpointConfigure() on sl_main.
+  while (!arduino_matter_server_ready) {
+    delay(1);
+  }
+}
+
+static void EnsureZapPlaceholderDisabled()
+{
+  DeviceLayer::StackLock lock;
+  if (!emberAfEndpointEnableDisable(kZapPlaceholderEndpoint, false)) {
+    ChipLogError(DeviceLayer, "Failed to disable ZAP placeholder endpoint %u", kZapPlaceholderEndpoint);
+  }
+}
+
 void InitDynamicEndpointHandler()
 {
   memset(gDevices, 0, sizeof(gDevices));
 
-  gFirstDynamicEndpointId = static_cast<chip::EndpointId>(
-    static_cast<int>(emberAfEndpointFromIndex(static_cast<uint16_t>(emberAfFixedEndpointCount() - 1))) + 1);
-  gCurrentEndpointId = gFirstDynamicEndpointId;
+  WaitForMatterServerReady();
+  EnsureZapPlaceholderDisabled();
 
-  // Disable last fixed endpoint, which is used as a placeholder for all of the
-  // supported clusters so that ZAP will generated the requisite code.
-  emberAfEndpointEnableDisable(emberAfEndpointFromIndex(static_cast<uint16_t>(emberAfFixedEndpointCount() - 1)), false);
+  // Dynamic endpoints start after the last fixed endpoint id (placeholder = 2).
+  gFirstDynamicEndpointId = static_cast<EndpointId>(kZapPlaceholderEndpoint + 1);
+  gCurrentEndpointId = gFirstDynamicEndpointId;
 }
 
 int AddDeviceEndpoint(Device* dev, EmberAfEndpointType* ep,
@@ -71,7 +93,7 @@ int AddDeviceEndpoint(Device* dev, EmberAfEndpointType* ep,
         }
         if (err != CHIP_ERROR_ENDPOINT_EXISTS) {
           gDevices[index] = nullptr;
-          ChipLogProgress(DeviceLayer, "Failed to add dynamic endpoint; err='0x%lx'", err.AsInteger());
+          ChipLogError(DeviceLayer, "Failed to add dynamic endpoint; err='0x%lx'", err.AsInteger());
           return -1;
         }
         // Handle wrap condition

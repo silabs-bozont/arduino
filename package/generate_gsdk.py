@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import subprocess
@@ -13,6 +14,7 @@ gsdk_dir = None
 slc_output_dir = None
 gsdk_version = None
 matter_extension_version = None
+matter_extension_dir = None
 aiml_extension_version = None
 aiml_extension_dir = None
 slc_cli = "slc"
@@ -20,8 +22,9 @@ zap_cli = None
 arduino_gcc_dir = None
 
 gsdk_cpp_empty_folder = "app/common/example/empty/"
-matter_lighting_app_folder = "extension/matter_extension/slc/sample-app/lighting-app/efr32/"
-matter_zap_folder = "extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/data_model/"
+# Staged Matter SLCP workspace (symlinks into matter_extension_dir; never writes origin)
+matter_workspace_dir = "matter_workspace/"
+matter_workspace_slcp_rel = "slc/apps/arduino/"
 gsdk_license_file = "gsdk_license"
 variants_folder = "../variants/"
 
@@ -131,29 +134,32 @@ def generate_gsdk(current_platform_config):
     is_matter = (protocol_stack == 'matter')
     is_zigbee = (protocol_stack == 'zigbee')
 
-    # noradio / ble_* / zigbee: generate from package SLCP (SiSDK 2026.x); never write into the SDK tree
-    use_direct_slcp_generate = is_noradio or is_ble_silabs or is_ble_arduino or is_zigbee
+    # All current stacks generate from package SLCP (SiSDK 2026.x); never write into the origin SDK tree
+    use_direct_slcp_generate = is_noradio or is_ble_silabs or is_ble_arduino or is_zigbee or is_matter
     slcp_folder = None
+    matter_staged_slcp = None
 
     if use_direct_slcp_generate:
         if is_zigbee:
             prepare_zigbee_zap_for_project(project_slcp_file, zigbee_project_zap_file)
+        if is_matter:
+            matter_staged_slcp = prepare_matter_workspace_for_project(
+                project_slcp_file, matter_project_zap_file, additional_files
+            )
         generate_project_with_slc_direct(
-            project_slcp_file,
+            matter_staged_slcp if is_matter else project_slcp_file,
             board_opn,
             config_name,
             is_ble_arduino=is_ble_arduino,
             is_zigbee=is_zigbee,
+            is_matter=is_matter,
         )
-    else:
-        # Matter still uses the copy-into-SDK example workflow
         if is_matter:
-            slcp_folder = matter_lighting_app_folder
-            print("Copying ZAP file...")
-            shutil.copy(matter_project_zap_file, gsdk_dir + matter_zap_folder + "lighting-app.zap")
-        else:
-            slcp_folder = gsdk_cpp_empty_folder
-
+            # -cpsdk leaves SLCP include/source as broken ../ relative paths;
+            # materialize Arduino Matter app files into gen/ like classic SLC did.
+            materialize_matter_arduino_project_files()
+    else:
+        slcp_folder = gsdk_cpp_empty_folder
         copy_slcp_file(slcp_folder, project_slcp_file, additional_files)
         generate_project_with_slc(slcp_folder, slcp_file_name, board_opn)
 
@@ -168,7 +174,17 @@ def generate_gsdk(current_platform_config):
         patch_matter_max_dynamic_endpoint_count()
         patch_matter_device_descriptors(current_platform_config["matter_vendor_name"], current_platform_config["matter_vendor_id"])
         patch_matter_device_name()
+        patch_matter_time_sync_tsc_feature()
+        patch_matter_time_sync_public_getters()
+        patch_matter_attribute_singleton_flag()
+        patch_matter_arduino_start_app_task()
+        patch_matter_application_start_priority()
+        patch_matter_disable_zap_placeholder_endpoint()
+        patch_matter_attribute_largest_for_dynamic_endpoints()
     build_project()
+    if is_matter:
+        # Arduino variant provides the strong StartAppTask stub; weaken gsdk.a's.
+        weaken_matter_start_app_task_in_archive(os.path.join(slc_output_dir, "gsdk.a"))
     apply_license_to_unlicensed_files(slc_output_dir + "autogen")
     apply_license_to_unlicensed_files(slc_output_dir + "config")
     if prebuild:
@@ -303,11 +319,145 @@ def prepare_zigbee_zap_for_project(project_slcp_file, zigbee_zap_file):
         print(f"Updated shared Zigbee ZAP: {src_zap}")
 
 
-def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name, is_ble_arduino=False, is_zigbee=False):
+def rewrite_matter_zap_sdk_packages(zap_file_path):
+    """
+    Point Matter .zap package entries at the configured Matter extension zap-templates.
+    Does not modify the origin extension — only the package-local / staged .zap file.
+    """
+    if not matter_extension_dir:
+        print("matter_extension_dir is not set; cannot bind Matter ZAP packages")
+        exit(-1)
+
+    zcl_path = os.path.join(matter_extension_dir, "src", "app", "zap-templates", "zcl", "zcl.json")
+    gen_path = os.path.join(matter_extension_dir, "src", "app", "zap-templates", "app-templates.json")
+    if not os.path.exists(zcl_path) or not os.path.exists(gen_path):
+        print(f"Matter ZAP templates not found under {matter_extension_dir}")
+        exit(-1)
+
+    with open(zap_file_path, "r") as f:
+        zap = json.load(f)
+
+    # Align featureLevel with the same ZAP tool used for Zigbee
+    zap["featureLevel"] = 110
+    packages = []
+    for pkg in zap.get("package", []):
+        pkg = dict(pkg)
+        ptype = pkg.get("type")
+        if ptype == "zcl-properties":
+            pkg["path"] = os.path.abspath(zcl_path)
+            pkg["pathRelativity"] = "absolute"
+        elif ptype == "gen-templates-json":
+            pkg["path"] = os.path.abspath(gen_path)
+            pkg["pathRelativity"] = "absolute"
+        packages.append(pkg)
+    zap["package"] = packages
+
+    # Matter 2.9 CodegenIntegration asserts Basic Information (0x0028) is only on
+    # endpoint 0. The Arduino template historically also enabled it on the light
+    # endpoint for dynamic-bridge sketches — disable that for static codegen.
+    root_type_indices = {
+        ep.get("endpointTypeIndex")
+        for ep in zap.get("endpoints", [])
+        if ep.get("endpointId") == 0
+    }
+    disabled_basic_info = 0
+    for i, ept in enumerate(zap.get("endpointTypes", [])):
+        if i in root_type_indices:
+            continue
+        for cluster in ept.get("clusters", []):
+            if cluster.get("code") == 40 and cluster.get("enabled") == 1:
+                cluster["enabled"] = 0
+                disabled_basic_info += 1
+
+    with open(zap_file_path, "w") as f:
+        json.dump(zap, f, indent=2)
+        f.write("\n")
+    print(f"Bound Matter ZAP packages to extension {matter_extension_version}: {zap_file_path}")
+    if disabled_basic_info:
+        print(f"Disabled Basic Information on {disabled_basic_info} non-root endpoint type(s)")
+
+
+def prepare_matter_workspace_for_project(project_slcp_file, matter_zap_file, additional_files):
+    """
+    Stage a Matter SLCP workspace that mirrors extension-relative paths
+    (../../../../third_party/...) without writing into the origin Matter extension.
+    Returns the absolute path of the staged SLCP.
+    """
+    if not matter_extension_dir or not os.path.isdir(matter_extension_dir):
+        print(f"matter_extension_dir missing: {matter_extension_dir}")
+        exit(-1)
+
+    workspace = os.path.abspath(matter_workspace_dir)
+    if os.path.exists(workspace):
+        shutil.rmtree(workspace)
+    os.makedirs(workspace)
+
+    # Symlink extension trees needed by SLCP relative paths
+    for name in ("third_party", "src", "slc", "provision.mattpconf"):
+        src = os.path.join(os.path.abspath(matter_extension_dir), name)
+        dst = os.path.join(workspace, name)
+        if not os.path.exists(src):
+            print(f"Missing in Matter extension: {src}")
+            exit(-1)
+        os.symlink(src, dst)
+
+    for name in ("matter.slce", "matter.slsdk"):
+        src = os.path.join(os.path.abspath(matter_extension_dir), name)
+        dst = os.path.join(workspace, name)
+        if os.path.exists(src) and not os.path.exists(dst):
+            os.symlink(src, dst)
+
+    slcp_dir = os.path.join(workspace, matter_workspace_slcp_rel)
+    os.makedirs(slcp_dir, exist_ok=True)
+
+    staged_slcp = os.path.join(slcp_dir, os.path.basename(project_slcp_file))
+    shutil.copy(os.path.abspath(project_slcp_file), staged_slcp)
+
+    package_slcp_dir = os.path.dirname(os.path.abspath(project_slcp_file))
+    for name in (
+        "sl_spidrv_eusart_xg24explorerkit1_config.h",
+        "sl_iostream_eusart_xg24explorerkit1_config.h",
+    ):
+        src = os.path.join(package_slcp_dir, name)
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(slcp_dir, name))
+
+    matter_ble = os.path.abspath(os.path.join("slcp", "common", "MatterBLE.h"))
+    if os.path.exists(matter_ble):
+        shutil.copy(matter_ble, os.path.join(slcp_dir, "MatterBLE.h"))
+
+    for file in additional_files:
+        if type(file) == list:
+            src = file[0]
+            if os.path.exists(src):
+                shutil.copy(src, os.path.join(slcp_dir, os.path.basename(src)))
+        else:
+            if os.path.exists(file):
+                shutil.copy(file, os.path.join(slcp_dir, os.path.basename(file)))
+
+    zap_dest_dir = os.path.join(slcp_dir, "config", "zcl")
+    os.makedirs(zap_dest_dir, exist_ok=True)
+    zap_dest = os.path.join(zap_dest_dir, "zcl_config.zap")
+    src_zap = os.path.abspath(matter_zap_file)
+    if not os.path.exists(src_zap):
+        print(f"Matter ZAP file not found: {src_zap}")
+        exit(-1)
+    shutil.copy(src_zap, zap_dest)
+    rewrite_matter_zap_sdk_packages(zap_dest)
+    if os.path.abspath(src_zap) != os.path.abspath(zap_dest):
+        shutil.copy(zap_dest, src_zap)
+        print(f"Updated shared Matter ZAP: {src_zap}")
+
+    print(f"Staged Matter workspace SLCP: {staged_slcp}")
+    return staged_slcp
+
+
+def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
+                                     is_ble_arduino=False, is_zigbee=False, is_matter=False):
     """
     Generate directly from an SLCP under package/ (SiSDK 2026.x).
-    Uses -cpsdk -np and --sdk-package-path for sibling extensions (AIML, arduino_ble_hci).
-    For Zigbee, passes --tool-path so SLC uses the configured ZAP adapter pack (not PATH).
+    Uses -cpsdk -np and --sdk-package-path for sibling extensions (AIML, Matter, arduino_ble_hci).
+    For Zigbee/Matter, passes --tool-path so SLC uses the configured ZAP adapter pack (not PATH).
     """
     print("Starting SLC generation (direct from package SLCP)...")
 
@@ -322,6 +472,11 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
     sdk_package_paths = os.path.abspath(gsdk_dir.rstrip("/"))
     if aiml_extension_dir:
         sdk_package_paths = sdk_package_paths + "," + os.path.abspath(aiml_extension_dir.rstrip("/"))
+    if is_matter:
+        if not matter_extension_dir or not os.path.isdir(matter_extension_dir):
+            print(f"Matter generation requires matter_extension_dir in generate_gsdk.cfg (got: {matter_extension_dir})")
+            exit(-1)
+        sdk_package_paths = sdk_package_paths + "," + os.path.abspath(matter_extension_dir.rstrip("/"))
     if is_ble_arduino:
         # HCI reset + ArduinoBLE name/compat without bluetooth_hci RCP/UART
         arduino_ble_hci_ext = os.path.abspath(
@@ -332,6 +487,7 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
             exit(-1)
         sdk_package_paths = sdk_package_paths + "," + arduino_ble_hci_ext
 
+    generator_timeout = "1800" if is_matter else "600"
     cmd = [
         slc_cli, "generate",
         "-o", "makefile",
@@ -340,7 +496,7 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
         "-np",
         "--overwrite-all",
         "--force",
-        "--generator-timeout", "600",
+        "--generator-timeout", generator_timeout,
         "--sdk-package-path", sdk_package_paths,
         "-p", project_slcp_abs,
         "-d", slc_output_abs,
@@ -348,9 +504,9 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
         "--with", board_opn,
     ]
 
-    if is_zigbee:
+    if is_zigbee or is_matter:
         if not zap_cli or not os.path.exists(zap_cli):
-            print(f"Zigbee generation requires zap_cli in generate_gsdk.cfg (got: {zap_cli})")
+            print(f"Zigbee/Matter generation requires zap_cli in generate_gsdk.cfg (got: {zap_cli})")
             exit(-1)
         zap_adapter = find_zap_adapter_pack_dir()
         if not zap_adapter:
@@ -365,8 +521,10 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
     # Prefer configured ZAP over anything on PATH when SLC/post-gen invokes it
     if zap_cli and os.path.exists(zap_cli):
         env["PATH"] = os.path.dirname(os.path.abspath(zap_cli)) + os.pathsep + env.get("PATH", "")
+    # Matter generate can be long
+    timeout = 2400 if is_matter else 1200
     slc_process = subprocess.Popen(cmd, env=env)
-    slc_process.communicate(timeout=1200)
+    slc_process.communicate(timeout=timeout)
     if slc_process.returncode != 0:
         print(f"SLC generation failed with exit code {slc_process.returncode}")
         exit(-1)
@@ -488,27 +646,29 @@ def patch_makefiles():
     # Find the first .Makefile in the directory
     print("Patching the makefiles...")
     makefile = find_type_of_file_in_dir(".Makefile", slc_output_dir)
+    makefile_path = slc_output_dir + makefile
 
     # Patch in the archive building
-    with open(slc_output_dir + makefile, "r") as in_file:
+    with open(makefile_path, "r") as in_file:
         buf = in_file.readlines()
 
+    already_patched = any("$(AR) rcs gsdk.a $(OBJS)" in line for line in buf)
     linecnt = 0
-    with open(slc_output_dir + makefile, "w") as out_file:
+    with open(makefile_path, "w") as out_file:
         for line in buf:
-            # Add archive file generation to the build process
-            if "@echo $(OBJS) > $(OUTPUT_DIR)/linker_objs" in line:
-                line = line + "\t$(ECHO)$(AR) rcs gsdk.a $(OBJS)\n"
-                line = line + "else ifeq ($(UNAME_S),Linux)\n"
-                line = line + "\t@echo $(OBJS) > $(OUTPUT_DIR)/linker_objs\n"
+            # Skip post-build — we never produce .s37 when linking is disabled
+            if "pre-build $(OUTPUT_DIR)/$(PROJECTNAME).out post-build" in line:
+                line = line.replace(" post-build", "")
+            # Add archive file generation to the build process (idempotent)
+            if (not already_patched) and "@echo $(OBJS) > $(OUTPUT_DIR)/linker_objs" in line:
                 line = line + "\t$(ECHO)$(AR) rcs gsdk.a $(OBJS)\n"
             # Comment out the linking phase and the binary conversion so that the build won't fail
             # (cosmetic only, we don't need it to link, we have the archive before that)
-            if "$(ECHO)$(LD) $(LD_FLAGS) @$(OUTPUT_DIR)/linker_objs $(LIBS) -o $(OUTPUT_DIR)/$(PROJECTNAME).out" in line:
+            if line.lstrip().startswith("$(ECHO)$(LD) $(LD_FLAGS) @$(OUTPUT_DIR)/linker_objs $(LIBS) -o $(OUTPUT_DIR)/$(PROJECTNAME).out"):
                 line = "#" + line
-                buf[linecnt + 1] = "#" + buf[linecnt + 1]
-                buf[linecnt + 2] = "#" + buf[linecnt + 2]
-                buf[linecnt + 3] = "#" + buf[linecnt + 3]
+                for offset in (1, 2, 3):
+                    if linecnt + offset < len(buf) and not buf[linecnt + offset].lstrip().startswith("#"):
+                        buf[linecnt + offset] = "#" + buf[linecnt + offset]
             out_file.write(line)
             linecnt += 1
 
@@ -533,6 +693,8 @@ def patch_makefiles():
                 ("$(OUTPUT_DIR)/project/src/AppTask.o: src/AppTask.cpp" in line) or
                 ("$(OUTPUT_DIR)/project/src/LightingManager.o: src/LightingManager.cpp" in line) or
                 ("$(OUTPUT_DIR)/project/src/ZclCallbacks.o: src/ZclCallbacks.cpp" in line) or
+                # Matter 2.9 platform main — Arduino core owns main via --wrap=main
+                ("src/main.cpp" in line and "main.o:" in line) or
                 (aiml_tflite_init_recipe in line) or
                 ("sl_tflite_micro_init.o:" in line and "sl_tflite_micro_init.cc" in line)
                ):
@@ -675,22 +837,458 @@ def patch_matter_device_descriptors(vendor_name, vendor_id):
     print("Patched Matter device descriptors")
 
 
-def patch_matter_device_name():
+def materialize_matter_arduino_project_files():
     """
-    Patches the Matter device name to "Arduino Matter Device"
+    SLC -cpsdk does not copy SLCP include:/source: entries that resolve via the
+    staged Matter workspace relative paths. Copy the Arduino Matter app headers
+    and CustomerAppTask into gen/, fix makefile include paths, and add the
+    CustomerAppTask build recipe. Platform main.cpp is omitted — Arduino core
+    owns main via --wrap=main and calls SilabsMatterConfig::AppInit().
     """
-    app_config_file_path = "include/AppConfig.h"
+    if not matter_extension_dir or not os.path.isdir(matter_extension_dir):
+        print(f"matter_extension_dir missing for materialize: {matter_extension_dir}")
+        exit(-1)
 
-    with open(slc_output_dir + app_config_file_path, "r") as in_file:
+    ext = os.path.abspath(matter_extension_dir)
+    lighting_include = os.path.join(
+        ext, "third_party/matter_sdk/examples/lighting-app/silabs/include"
+    )
+    customer_dir = os.path.join(
+        ext, "third_party/matter_sdk/examples/platform/silabs/customer"
+    )
+    matter_ble_src = os.path.abspath(os.path.join("slcp", "common", "MatterBLE.h"))
+
+    include_dir = os.path.join(slc_output_dir, "include")
+    src_dir = os.path.join(slc_output_dir, "src")
+    os.makedirs(include_dir, exist_ok=True)
+    os.makedirs(src_dir, exist_ok=True)
+
+    for name in ("AppConfig.h", "AppEvent.h", "CHIPProjectConfig.h"):
+        src = os.path.join(lighting_include, name)
+        if not os.path.exists(src):
+            print(f"Missing Matter lighting include: {src}")
+            exit(-1)
+        shutil.copy(src, os.path.join(include_dir, name))
+
+    customer_hdr = os.path.join(customer_dir, "CustomerAppTask.h")
+    customer_src = os.path.join(customer_dir, "CustomerAppTask.cpp")
+    if not os.path.exists(customer_hdr) or not os.path.exists(customer_src):
+        print(f"Missing CustomerAppTask sources under {customer_dir}")
+        exit(-1)
+    shutil.copy(customer_hdr, os.path.join(include_dir, "CustomerAppTask.h"))
+    shutil.copy(customer_src, os.path.join(src_dir, "CustomerAppTask.cpp"))
+
+    if os.path.exists(matter_ble_src):
+        shutil.copy(matter_ble_src, os.path.join(include_dir, "MatterBLE.h"))
+    else:
+        print(f"Warning: MatterBLE.h not found at {matter_ble_src}")
+
+    # Fix broken -cpsdk relative includes and ensure -Iinclude is present
+    mak_file = find_type_of_file_in_dir(".mak", slc_output_dir)
+    if mak_file is None:
+        print("Could not find project .mak to patch Matter includes")
+        exit(-1)
+    mak_path = os.path.join(slc_output_dir, mak_file)
+    with open(mak_path, "r") as in_file:
         buf = in_file.readlines()
 
-    with open(slc_output_dir + app_config_file_path, "w") as out_file:
+    broken_include_substrings = (
+        "-I../third_party/matter_sdk/examples/lighting-app/silabs/include",
+        "-I../third_party/matter_sdk/examples/platform/silabs/customer",
+        "-I../matter_workspace/slc/apps/arduino",
+    )
+    new_buf = []
+    has_include_flag = False
+    for line in buf:
+        if any(s in line for s in broken_include_substrings):
+            continue
+        if line.strip() == "-Iinclude" or line.strip() == "-Iinclude \\":
+            has_include_flag = True
+        new_buf.append(line)
+
+    if not has_include_flag:
+        inserted = False
+        for i, line in enumerate(new_buf):
+            if line.startswith("INCLUDES += \\"):
+                new_buf.insert(i + 1, " -Iinclude \\\n")
+                inserted = True
+                break
+        if not inserted:
+            print("Warning: could not insert -Iinclude into project makefile")
+
+    # Inject CustomerAppTask.cpp if SLC omitted it
+    customer_obj = "$(OUTPUT_DIR)/project/src/CustomerAppTask.o"
+    if not any(customer_obj in line for line in new_buf):
+        recipe = (
+            f"\n{customer_obj}: src/CustomerAppTask.cpp\n"
+            "\t@$(POSIX_TOOL_PATH)echo 'Building src/CustomerAppTask.cpp'\n"
+            "\t@$(POSIX_TOOL_PATH)mkdir -p $(@D)\n"
+            "\t$(ECHO)$(CXX) $(CXXFLAGS) -c -o $@ src/CustomerAppTask.cpp\n"
+            f"CXXDEPS += {customer_obj[:-2]}.d\n"
+            f"OBJS += {customer_obj}\n"
+        )
+        new_buf.append(recipe)
+
+    with open(mak_path, "w") as out_file:
+        out_file.writelines(new_buf)
+
+    print("Materialized Matter Arduino include/src and patched project makefile")
+
+
+def patch_matter_device_name():
+    """
+    Patches the Matter BLE device name to "Arduino Matter" (< 21 chars).
+    """
+    app_config_file_path = "include/AppConfig.h"
+    app_config_abs = slc_output_dir + app_config_file_path
+    if not os.path.exists(app_config_abs):
+        print(f"AppConfig.h not found at {app_config_abs} — run materialize_matter_arduino_project_files first")
+        exit(-1)
+
+    with open(app_config_abs, "r") as in_file:
+        buf = in_file.readlines()
+
+    with open(app_config_abs, "w") as out_file:
         for line in buf:
             if "#define BLE_DEV_NAME" in line:
-                 line = "#define BLE_DEV_NAME \"Arduino Matter Device\"\n"
+                 # BLEManagerImpl rejects names with strlen >= kMaxDeviceNameLength (21)
+                 line = "#define BLE_DEV_NAME \"Arduino Matter\"\n"
             out_file.write(line)
 
     print("Patched Matter device name")
+
+
+def patch_matter_time_sync_public_getters():
+    """
+    Matter 2.9 keeps GetTimeZone()/GetDSTOffset() private with out-of-line
+    inline bodies in TimeSynchronizationCluster.cpp. Arduino
+    MatterTimeSynchronization needs them for local-offset helpers.
+
+    Move public inline definitions into the header (so other TUs can call
+    them without -Wundefined-inline) and strip the matching .cpp bodies so
+    regenerating/rebuilding gsdk.a does not hit a redefinition.
+    """
+    cluster_dir = os.path.join(
+        slc_output_dir,
+        "matter_" + matter_extension_version,
+        "third_party/matter_sdk/src/app/clusters/time-synchronization-server",
+    )
+    header_path = os.path.join(cluster_dir, "TimeSynchronizationCluster.h")
+    cpp_path = os.path.join(cluster_dir, "TimeSynchronizationCluster.cpp")
+    if not os.path.exists(header_path):
+        print(f"TimeSynchronizationCluster.h not found at {header_path}")
+        exit(-1)
+
+    private_getters = (
+        "    inline Span<TimeSyncDataProvider::TimeZoneStore> & GetTimeZone();\n"
+        "    inline DataModel::List<TimeSynchronization::Structs::DSTOffsetStruct::Type> & GetDSTOffset();\n"
+    )
+    # Bare public decls from an earlier patch (trigger -Wundefined-inline)
+    bare_public_getters = (
+        "    // Arduino Matter: public getters (private in upstream Matter 2.9)\n"
+        + private_getters
+    )
+    public_getter_bodies = (
+        "    // Arduino Matter: public getters (private inline in upstream Matter 2.9 .cpp)\n"
+        "    Span<TimeSyncDataProvider::TimeZoneStore> & GetTimeZone()\n"
+        "    {\n"
+        "        mTimeZoneObj.timeZoneList = mTimeZoneObj.timeZoneList.SubSpan(0, mTimeZoneObj.validSize);\n"
+        "        return mTimeZoneObj.timeZoneList;\n"
+        "    }\n"
+        "    DataModel::List<TimeSynchronization::Structs::DSTOffsetStruct::Type> & GetDSTOffset()\n"
+        "    {\n"
+        "        mDstOffsetObj.dstOffsetList = mDstOffsetObj.dstOffsetList.SubSpan(0, mDstOffsetObj.validSize);\n"
+        "        return mDstOffsetObj.dstOffsetList;\n"
+        "    }\n"
+    )
+    public_anchor = (
+        "    void SetDelegate(TimeSynchronization::Delegate * delegate)\n"
+        "    {\n"
+        "        VerifyOrDie(delegate != nullptr);\n"
+        "        mDelegate = delegate;\n"
+        "    }\n"
+    )
+
+    with open(header_path, "r") as in_file:
+        header = in_file.read()
+
+    if "mTimeZoneObj.timeZoneList.SubSpan" in header and "Arduino Matter: public getters" in header:
+        print("TimeSynchronizationCluster GetTimeZone/GetDSTOffset already public with bodies")
+    elif bare_public_getters in header:
+        header = header.replace(bare_public_getters, public_getter_bodies, 1)
+        with open(header_path, "w") as out_file:
+            out_file.write(header)
+        print("Upgraded TimeSynchronizationCluster.h public getters to inline bodies")
+    else:
+        if private_getters not in header:
+            print("Could not locate private GetTimeZone/GetDSTOffset in TimeSynchronizationCluster.h")
+            exit(-1)
+        if public_anchor not in header:
+            print("Could not locate SetDelegate to insert public TimeSync getters")
+            exit(-1)
+        header = header.replace(private_getters, "", 1)
+        header = header.replace(public_anchor, public_anchor + "\n" + public_getter_bodies, 1)
+        with open(header_path, "w") as out_file:
+            out_file.write(header)
+        print("Patched TimeSynchronizationCluster.h: GetTimeZone/GetDSTOffset public inline bodies")
+
+    # Drop out-of-line inline definitions so rebuild does not redefine the header bodies
+    if os.path.exists(cpp_path):
+        with open(cpp_path, "r") as in_file:
+            cpp = in_file.read()
+        cpp_getters = (
+            "inline Span<TimeSyncDataProvider::TimeZoneStore> & TimeSynchronizationCluster::GetTimeZone()\n"
+            "{\n"
+            "    // We can't return a reference to a local temporary object, so we need this assignment\n"
+            "    mTimeZoneObj.timeZoneList = mTimeZoneObj.timeZoneList.SubSpan(0, mTimeZoneObj.validSize);\n"
+            "    return mTimeZoneObj.timeZoneList;\n"
+            "}\n"
+            "\n"
+            "inline DataModel::List<Structs::DSTOffsetStruct::Type> & TimeSynchronizationCluster::GetDSTOffset()\n"
+            "{\n"
+            "    // We can't return a reference to a local temporary object, so we need this assignment\n"
+            "    mDstOffsetObj.dstOffsetList = mDstOffsetObj.dstOffsetList.SubSpan(0, mDstOffsetObj.validSize);\n"
+            "    return mDstOffsetObj.dstOffsetList;\n"
+            "}\n"
+        )
+        if cpp_getters in cpp:
+            with open(cpp_path, "w") as out_file:
+                out_file.write(cpp.replace(cpp_getters, "", 1))
+            print("Removed TimeSynchronizationCluster.cpp out-of-line GetTimeZone/GetDSTOffset")
+        elif "TimeSynchronizationCluster::GetTimeZone()" in cpp:
+            print("Warning: GetTimeZone still in TimeSynchronizationCluster.cpp but pattern unmatched")
+
+
+def patch_matter_time_sync_tsc_feature():
+    """
+    matter_time_synchronization.slcc hardcodes TIME_SYNC_ENABLE_TSC_FEATURE=1, which
+    pulls in ReadClient APIs. Arduino ZAP only enables the TimeZone feature and
+    CHIP_CONFIG_ENABLE_READ_CLIENT stays 0 — force TSC off so the cluster compiles.
+    """
+    mak_file = find_type_of_file_in_dir(".mak", slc_output_dir)
+    if mak_file is None:
+        print("Could not find project .mak to patch TIME_SYNC_ENABLE_TSC_FEATURE")
+        exit(-1)
+    mak_path = os.path.join(slc_output_dir, mak_file)
+    with open(mak_path, "r") as in_file:
+        content = in_file.read()
+    old = "'-DTIME_SYNC_ENABLE_TSC_FEATURE=1'"
+    new = "'-DTIME_SYNC_ENABLE_TSC_FEATURE=0'"
+    if old not in content:
+        print("TIME_SYNC_ENABLE_TSC_FEATURE=1 not found in project makefile (ok if already patched)")
+        return
+    with open(mak_path, "w") as out_file:
+        out_file.write(content.replace(old, new))
+    print("Patched TIME_SYNC_ENABLE_TSC_FEATURE=0 (TSC/ReadClient not enabled for Arduino)")
+
+
+def patch_matter_application_start_priority():
+    """
+    SilabsMatterConfig::AppInit spawns ApplicationStart at osPriorityRealtime7.
+    On Arduino (scheduler already running) that task can starve setup()/loop()
+    if InitMatter blocks. Drop it to osPriorityNormal in the gen MatterConfig.cpp.
+    """
+    path = os.path.join(
+        slc_output_dir,
+        "matter_" + matter_extension_version,
+        "third_party/matter_sdk/examples/platform/silabs/MatterConfig.cpp",
+    )
+    if not os.path.exists(path):
+        print(f"MatterConfig.cpp not found at {path}")
+        exit(-1)
+    with open(path, "r") as in_file:
+        content = in_file.read()
+    if "Arduino: was Realtime7" in content:
+        print("ApplicationStart priority already patched for Arduino")
+        return
+    old = ".priority   = osPriorityRealtime7 };"
+    new = ".priority   = osPriorityNormal }; // Arduino: was Realtime7 (starved setup/loop)"
+    if old not in content:
+        print("Could not locate kMainTaskAttr priority in MatterConfig.cpp")
+        exit(-1)
+    with open(path, "w") as out_file:
+        out_file.write(content.replace(old, new, 1))
+    print("Patched ApplicationStart task priority to osPriorityNormal for Arduino")
+
+
+def patch_matter_disable_zap_placeholder_endpoint():
+    """
+    After Server::Init, disable ZAP placeholder endpoint 2 and signal Arduino
+    that the Matter server is ready (arduino_matter_server_ready).
+    """
+    path = os.path.join(
+        slc_output_dir,
+        "matter_" + matter_extension_version,
+        "third_party/matter_sdk/examples/platform/silabs/MatterConfig.cpp",
+    )
+    if not os.path.exists(path):
+        print(f"MatterConfig.cpp not found at {path}")
+        exit(-1)
+    with open(path, "r") as in_file:
+        content = in_file.read()
+    if "arduino_matter_server_ready = true" in content:
+        print("ZAP placeholder disable already patched in MatterConfig.cpp")
+        return
+
+    include_anchor = "#include <cmsis_os2.h>\n"
+    include_patch = (
+        "#include <cmsis_os2.h>\n"
+        "#include <app/util/endpoint-config-api.h>\n"
+        "#include <app/util/attribute-storage.h>\n"
+        "\n"
+        "// Declared in Arduino cores/gecko/silabs_stubs.cpp\n"
+        "extern \"C\" volatile bool arduino_matter_server_ready;\n"
+    )
+    if include_anchor not in content:
+        print("Could not locate cmsis_os2 include in MatterConfig.cpp")
+        exit(-1)
+    content = content.replace(include_anchor, include_patch, 1)
+
+    old = (
+        "    ReturnErrorOnFailure(PlatformMgr().StartEventLoopTask());\n"
+        "\n"
+        "#ifdef ENABLE_CHIP_SHELL\n"
+        "    chip::startShellTask();\n"
+        "#endif\n"
+        "\n"
+        "    return CHIP_NO_ERROR;\n"
+        "}"
+    )
+    new = (
+        "    ReturnErrorOnFailure(PlatformMgr().StartEventLoopTask());\n"
+        "\n"
+        "#ifdef ENABLE_CHIP_SHELL\n"
+        "    chip::startShellTask();\n"
+        "#endif\n"
+        "\n"
+        "    // Arduino: disable ZAP placeholder endpoint 2 after Server::Init.\n"
+        "    {\n"
+        "        constexpr chip::EndpointId kZapPlaceholderEndpoint = 2;\n"
+        "        DeviceLayer::StackLock lock;\n"
+        "        if (!emberAfEndpointEnableDisable(kZapPlaceholderEndpoint, false))\n"
+        "        {\n"
+        "            ChipLogError(DeviceLayer, \"Arduino: failed to disable ZAP placeholder endpoint %u\",\n"
+        "                         kZapPlaceholderEndpoint);\n"
+        "        }\n"
+        "        else\n"
+        "        {\n"
+        "            ChipLogProgress(DeviceLayer, \"Arduino: disabled ZAP placeholder endpoint %u\",\n"
+        "                            kZapPlaceholderEndpoint);\n"
+        "        }\n"
+        "    }\n"
+        "    arduino_matter_server_ready = true;\n"
+        "\n"
+        "    return CHIP_NO_ERROR;\n"
+        "}"
+    )
+    if old not in content:
+        print("Could not locate InitMatter epilogue in MatterConfig.cpp for placeholder disable")
+        exit(-1)
+    with open(path, "w") as out_file:
+        out_file.write(content.replace(old, new, 1))
+    print("Patched InitMatter to disable ZAP placeholder endpoint 2")
+
+
+
+def patch_matter_attribute_largest_for_dynamic_endpoints():
+    """
+    Arduino dynamic endpoints declare Descriptor list attrs up to 254 bytes.
+    ZAP may emit a smaller ATTRIBUTE_LARGEST (IO buffer size); bump it so
+    emberAfSetDynamicEndpoint does not reject those attributes.
+    """
+    path = os.path.join(slc_output_dir, "autogen", "zap-generated", "endpoint_config.h")
+    if not os.path.exists(path):
+        print(f"endpoint_config.h not found at {path}")
+        return
+    with open(path, "r") as in_file:
+        content = in_file.read()
+    import re
+    m = re.search(r"#define ATTRIBUTE_LARGEST \((\d+)\)", content)
+    if not m:
+        print("ATTRIBUTE_LARGEST define not found in endpoint_config.h")
+        return
+    current = int(m.group(1))
+    required = 254
+    if current >= required:
+        print(f"ATTRIBUTE_LARGEST already {current} (>= {required})")
+        return
+    content = content.replace(
+        f"#define ATTRIBUTE_LARGEST ({current})",
+        f"#define ATTRIBUTE_LARGEST ({required}) // Arduino: was {current}; sized for dynamic Descriptor lists",
+        1,
+    )
+    with open(path, "w") as out_file:
+        out_file.write(content)
+    print(f"Patched ATTRIBUTE_LARGEST {current} -> {required} for dynamic endpoints")
+
+
+def patch_matter_arduino_start_app_task():
+    """
+    Lighting-app AppTask::StartAppTask() starts AppTaskMain. Arduino sketches use
+    setup()/loop() instead — make StartAppTask a no-op in the generated tree so
+    gsdk.a does not take over the application thread.
+    """
+    path = os.path.join(slc_output_dir, "autogen", "AppTask.cpp")
+    if not os.path.exists(path):
+        print(f"AppTask.cpp not found at {path}")
+        exit(-1)
+    with open(path, "r") as in_file:
+        content = in_file.read()
+    if "Arduino: setup()/loop()" in content:
+        print("AppTask::StartAppTask already patched for Arduino")
+        return
+    old = (
+        "CHIP_ERROR AppTask::StartAppTask()\n"
+        "{\n"
+        "    return BaseApplication::StartAppTask(&AppTask::AppTaskMain);\n"
+        "}"
+    )
+    new = (
+        "CHIP_ERROR AppTask::StartAppTask()\n"
+        "{\n"
+        "    // Arduino: setup()/loop() is the application; do not start lighting-app AppTaskMain.\n"
+        "    return CHIP_NO_ERROR;\n"
+        "}"
+    )
+    if old not in content:
+        print("Could not locate AppTask::StartAppTask body to patch for Arduino")
+        exit(-1)
+    with open(path, "w") as out_file:
+        out_file.write(content.replace(old, new, 1))
+    print("Patched AppTask::StartAppTask to no-op for Arduino setup()/loop()")
+
+
+def patch_matter_attribute_singleton_flag():
+    """
+    ZAP 2026.x still emits ZAP_ATTRIBUTE_MASK(SINGLETON) in endpoint_config.h, but
+    Matter 2.9 removed MATTER_ATTRIBUTE_FLAG_SINGLETON. Alias it to 0 in the gen
+    copy of attribute-metadata.h (never touch the origin extension).
+    """
+    rel = os.path.join(
+        "matter_" + matter_extension_version,
+        "third_party/matter_sdk/src/app/util/attribute-metadata.h",
+    )
+    path = os.path.join(slc_output_dir, rel)
+    if not os.path.exists(path):
+        print(f"attribute-metadata.h not found at {path}")
+        exit(-1)
+    with open(path, "r") as in_file:
+        content = in_file.read()
+    if "MATTER_ATTRIBUTE_FLAG_SINGLETON" in content:
+        print("MATTER_ATTRIBUTE_FLAG_SINGLETON already present")
+        return
+    needle = "#define MATTER_ATTRIBUTE_FLAG_NULLABLE (0x40)\n"
+    insert = (
+        needle
+        + "// Alias until ZAP stops emitting SINGLETON (removed from Matter masks)\n"
+        + "#define MATTER_ATTRIBUTE_FLAG_SINGLETON (0)\n"
+    )
+    if needle not in content:
+        print("Could not locate NULLABLE define to insert SINGLETON alias")
+        exit(-1)
+    with open(path, "w") as out_file:
+        out_file.write(content.replace(needle, insert, 1))
+    print("Patched MATTER_ATTRIBUTE_FLAG_SINGLETON alias into attribute-metadata.h")
 
 
 def build_project():
@@ -703,8 +1301,14 @@ def build_project():
         ["make", "-f", makefile, "-j", "20"], cwd=slc_output_dir
     )
     build_process.communicate(timeout=360)
+    gsdk_archive = os.path.join(slc_output_dir, "gsdk.a")
     if build_process.returncode != 0:
-        raise RuntimeError(f"Build failed with exit code {build_process.returncode}")
+        # Prebuild patches disable linking/.s37; post-build may still fail even when
+        # gsdk.a was produced successfully.
+        if os.path.exists(gsdk_archive) and os.path.getsize(gsdk_archive) > 0:
+            print(f"Make exited {build_process.returncode} but gsdk.a is present — continuing")
+        else:
+            raise RuntimeError(f"Build failed with exit code {build_process.returncode}")
     print("Build finished")
 
 
@@ -801,6 +1405,49 @@ def copy_output_files(output_dir, is_matter):
     shutil.copy(gsdk_license_file, output_dir + "simplicity_sdk_" + gsdk_version + "/LICENSE")
 
 
+# FreeRTOS public headers that must not be overwritten by same-named files from
+# TCPLP (sys/queue.h), OpenThread, or other SDK trees when flattening includes.
+MATTER_FREERTOS_KERNEL_HEADERS = {
+    "FreeRTOS.h",
+    "queue.h",
+    "list.h",
+    "task.h",
+    "semphr.h",
+    "timers.h",
+    "event_groups.h",
+    "stream_buffer.h",
+    "message_buffer.h",
+    "croutine.h",
+    "stack_macros.h",
+    "deprecated_definitions.h",
+    "mpu_prototypes.h",
+    "mpu_wrappers.h",
+    "portable.h",
+    "projdefs.h",
+    "atomic.h",
+}
+
+
+def matter_should_copy_flat_header(src_path_norm, dest_path):
+    """
+    Decide whether a flattened Matter include copy should proceed.
+    Prefer freertos/kernel/include for FreeRTOS public headers so TCPLP's
+    sys/queue.h (and similar) cannot shadow QueueHandle_t.
+    """
+    base = os.path.basename(src_path_norm)
+    is_freertos_src = "/freertos/kernel/include/" in src_path_norm
+    if base in MATTER_FREERTOS_KERNEL_HEADERS:
+        if is_freertos_src:
+            return True
+        # Never install a non-FreeRTOS file under these names; wait for the
+        # real FreeRTOS header (or keep an already-correct FreeRTOS copy).
+        return False
+    if os.path.exists(dest_path) and is_freertos_src:
+        # Should not happen for non-FreeRTOS basenames; allow overwrite.
+        return True
+    return True
+
+
 def copy_extra_sdk_headers(header_output_dir):
     """
     Copy headers that Arduino needs but SLC -cpsdk may not place in the project tree
@@ -877,6 +1524,37 @@ def _find_arm_gnu_tool(tool_name):
     if os.path.isfile(candidate):
         return candidate
     return None
+
+
+def weaken_matter_start_app_task_in_archive(archive_path):
+    """
+    Matter lighting-app AppTask::StartAppTask remains in gsdk.a (other AppTask
+    symbols are needed). Arduino variants define a strong stub for setup()/loop();
+    weaken the archive symbol so the variant wins at link time.
+    """
+    ar_bin = _find_arm_gnu_tool("arm-none-eabi-ar")
+    objcopy_bin = _find_arm_gnu_tool("arm-none-eabi-objcopy")
+    if not ar_bin or not objcopy_bin or not os.path.exists(archive_path):
+        print(f"Warning: cannot weaken StartAppTask in {archive_path}")
+        return False
+    members = subprocess.check_output([ar_bin, "t", archive_path], text=True).splitlines()
+    if "AppTask.o" not in members:
+        return False
+    work_dir = archive_path + ".apptask_tmp"
+    if os.path.exists(work_dir):
+        shutil.rmtree(work_dir)
+    os.mkdir(work_dir)
+    try:
+        subprocess.check_call([ar_bin, "x", os.path.abspath(archive_path), "AppTask.o"], cwd=work_dir)
+        obj_path = os.path.join(work_dir, "AppTask.o")
+        subprocess.check_call(
+            [objcopy_bin, "--weaken-symbol=_ZN7AppTask12StartAppTaskEv", obj_path]
+        )
+        subprocess.check_call([ar_bin, "r", os.path.abspath(archive_path), "AppTask.o"], cwd=work_dir)
+        print(f"Weakened AppTask::StartAppTask in {archive_path}")
+        return True
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
 
 
 def rename_sl_i2c_irq_handlers_in_archive(archive_path):
@@ -1131,17 +1809,29 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
             for f in file:
                 filepath = os.path.join(root, f)
                 if f.endswith('.h'):
+                    filepath_norm = filepath.replace("\\", "/")
+                    # ot-br-posix embeds a second OpenThread tree; skip it to avoid
+                    # overwriting the canonical include/openthread headers.
+                    if "ot-br-posix" in filepath_norm and "include/openthread" in filepath_norm:
+                        continue
                     # Retain containing directory structure for the following
-                    if "include/openthread/platform" in filepath:
-                        shutil.copyfile(filepath, header_output_dir + "openthread/platform/" + str(f))
-                    elif "include/openthread" in filepath:
-                        shutil.copyfile(filepath, header_output_dir + "openthread/" + str(f))
-                    elif "include/psa" in filepath:
+                    if "include/openthread/" in filepath_norm:
+                        # Preserve provisional/ and other OT subdirs (flat basename
+                        # copy used to overwrite link.h with provisional/link.h).
+                        rel = filepath_norm.split("include/openthread/", 1)[1]
+                        dest = os.path.join(header_output_dir, "openthread", rel)
+                        os.makedirs(os.path.dirname(dest), exist_ok=True)
+                        shutil.copyfile(filepath, dest)
+                    elif "include/psa" in filepath_norm:
                         shutil.copyfile(filepath, header_output_dir + "psa/" + str(f))
-                    elif "include/mbedtls" in filepath:
+                    elif "include/mbedtls" in filepath_norm:
                         shutil.copyfile(filepath, header_output_dir + "mbedtls/" + str(f))
                     else:
-                        shutil.copyfile(filepath, header_output_dir + str(f))
+                        dest = header_output_dir + str(f)
+                        if not matter_should_copy_flat_header(filepath_norm, dest):
+                            print(f"Skipping flat header conflict '{filepath}'")
+                            continue
+                        shutil.copyfile(filepath, dest)
                     print(f"Copying '{filepath}'")
 
         if ai_capable:
@@ -1185,6 +1875,10 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
                     filepath = os.path.join(root, f)
                     if f.endswith('.cc'):
                         os.remove(filepath)
+
+        # -imacros sl_gcc_preinclude.h and CMSIS nested includes (same as non-Matter stacks)
+        copy_extra_sdk_headers(header_output_dir)
+        copy_cmsis_profile_headers(slc_output_dir, header_output_dir)
 
     # BLE (Arduino): HCI headers from SiSDK 2026.x bluetooth_le_controller
     if is_ble_arduino:
@@ -1289,6 +1983,11 @@ def cleanup_direct_generate(keep_gen_folder=False):
     else:
         if os.path.exists(slc_output_dir):
             shutil.rmtree(slc_output_dir)
+    # Staged Matter workspace only holds symlinks + copied SLCP/ZAP; safe to drop
+    workspace = os.path.abspath(matter_workspace_dir)
+    if os.path.exists(workspace):
+        shutil.rmtree(workspace)
+        print("Removed staged Matter workspace")
 
 
 def get_platform_config_from_arguments():
@@ -1337,6 +2036,7 @@ def read_config_file(config_file_path):
         global slc_output_dir
         global gsdk_version
         global matter_extension_version
+        global matter_extension_dir
         global aiml_extension_version
         global aiml_extension_dir
         global slc_cli
@@ -1356,6 +2056,8 @@ def read_config_file(config_file_path):
                 gsdk_version = value
             if config == "matter_extension_version":
                 matter_extension_version = value
+            if config == "matter_extension_dir":
+                matter_extension_dir = value
             if config == "aiml_extension_version":
                 aiml_extension_version = value
             if config == "aiml_extension_dir":
@@ -1377,6 +2079,9 @@ def read_config_file(config_file_path):
             exit(-1)
         if arduino_gcc_dir is not None and not os.path.isdir(arduino_gcc_dir):
             print(f"arduino_gcc_dir path does not exist: {arduino_gcc_dir}")
+            exit(-1)
+        if matter_extension_dir is not None and not os.path.isdir(matter_extension_dir):
+            print(f"matter_extension_dir path does not exist: {matter_extension_dir}")
             exit(-1)
 
 

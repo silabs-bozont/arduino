@@ -29,7 +29,7 @@
 
 #include "Matter.h"
 #include <app/AttributeAccessInterface.h>
-#include <app/util/binding-table.h>
+#include <app/clusters/bindings/binding-table.h>
 #include <app-common/zap-generated/cluster-objects.h>
 #include <platform/CHIPDeviceLayer.h>
 #include <atomic>
@@ -37,8 +37,11 @@
 using namespace chip;
 using namespace ::chip::DeviceLayer;
 
+using MatterBindingTableEntry = chip::app::Clusters::Binding::TableEntry;
+using MatterBindingTable = chip::app::Clusters::Binding::Table;
+
 // Serves the standard Matter Binding cluster's list-type `Binding` attribute,
-// backed by chip::BindingTable. One instance is created per endpoint that opts
+// backed by Binding::Table. One instance is created per endpoint that opts
 // into binding support (see MatterSwitch::beginWithBinding()).
 class MatterBindingAttributeAccess : public chip::app::AttributeAccessInterface {
 public:
@@ -58,7 +61,7 @@ public:
 // source nor precompiled object code for those is present. This class instead
 // builds the same behavior directly out of pieces that *are* already available
 // (either precompiled into the SDK static library, or header-only templates
-// compiled fresh with the sketch): chip::BindingTable, chip::CASESessionManager,
+// compiled fresh with the sketch): Binding::Table, chip::CASESessionManager,
 // chip::Server, chip::app::CommandSender and Controller::InvokeCommandRequest /
 // InvokeGroupCommandRequest. No SDK vendoring is required.
 class MatterBindingManager {
@@ -71,8 +74,8 @@ public:
   void begin();
 
   // True once the deferred load triggered by begin() has actually completed
-  // (BindingTable is linked to persistent storage and populated). Every entry
-  // point that touches the BindingTable gates on this to avoid a window right
+  // (Binding::Table is linked to persistent storage and populated). Every entry
+  // point that touches the table gates on this to avoid a window right
   // after begin() where the table isn't ready yet.
   bool is_table_ready() const
   {
@@ -91,8 +94,8 @@ public:
 private:
   MatterBindingManager();
 
-  void dispatch_unicast(const EmberBindingTableEntry& entry, chip::CommandId command_id);
-  void dispatch_group(const EmberBindingTableEntry& entry, chip::CommandId command_id);
+  void dispatch_unicast(const MatterBindingTableEntry& entry, chip::CommandId command_id);
+  void dispatch_group(const MatterBindingTableEntry& entry, chip::CommandId command_id);
 
   bool initialized;
   std::atomic<bool> table_ready;

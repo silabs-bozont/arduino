@@ -63,7 +63,11 @@ bool read_valid_unix_time_ms(uint64_t& out_unix_ms)
 
 int32_t read_timezone_offset_seconds()
 {
-  auto& tz_list = TimeSynchronizationServer::Instance().GetTimeZone();
+  auto* cluster = GetClusterInstance();
+  if (cluster == nullptr) {
+    return 0;
+  }
+  auto& tz_list = cluster->GetTimeZone();
   if (tz_list.size() == 0) {
     return 0;
   }
@@ -72,7 +76,11 @@ int32_t read_timezone_offset_seconds()
 
 int32_t read_dst_offset_seconds(uint64_t chip_epoch_us)
 {
-  auto& dst_list = TimeSynchronizationServer::Instance().GetDSTOffset();
+  auto* cluster = GetClusterInstance();
+  if (cluster == nullptr) {
+    return 0;
+  }
+  auto& dst_list = cluster->GetDSTOffset();
   if (dst_list.size() == 0) {
     return 0;
   }

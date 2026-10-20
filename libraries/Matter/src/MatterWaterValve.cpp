@@ -179,8 +179,27 @@ bool MatterWaterValve::begin()
   // this can't be serviced through the plain ember external-attribute mechanism.
   EndpointId assigned_endpoint_id = new_water_valve_device->GetEndpointId();
   this->command_handler = new (std::nothrow)WaterValveCommandHandler(assigned_endpoint_id, new_water_valve_device);
-  if (this->command_handler != nullptr) {
-    app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->command_handler);
+  if (this->command_handler == nullptr) {
+    (void)RemoveDeviceEndpoint(new_water_valve_device);
+    delete(new_water_valve_device);
+    free(new_endpoint);
+    free(new_sensor_data_version);
+    this->water_valve_device = nullptr;
+    this->device_endpoint = nullptr;
+    this->endpoint_dataversion_storage = nullptr;
+    return false;
+  }
+  if (app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->command_handler) != CHIP_NO_ERROR) {
+    delete(this->command_handler);
+    this->command_handler = nullptr;
+    (void)RemoveDeviceEndpoint(new_water_valve_device);
+    delete(new_water_valve_device);
+    free(new_endpoint);
+    free(new_sensor_data_version);
+    this->water_valve_device = nullptr;
+    this->device_endpoint = nullptr;
+    this->endpoint_dataversion_storage = nullptr;
+    return false;
   }
 
   this->initialized = true;

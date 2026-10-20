@@ -38,6 +38,7 @@
 #include "sli_se_manager_mailbox.h"
 #include "sl_se_manager.h"
 #include "sl_se_manager_key_handling.h"
+#include "sli_psec_common.h"
 
 #ifdef __cplusplus
 extern "C" {

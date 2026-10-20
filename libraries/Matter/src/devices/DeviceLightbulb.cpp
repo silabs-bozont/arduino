@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2025 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +35,12 @@ DeviceLightbulb::DeviceLightbulb(const char* device_name) :
   startup_on_off(0u),
   hue(0u),
   saturation(0u),
-  level(255u),
+  // CurrentLevel is nullable; 255 means null and breaks On/Off <-> LevelControl
+  // coupling (Off never completes) - start at max valid level instead
+  // ToDo: properly null this attribute
+  level(254u),
   level_control_options(0u),
-  level_control_on_level(255u),
+  level_control_on_level(254u),
   level_control_startup_current_level(254u),
   color_control_options(0u)
 {

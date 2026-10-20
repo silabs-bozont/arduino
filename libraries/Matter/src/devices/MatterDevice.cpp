@@ -25,6 +25,7 @@
 #include <silabs_additional.h>
 #include <platform/CHIPDeviceLayer.h>
 #include <app-common/zap-generated/callback.h>
+#include <lib/support/CodeUtils.h>
 
 using namespace ::chip;
 using namespace chip::app::Clusters::Actions;
@@ -195,19 +196,19 @@ CHIP_ERROR Device::HandleReadBridgedDeviceBasicAttribute(ClusterId clusterId,
     *buffer = this->IsReachable() ? 1 : 0;
   } else if ((attributeId == NodeLabel::Id) && (maxReadLength == 32)) {
     MutableByteSpan zclNameSpan(buffer, maxReadLength);
-    MakeZclCharString(zclNameSpan, this->GetName());
+    ReturnErrorOnFailure(MakeZclCharString(zclNameSpan, this->GetName()));
   } else if ((attributeId == VendorName::Id) && (maxReadLength == 32)) {
     MutableByteSpan zclNameSpan(buffer, maxReadLength);
-    MakeZclCharString(zclNameSpan, this->GetVendorName());
+    ReturnErrorOnFailure(MakeZclCharString(zclNameSpan, this->GetVendorName()));
   } else if ((attributeId == ProductName::Id) && (maxReadLength == 32)) {
     MutableByteSpan zclNameSpan(buffer, maxReadLength);
-    MakeZclCharString(zclNameSpan, this->GetProductName());
+    ReturnErrorOnFailure(MakeZclCharString(zclNameSpan, this->GetProductName()));
   } else if ((attributeId == SerialNumber::Id) && (maxReadLength == 32)) {
     MutableByteSpan zclNameSpan(buffer, maxReadLength);
-    MakeZclCharString(zclNameSpan, this->GetSerialNumber());
+    ReturnErrorOnFailure(MakeZclCharString(zclNameSpan, this->GetSerialNumber()));
   } else if ((attributeId == UniqueID::Id) && (maxReadLength == 32)) {
     MutableByteSpan zclNameSpan(buffer, maxReadLength);
-    MakeZclCharString(zclNameSpan, this->GetUniqueID());
+    ReturnErrorOnFailure(MakeZclCharString(zclNameSpan, this->GetUniqueID()));
   } else if ((attributeId == ClusterRevision::Id) && (maxReadLength == 2)) {
     uint16_t rev = this->GetBridgedDeviceBasicInformationClusterRevision();
     memcpy(buffer, &rev, sizeof(rev));
@@ -285,12 +286,8 @@ CHIP_ERROR Device::HandleWriteIdentifyAttribute(ClusterId clusterId,
 
   if (attributeId == Identify::Attributes::IdentifyTime::Id) {
     this->identify_time = *buffer;
-    app::ConcreteAttributePath attributePath(this->endpoint_id, Identify::Id, Identify::Attributes::IdentifyTime::Id);
-    MatterIdentifyClusterServerAttributeChangedCallback(attributePath);
   } else if (attributeId == Identify::Attributes::IdentifyType::Id) {
     this->identify_type = *buffer;
-    app::ConcreteAttributePath attributePath(this->endpoint_id, Identify::Id, Identify::Attributes::IdentifyType::Id);
-    MatterIdentifyClusterServerAttributeChangedCallback(attributePath);
   } else {
     return CHIP_ERROR_INTERNAL;
   }

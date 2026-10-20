@@ -35,8 +35,13 @@
 #ifndef OPENTHREAD_BORDER_ROUTING_H_
 #define OPENTHREAD_BORDER_ROUTING_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <openthread/error.h>
+#include <openthread/instance.h>
 #include <openthread/ip6.h>
+#include <openthread/multi_ail_detection.h> // IWYU pragma: keep
 #include <openthread/netdata.h>
 
 #ifdef __cplusplus
@@ -128,6 +133,34 @@ typedef struct otBorderRoutingPrefixTableEntry
 } otBorderRoutingPrefixTableEntry;
 
 /**
+ * Represents an entry from the discovered NAT64 prefix table.
+ *
+ * The entries in the discovered table track the NAT64 Prefix Options in the received Router Advertisement messages from
+ * other routers on the infrastructure link.
+ */
+typedef struct otBorderRoutingNat64PrefixEntry
+{
+    otBorderRoutingRouterEntry mRouter;              ///< Information about the router advertising this NAT64 prefix.
+    otIp6Prefix                mPrefix;              ///< The discovered IPv6 prefix.
+    uint32_t                   mMsecSinceLastUpdate; ///< Milliseconds since last update of this prefix.
+    uint32_t                   mLifetime;            ///< Lifetime of the prefix (in seconds).
+} otBorderRoutingNat64PrefixEntry;
+
+/**
+ * Represents a discovered Recursive DNS Server (RDNSS) address entry.
+ *
+ * Address entries are discovered by processing the RDNSS options within received Router Advertisement messages from
+ * routers on infrastructure link.
+ */
+typedef struct otBorderRoutingRdnssAddrEntry
+{
+    otBorderRoutingRouterEntry mRouter;              ///< Information about the router advertising this address.
+    otIp6Address               mAddress;             ///< The DNS Server IPv6 address.
+    uint32_t                   mMsecSinceLastUpdate; ///< Milliseconds since last update of this address.
+    uint32_t                   mLifetime;            ///< Lifetime of the address (in seconds).
+} otBorderRoutingRdnssAddrEntry;
+
+/**
  * Represents information about a peer Border Router found in the Network Data.
  */
 typedef struct otBorderRoutingPeerBorderRouterEntry
@@ -135,6 +168,15 @@ typedef struct otBorderRoutingPeerBorderRouterEntry
     uint16_t mRloc16; ///< The RLOC16 of BR.
     uint32_t mAge;    ///< Seconds since the BR appeared in the Network Data.
 } otBorderRoutingPeerBorderRouterEntry;
+
+/**
+ * Represents an infra-if IPv6 address entry (an address used by this BR itself on the AIL).
+ */
+typedef struct otBorderRoutingIfAddrEntry
+{
+    otIp6Address mAddress;         ///< The IPv6 address.
+    uint32_t     mSecSinceLastUse; ///< Seconds since the last RA was sent from this BR using this address.
+} otBorderRoutingIfAddrEntry;
 
 /**
  * Represents a group of data of platform-generated RA messages processed.
@@ -147,14 +189,27 @@ typedef struct otPdProcessedRaInfo
 } otPdProcessedRaInfo;
 
 /**
+ * Represents the configuration options related to the OMR prefix.
+ *
+ * This is used in `otBorderRoutingSetOmrConfig()` to offer manual administration options to explicitly configure
+ * the OMR prefix or to disable it.
+ */
+typedef enum
+{
+    OT_BORDER_ROUTING_OMR_CONFIG_AUTO,     ///< BR auto-generates the local OMR prefix.
+    OT_BORDER_ROUTING_OMR_CONFIG_CUSTOM,   ///< BR uses a given custom OMR prefix.
+    OT_BORDER_ROUTING_OMR_CONFIG_DISABLED, ///< BR does not add local/PD OMR prefix in Network Data.
+} otBorderRoutingOmrConfig;
+
+/**
  * Represents the state of Border Routing Manager.
  */
 typedef enum
 {
-    OT_BORDER_ROUTING_STATE_UNINITIALIZED, ///< Routing Manager is uninitialized.
-    OT_BORDER_ROUTING_STATE_DISABLED,      ///< Routing Manager is initialized but disabled.
-    OT_BORDER_ROUTING_STATE_STOPPED,       ///< Routing Manager in initialized and enabled but currently stopped.
-    OT_BORDER_ROUTING_STATE_RUNNING,       ///< Routing Manager is initialized, enabled, and running.
+    OT_BORDER_ROUTING_STATE_UNINITIALIZED = 0, ///< Routing Manager is uninitialized.
+    OT_BORDER_ROUTING_STATE_DISABLED      = 1, ///< Routing Manager is initialized but disabled.
+    OT_BORDER_ROUTING_STATE_STOPPED       = 2, ///< Routing Manager in initialized and enabled but currently stopped.
+    OT_BORDER_ROUTING_STATE_RUNNING       = 3, ///< Routing Manager is initialized, enabled, and running.
 } otBorderRoutingState;
 
 /**
@@ -171,24 +226,42 @@ typedef enum
 /**
  * Initializes the Border Routing Manager on given infrastructure interface.
  *
- * @note  This method MUST be called before any other otBorderRouting* APIs.
- * @note  This method can be re-called to change the infrastructure interface, but the Border Routing Manager should be
- *        disabled first, and re-enabled after.
+ * This function MUST be called before any other otBorderRouting* APIs.
+ *
+ * This function can also be used to re-initialize and switch the infrastructure interface index to a new one.
+ * Switching the interface index will trigger all components running on the previous interface (Border Routing,
+ * mDNS, etc) to be stopped (as if the previous if-index is no longer running) before restarting operations on the
+ * new interface.
  *
  * @param[in]  aInstance          A pointer to an OpenThread instance.
  * @param[in]  aInfraIfIndex      The infrastructure interface index.
  * @param[in]  aInfraIfIsRunning  A boolean that indicates whether the infrastructure
- *                                interface is running.
  *
  * @retval  OT_ERROR_NONE           Successfully started the Border Routing Manager on given infrastructure.
- * @retval  OT_ERROR_INVALID_STATE  The Border Routing Manager is in a state other than disabled or uninitialized.
- * @retval  OT_ERROR_INVALID_ARGS   The index of the infrastructure interface is not valid.
- * @retval  OT_ERROR_FAILED         Internal failure. Usually due to failure in generating random prefixes.
  *
  * @sa otPlatInfraIfStateChanged.
  * @sa otBorderRoutingSetEnabled.
  */
 otError otBorderRoutingInit(otInstance *aInstance, uint32_t aInfraIfIndex, bool aInfraIfIsRunning);
+
+/**
+ * Gets the interface index and running state of the configured infrastructure interface.
+ *
+ * @note The running state in @p aInfraIfIsRunning reflects the Border Routing Manager's perspective. This state is set
+ * when `otBorderRoutingInit()` is called and is subsequently updated by the platform signaling changes via
+ * `otPlatInfraIfStateChanged()`.
+ *
+ * @param[in]  aInstance          A pointer to an OpenThread instance.
+ * @param[out] aInfraIfIndex      A pointer to output the interface index. MUST NOT be NULL.
+ * @param[out] aInfraIfIsRunning  A pointer to output whether the interface is running. Can be NULL if not needed.
+ *
+ * @retval OT_ERROR_NONE           Successfully retrieved the interface information.
+ * @retval OT_ERROR_INVALID_STATE  The Border Routing Manager is not initialized.
+ *
+ * @sa otBorderRoutingInit
+ * @sa otPlatInfraIfStateChanged
+ */
+otError otBorderRoutingGetInfraIfInfo(otInstance *aInstance, uint32_t *aInfraIfIndex, bool *aInfraIfIsRunning);
 
 /**
  * Enables or disables the Border Routing Manager.
@@ -211,6 +284,56 @@ otError otBorderRoutingSetEnabled(otInstance *aInstance, bool aEnabled);
  * @returns The current state of Border Routing Manager.
  */
 otBorderRoutingState otBorderRoutingGetState(otInstance *aInstance);
+
+/**
+ * Configures the OMR prefix handling in the Border Routing Manager.
+ *
+ * This function offers manual administration options to explicitly configure the OMR prefix or to disable it.
+ *
+ * By default, `OT_BORDER_ROUTING_OMR_CONFIG_AUTO` is used. In this mode, the Border Routing Manager automatically
+ * selects and manages the OMR prefix. This can involve auto-generating a local prefix or utilizing a prefix obtained
+ * through DHCPv6 PD (Prefix Delegation), if the feature is enabled.
+ *
+ * The `OT_BORDER_ROUTING_OMR_CONFIG_CUSTOM` option enables the use of a user-specified OMR prefix. When this option
+ * is selected, the @p aOmrPrefix and @p aPreference parameters are used to define the custom OMR prefix and its
+ * associated preference. These parameters are ignored for other configuration modes, and @p aOmrPrefix can be `NULL`.
+ *
+ * The `OT_BORDER_ROUTING_OMR_CONFIG_DISABLED` option disables the Border Routing Manager's management of the OMR
+ * prefix. The Routing Manager module itself will not add any local or DHCPv6 PD OMR prefixes to the Network Data.
+ *
+ * @param[in] aInstance      A pointer to the OpenThread instance.
+ * @param[in] aConfig        The desired OMR configuration.
+ * @param[in] aOmrPrefix     A pointer to the custom OMR prefix. Required only when @p aConfig is
+ *                           `OT_BORDER_ROUTING_OMR_CONFIG_CUSTOM`. Otherwise, it can be `NULL`.
+ * @param[in] aPreference    The preference associated with the custom OMR prefix.
+ *
+ * @retval OT_ERROR_NONE           The OMR configuration was successfully set to @p aConfig.
+ * @retval OT_ERROR_INVALID_ARGS   The provided custom OMR prefix (@p aOmrPrefix) is invalid.
+ */
+otError otBorderRoutingSetOmrConfig(otInstance              *aInstance,
+                                    otBorderRoutingOmrConfig aConfig,
+                                    const otIp6Prefix       *aOmrPrefix,
+                                    otRoutePreference        aPreference);
+
+/**
+ * Gets the current OMR prefix configuration mode.
+ *
+ * This function retrieves the current OMR configuration and, if a custom OMR prefix is configured, the custom prefix
+ * and its associated preference.
+ *
+ * If the caller does not require the custom OMR prefix and preference, the @p aOmrPrefix and @p aPreference parameters
+ * can be set to `NULL`.
+ *
+ * @param[in]  aInstance      A pointer to the OpenThread instance.
+ * @param[out] aOmrPrefix     A pointer to an `otIp6Prefix` to return the custom OMR prefix, if the configuration is
+ *                            `OT_BORDER_ROUTING_OMR_CONFIG_CUSTOM`.
+ * @param[out] aPreference    A pointer to return the preference associated with the custom OMR prefix.
+ *
+ * @return The current OMR prefix configuration mode.
+ */
+otBorderRoutingOmrConfig otBorderRoutingGetOmrConfig(otInstance        *aInstance,
+                                                     otIp6Prefix       *aOmrPrefix,
+                                                     otRoutePreference *aPreference);
 
 /**
  * Gets the current preference used when advertising Route Info Options (RIO) in Router Advertisement
@@ -455,7 +578,6 @@ void otBorderRoutingPrefixTableInitIterator(otInstance *aInstance, otBorderRouti
 otError otBorderRoutingGetNextPrefixTableEntry(otInstance                         *aInstance,
                                                otBorderRoutingPrefixTableIterator *aIterator,
                                                otBorderRoutingPrefixTableEntry    *aEntry);
-
 /**
  * Iterates over the discovered router entries on the infrastructure link.
  *
@@ -519,6 +641,96 @@ otError otBorderRoutingGetNextPeerBrEntry(otInstance                           *
  * @returns The number of peer BRs.
  */
 uint16_t otBorderRoutingCountPeerBrs(otInstance *aInstance, uint32_t *aMinAge);
+
+/**
+ * Iterates over the Recursive DNS Server (RDNSS) address entries.
+ *
+ * Address entries are discovered by processing the RDNSS options within received Router Advertisement messages from
+ * routers on infrastructure link.
+ *
+ * Address entries associated with the same discovered router on an infrastructure link are guaranteed to be grouped
+ * together (retrieved back-to-back).
+ *
+ * @param[in]     aInstance    The OpenThread instance.
+ * @param[in,out] aIterator    A pointer to the iterator.
+ * @param[out]    aEntry       A pointer to the entry to populate.
+ *
+ * @retval OT_ERROR_NONE          Iterated to the next address entry, @p aEntry and @p aIterator are updated.
+ * @retval OT_ERROR_NOT_FOUND     No more entries in the table.
+ * @retval OT_ERROR_INVALID_ARGS  The iterator is invalid (used to iterate over other entry types, e.g. prefix).
+ */
+otError otBorderRoutingGetNextRdnssAddrEntry(otInstance                         *aInstance,
+                                             otBorderRoutingPrefixTableIterator *aIterator,
+                                             otBorderRoutingRdnssAddrEntry      *aEntry);
+
+/**
+ * Iterates through the RA-discovered NAT64 prefix table.
+ *
+ * Requires `OPENTHREAD_CONFIG_NAT64_BORDER_ROUTING_ENABLE`.
+ *
+ * @param[in]     aInstance    The OpenThread instance.
+ * @param[in,out] aIterator    A pointer to the iterator.
+ * @param[out]    aEntry       A pointer to the entry to populate.
+ *
+ * @retval OT_ERROR_NONE          Iterated to the next NAT64 prefix entry, @p aEntry and @p aIterator are updated.
+ * @retval OT_ERROR_NOT_FOUND     No more entries in the table.
+ * @retval OT_ERROR_INVALID_ARGS  The iterator is invalid (used to iterate over other entry types).
+ *
+ */
+otError otBorderRoutingGetNextNat64PrefixEntry(otInstance                         *aInstance,
+                                               otBorderRoutingPrefixTableIterator *aIterator,
+                                               otBorderRoutingNat64PrefixEntry    *aEntry);
+
+/**
+ * Callback function pointer to notify of changes to discovered Recursive DNS Server (RDNSS) address entries.
+ *
+ * Address entries are discovered by processing the RDNSS options within received Router Advertisement messages from
+ * routers on infrastructure link.
+ *
+ * The `otBorderRoutingGetNextRdnssAddrEntry()` function can be used to iterate over the discovered RDNSS address
+ * entries.
+ *
+ * This callback is invoked when any of the following changes occur to the address entries associated with a discovered
+ * router:
+ * - A new RDNSS address is advertised by the router.
+ * - A previously discovered address is removed due to the router advertising it with a zero lifetime.
+ * - A previously discovered address has aged out (its lifetime expired without being re-advertised).
+ * - We determine that the router that advertised the address is now unreachable, and therefore all its associated
+ *   entries are removed.
+ *
+ * @param[in] aContext  A pointer to arbitrary context information.
+ */
+typedef void (*otBorderRoutingRdnssAddrCallback)(void *aContext);
+
+/**
+ * Sets the callback to be notified of changes to discovered Recursive DNS Server (RDNSS) address entries.
+ *
+ * A subsequent call to this function, replaces a previously set callback.
+ *
+ * @param[in] aInstance   The OpenThread instance.
+ * @param[in] aCallback   The callback function pointer. Can be `NULL` if no callback is required.
+ * @param[in] aConext     An arbitrary context information (used when invoking the callback).
+ */
+void otBorderRoutingSetRdnssAddrCallback(otInstance                      *aInstance,
+                                         otBorderRoutingRdnssAddrCallback aCallback,
+                                         void                            *aContext);
+
+/**
+ * Iterates over the infrastructure interface address entries.
+ *
+ * These are addresses used by the BR itself, for example, when sending Router Advertisements.
+ *
+ * @param[in]     aInstance    The OpenThread instance.
+ * @param[in,out] aIterator    A pointer to the iterator.
+ * @param[out]    aEntry       A pointer to the entry to populate.
+ *
+ * @retval OT_ERROR_NONE          Iterated to the next address entry, @p aEntry and @p aIterator are updated.
+ * @retval OT_ERROR_NOT_FOUND     No more entries in the table.
+ * @retval OT_ERROR_INVALID_ARGS  The iterator is invalid (used to iterate over other entry types, e.g., prefix).
+ */
+otError otBorderRoutingGetNextIfAddrEntry(otInstance                         *aInstance,
+                                          otBorderRoutingPrefixTableIterator *aIterator,
+                                          otBorderRoutingIfAddrEntry         *aEntry);
 
 /**
  * Enables / Disables DHCPv6 Prefix Delegation.

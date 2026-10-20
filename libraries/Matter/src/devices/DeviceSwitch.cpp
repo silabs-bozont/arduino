@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2025 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -170,12 +170,13 @@ void DeviceSwitch::HandleSwitchDeviceStatusChanged(Changed_t itemChangedMask)
   if (itemChangedMask & kChanged_CurrentPosition) {
     ScheduleMatterReportingCallback(this->endpoint_id, Switch::Id, Switch::Attributes::CurrentPosition::Id);
 
-    // Send the corresponding event for press or release
     PlatformMgr().LockChipStack();
-    if (this->current_position) {
-      SwitchServer::Instance().OnInitialPress(this->endpoint_id, this->current_position);
-    } else {
-      SwitchServer::Instance().OnShortRelease(this->endpoint_id, this->current_position);
+    if (auto* cluster = Switch::FindClusterOnEndpoint(this->endpoint_id)) {
+      if (this->current_position) {
+        cluster->OnInitialPress(this->current_position);
+      } else {
+        cluster->OnShortRelease(this->current_position);
+      }
     }
     PlatformMgr().UnlockChipStack();
   }

@@ -27,6 +27,7 @@
 #include "Matter.h"
 #include <silabs_stubs.h>
 #include <util/endpoint-config-api.h>
+#include <zap-generated/endpoint_config.h>
 #include <QRCodeSetupPayloadParser.h>
 #include <ManualSetupPayloadGenerator.h>
 #include <ProvisionManager.h>
@@ -38,8 +39,9 @@ using namespace ::chip::DeviceLayer;
 using namespace ::chip::app::Clusters;
 using namespace ::chip::DeviceLayer::Silabs;
 
-// Current ZCL implementation of struct uses a max size array of 254 bytes
-const uint16_t kDescriptorAttributeArraySize = 254u;
+// Must fit in gEmberAttributeIOBufferSpan (sized to ATTRIBUTE_LARGEST from ZAP),
+// exceeding it makes emberAfSetDynamicEndpoint return CHIP_ERROR_NO_MEMORY
+const uint16_t kDescriptorAttributeArraySize = ATTRIBUTE_LARGEST;
 
 // Descriptor cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(descriptorAttrs)
@@ -99,7 +101,8 @@ CommandId groupsOutgoingCommands[] = {
 
 void IdentifyStartHandler(::Identify* identify)
 {
-  uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(identify->mEndpoint);
+  chip::EndpointId endpoint = identify->mCluster.Cluster().GetPaths()[0].mEndpointId;
+  uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
   Device* dev = GetDeviceForEndpointIndex(endpointIndex);
   if (!dev) {
     return;
@@ -109,7 +112,8 @@ void IdentifyStartHandler(::Identify* identify)
 
 void IdentifyStopHandler(::Identify* identify)
 {
-  uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(identify->mEndpoint);
+  chip::EndpointId endpoint = identify->mCluster.Cluster().GetPaths()[0].mEndpointId;
+  uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
   Device* dev = GetDeviceForEndpointIndex(endpointIndex);
   if (!dev) {
     return;
@@ -297,12 +301,12 @@ bool MatterClass::isDeviceThreadConnected()
 
 void MatterClass::decommission()
 {
-  PlatformMgr().ScheduleWork([](intptr_t) {
+  LogErrorOnFailure(PlatformMgr().ScheduleWork([](intptr_t) {
     PlatformMgr().HandleServerShuttingDown(); // HandleServerShuttingDown calls OnShutdown() which is only implemented for the
                                               // basic information cluster it seems. And triggers and Event flush, which is not
                                               // relevant when there are no fabrics left
     ConfigurationMgr().InitiateFactoryReset();
-  });
+  }));
 
   while (1) {
     // Wait for the factory reset to complete
@@ -332,5 +336,5 @@ void CallMatterReportingCallback(intptr_t closure)
 void ScheduleMatterReportingCallback(EndpointId endpointId, ClusterId cluster, AttributeId attribute)
 {
   auto* path = Platform::New<app::ConcreteAttributePath>(endpointId, cluster, attribute);
-  chip::DeviceLayer::PlatformMgr().ScheduleWork(CallMatterReportingCallback, reinterpret_cast<intptr_t>(path));
+  LogErrorOnFailure(chip::DeviceLayer::PlatformMgr().ScheduleWork(CallMatterReportingCallback, reinterpret_cast<intptr_t>(path)));
 }

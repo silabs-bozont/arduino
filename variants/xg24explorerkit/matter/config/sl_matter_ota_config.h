@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,9 +30,11 @@
 // <<< Use Configuration Wizard in Context Menu >>>
 
 // <o OTA_PERIODIC_TIMEOUT> OTA Requestor periodic timeout
-// <d> Default: 86400
+// <i> How often the device checks for available firmware updates
+// <i> Default: 86400 seconds (24 hours)
 #define OTA_PERIODIC_TIMEOUT 86400
 
 // <<< end of configuration section >>>
 
 #endif // SL_MATTER_OTA_CONFIG_H
+

@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2025 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@
 
 #include "MatterLightbulb.h"
 #include "util/hsv_rgb.h"
+#include <platform/PlatformManager.h>
 
 using namespace ::chip;
 using namespace ::chip::Platform;
@@ -307,18 +308,13 @@ bool MatterLightbulb::begin_internal(bulb_types_e bulb_type, EmberAfCluster* end
     return false;
   }
 
-  // Start the Identify cluster server
-  emberAfIdentifyClusterServerInitCallback(new_lightbulb_device->GetEndpointId());
-
-  // Start the Groups cluster server
-  emberAfGroupsClusterServerInitCallback(new_lightbulb_device->GetEndpointId());
-
+  // Dynamic clusters have no ZAP INIT_FUNCTION, so LevelControl state (min/max) is never set up unless called here
   if (bulb_type == lightbulb_dimmable || bulb_type == lightbulb_color) {
-    // Call the LevelControl init callback one more time to have the min/max values set.
-    // It's called first when adding the cluster/endpoint, but the min/max is not initialized at that point.
-    // Without this the min/max is at 0 and every level change results in the bulb being turned off.
-    emberAfLevelControlClusterServerInitCallback(new_lightbulb_device->GetEndpointId());
-    // Set the device back to offline as the LevelControlClusterServer init inadvertently sets it to online
+    {
+      DeviceLayer::StackLock lock;
+      emberAfLevelControlClusterServerInitCallback(new_lightbulb_device->GetEndpointId());
+    }
+    // LevelControl init can mark the appliance online via attribute traffic
     new_lightbulb_device->SetOnline(false);
   }
 

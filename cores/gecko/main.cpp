@@ -54,16 +54,15 @@ int main()
   escape_hatch();
   gpio_interrupt_handler_init();
 
-  #ifdef ARDUINO_MATTER
-  // Initialize the Matter stack
-  // ToDo: check and ensure to properly init Matter stack once the variant is ported to 2026.6.2
-  SilabsMatterConfig::AppInit();
-  #endif
-
   // Main task is osPriorityRealtime7 by default - drop to arduino_task_priority
   // (below protocol tasks) and yield so they can finish init before setup()
   osThreadSetPriority(osThreadGetId(), arduino_task_priority);
   osThreadYield();
+
+  #ifdef ARDUINO_MATTER
+  SilabsMatterConfig::AppInit();
+  osThreadYield();
+  #endif
 
   setup();
   while (1) {

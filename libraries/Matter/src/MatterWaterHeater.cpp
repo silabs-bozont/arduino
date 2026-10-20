@@ -317,7 +317,21 @@ bool MatterWaterHeater::begin()
     this->endpoint_dataversion_storage = nullptr;
     return false;
   }
-  app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->mode_command_handler);
+  if (app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->mode_command_handler) != CHIP_NO_ERROR) {
+    delete(this->mode_command_handler);
+    this->mode_command_handler = nullptr;
+    app::AttributeAccessInterfaceRegistry::Instance().Unregister(this->mode_attribute_access);
+    delete(this->mode_attribute_access);
+    this->mode_attribute_access = nullptr;
+    (void)RemoveDeviceEndpoint(new_water_heater_device);
+    delete(new_water_heater_device);
+    free(new_endpoint);
+    free(new_sensor_data_version);
+    this->water_heater_device = nullptr;
+    this->device_endpoint = nullptr;
+    this->endpoint_dataversion_storage = nullptr;
+    return false;
+  }
 
   // Register the Water Heater Management cluster's Boost/CancelBoost command handler.
   this->management_command_handler = new (std::nothrow)WaterHeaterManagementCommandHandler(assigned_endpoint_id, new_water_heater_device);
@@ -337,7 +351,24 @@ bool MatterWaterHeater::begin()
     this->endpoint_dataversion_storage = nullptr;
     return false;
   }
-  app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->management_command_handler);
+  if (app::CommandHandlerInterfaceRegistry::Instance().RegisterCommandHandler(this->management_command_handler) != CHIP_NO_ERROR) {
+    delete(this->management_command_handler);
+    this->management_command_handler = nullptr;
+    (void)app::CommandHandlerInterfaceRegistry::Instance().UnregisterCommandHandler(this->mode_command_handler);
+    delete(this->mode_command_handler);
+    this->mode_command_handler = nullptr;
+    app::AttributeAccessInterfaceRegistry::Instance().Unregister(this->mode_attribute_access);
+    delete(this->mode_attribute_access);
+    this->mode_attribute_access = nullptr;
+    (void)RemoveDeviceEndpoint(new_water_heater_device);
+    delete(new_water_heater_device);
+    free(new_endpoint);
+    free(new_sensor_data_version);
+    this->water_heater_device = nullptr;
+    this->device_endpoint = nullptr;
+    this->endpoint_dataversion_storage = nullptr;
+    return false;
+  }
 
   this->initialized = true;
   return true;

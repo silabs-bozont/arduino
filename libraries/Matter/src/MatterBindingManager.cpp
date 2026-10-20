@@ -111,7 +111,7 @@ CHIP_ERROR MatterBindingAttributeAccess::Read(const ConcreteReadAttributePath& p
 
   EndpointId local_endpoint = path.mEndpointId;
   return encoder.EncodeList([local_endpoint](const auto& listEncoder) -> CHIP_ERROR {
-    for (auto& entry : chip::BindingTable::GetInstance()) {
+    for (auto& entry : MatterBindingTable::GetInstance()) {
       if (entry.local != local_endpoint) {
         continue;
       }
@@ -120,11 +120,11 @@ CHIP_ERROR MatterBindingAttributeAccess::Read(const ConcreteReadAttributePath& p
       value.fabricIndex = entry.fabricIndex;
       value.cluster = FromStdOptional(entry.clusterId);
 
-      if (entry.type == MATTER_UNICAST_BINDING) {
+      if (entry.type == Binding::MATTER_UNICAST_BINDING) {
         value.node = MakeOptional(entry.nodeId);
         value.group = NullOptional;
         value.endpoint = MakeOptional(entry.remote);
-      } else if (entry.type == MATTER_MULTICAST_BINDING) {
+      } else if (entry.type == Binding::MATTER_MULTICAST_BINDING) {
         value.node = NullOptional;
         value.group = MakeOptional(entry.groupId);
         value.endpoint = NullOptional;
@@ -157,17 +157,17 @@ CHIP_ERROR MatterBindingAttributeAccess::Write(const ConcreteDataAttributePath& 
   }
 
   auto add_entry = [](EndpointId local_endpoint, const Binding::Structs::TargetStruct::Type& target) -> CHIP_ERROR {
-                     EmberBindingTableEntry entry;
+                     MatterBindingTableEntry entry;
                      if (target.group.HasValue()) {
-                       entry = EmberBindingTableEntry::ForGroup(target.fabricIndex, target.group.Value(), local_endpoint,
+                       entry = MatterBindingTableEntry::ForGroup(target.fabricIndex, target.group.Value(), local_endpoint,
                                                                 target.cluster.std_optional());
                      } else if (target.node.HasValue() && target.endpoint.HasValue()) {
-                       entry = EmberBindingTableEntry::ForNode(target.fabricIndex, target.node.Value(), local_endpoint, target.endpoint.Value(),
+                       entry = MatterBindingTableEntry::ForNode(target.fabricIndex, target.node.Value(), local_endpoint, target.endpoint.Value(),
                                                                target.cluster.std_optional());
                      } else {
                        return CHIP_IM_GLOBAL_STATUS(ConstraintError);
                      }
-                     return chip::BindingTable::GetInstance().Add(entry);
+                     return MatterBindingTable::GetInstance().Add(entry);
                    };
 
   if (!path.IsListOperation() || path.mListOp == ConcreteDataAttributePath::ListOperation::ReplaceAll) {
@@ -180,7 +180,7 @@ CHIP_ERROR MatterBindingAttributeAccess::Write(const ConcreteDataAttributePath& 
     // ReplaceAll write must not touch bindings owned by another fabric
     // (multi-admin), matching the fabric-scoped-list semantics the Read()
     // path above already applies.
-    auto& table = chip::BindingTable::GetInstance();
+    auto& table = MatterBindingTable::GetInstance();
     auto iter = table.begin();
     while (iter != table.end()) {
       if (iter->local == path.mEndpointId && iter->fabricIndex == accessing_fabric) {
@@ -246,15 +246,15 @@ void MatterBindingManager::begin()
   // touches the BindingTable (notify_bound_cluster_changed, and the Binding
   // attribute's Read()/Write()) gates on it, so an early access can't hit a
   // table that isn't linked to persistent storage / loaded yet.
-  PlatformMgr().ScheduleWork([](intptr_t) {
+  LogErrorOnFailure(PlatformMgr().ScheduleWork([](intptr_t) {
     chip::Server& server = chip::Server::GetInstance();
-    chip::BindingTable::GetInstance().SetPersistentStorage(&server.GetPersistentStorage());
-    CHIP_ERROR err = chip::BindingTable::GetInstance().LoadFromStorage();
+    MatterBindingTable::GetInstance().SetPersistentStorage(&server.GetPersistentStorage());
+    CHIP_ERROR err = MatterBindingTable::GetInstance().LoadFromStorage();
     if (err != CHIP_NO_ERROR) {
       ChipLogError(DeviceLayer, "Matter binding: failed to load the binding table: %" CHIP_ERROR_FORMAT, err.Format());
     }
     MatterBindingManager::instance().table_ready = true;
-  }, 0);
+  }, 0));
 }
 
 /***************************************************************************//**
@@ -270,7 +270,7 @@ void MatterBindingManager::notify_bound_cluster_changed(EndpointId local_endpoin
     return;
   }
 
-  for (auto& entry : chip::BindingTable::GetInstance()) {
+  for (auto& entry : MatterBindingTable::GetInstance()) {
     if (entry.local != local_endpoint) {
       continue;
     }
@@ -278,9 +278,9 @@ void MatterBindingManager::notify_bound_cluster_changed(EndpointId local_endpoin
       continue;
     }
 
-    if (entry.type == MATTER_UNICAST_BINDING) {
+    if (entry.type == Binding::MATTER_UNICAST_BINDING) {
       this->dispatch_unicast(entry, command_id);
-    } else if (entry.type == MATTER_MULTICAST_BINDING) {
+    } else if (entry.type == Binding::MATTER_MULTICAST_BINDING) {
       this->dispatch_group(entry, command_id);
     }
   }
@@ -290,7 +290,7 @@ void MatterBindingManager::notify_bound_cluster_changed(EndpointId local_endpoin
  * Establishes (or reuses) a CASE session to a unicast binding target, then
  * sends the bound command once connected
  ******************************************************************************/
-void MatterBindingManager::dispatch_unicast(const EmberBindingTableEntry& entry, CommandId command_id)
+void MatterBindingManager::dispatch_unicast(const MatterBindingTableEntry& entry, CommandId command_id)
 {
   PendingCommand* pending = new (std::nothrow) PendingCommand(entry.remote, command_id);
   if (pending == nullptr) {
@@ -308,7 +308,7 @@ void MatterBindingManager::dispatch_unicast(const EmberBindingTableEntry& entry,
  * Sends the bound command to every member of a multicast (group) binding
  * target - no session establishment needed for group messaging
  ******************************************************************************/
-void MatterBindingManager::dispatch_group(const EmberBindingTableEntry& entry, CommandId command_id)
+void MatterBindingManager::dispatch_group(const MatterBindingTableEntry& entry, CommandId command_id)
 {
   Messaging::ExchangeManager& exchange_mgr = chip::Server::GetInstance().GetExchangeManager();
   SendOnOffCommand(command_id, [&](auto& command) {

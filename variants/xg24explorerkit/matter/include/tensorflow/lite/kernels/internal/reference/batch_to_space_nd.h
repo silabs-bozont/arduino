@@ -89,7 +89,11 @@ inline void BatchToSpaceND(const RuntimeShape& unextended_input1_shape,
         T* out = output_data + Offset(output_shape, out_batch, out_h, out_w, 0);
         const T* in =
             input1_data + Offset(input1_shape, in_batch, in_h, in_w, 0);
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wstringop-overflow"
+        #pragma GCC diagnostic ignored "-Wrestrict"
         memcpy(out, in, depth * sizeof(T));
+        #pragma GCC diagnostic pop
       }
     }
   }

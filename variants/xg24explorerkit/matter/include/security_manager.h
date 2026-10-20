@@ -24,6 +24,10 @@
 #include "psa/crypto.h"
 #include "psa/crypto_values.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Import a key into PSA ITS.
  *
@@ -366,6 +370,76 @@ psa_status_t sl_sec_man_get_random(uint8_t               *sl_psa_output_buffer,
                                    uint16_t              sl_psa_output_size);
 
 /**
+ * Register a PSA key reference with its associated KSU slot.
+ *
+ * This API allows protocols (OpenThread, Zigbee, etc.) to register their
+ * PSA key IDs with the corresponding KSU hardware slot number. This mapping
+ * is used by the crypto drivers to accelerate operations using the KSU.
+ *
+ * @param[in]  key_ref                              PSA key ID to register.
+ * @param[in]  ksu_slot                             KSU hardware slot number (0-based).
+ *
+ * @retval                                          A psa_status_t status code. Refer to /ref psa_status_t.
+ *
+ */
+psa_status_t sl_sec_man_register_ksu_key(psa_key_id_t key_ref, uint8_t ksu_slot);
+
+/**
+ * Unregister a PSA key reference from the KSU registry.
+ *
+ * This API removes the mapping between a PSA key ID and its KSU slot.
+ * Should be called when a key is destroyed or no longer stored in KSU.
+ *
+ * @param[in]  key_ref                              PSA key ID to unregister.
+ *
+ * @retval                                          A psa_status_t status code. Refer to /ref psa_status_t.
+ *
+ */
+psa_status_t sl_sec_man_unregister_ksu_key(psa_key_id_t key_ref);
+
+/**
+ * Look up the KSU slot for a registered PSA key.
+ *
+ * This API retrieves the KSU hardware slot number associated with a PSA key ID.
+ * It's used by crypto drivers to determine if a key is stored in KSU hardware
+ * and which slot to use for hardware-accelerated operations.
+ *
+ * @param[in]  key_ref                              PSA key ID to look up.
+ * @param[out] ksu_slot                             Pointer to store the KSU slot number.
+ *
+ * @retval     PSA_SUCCESS                          Key found and ksu_slot populated.
+ * @retval     PSA_ERROR_DOES_NOT_EXIST             Key not found in KSU registry.
+ * @retval     PSA_ERROR_INVALID_ARGUMENT           ksu_slot is NULL.
+ *
+ */
+psa_status_t sl_sec_man_get_ksu_slot_for_key(psa_key_id_t key_ref, uint8_t *ksu_slot);
+
+/**
+ * Copy a PSA key to KSU hardware storage.
+ *
+ * This API copies a PSA key from its current location to KSU (Key Storage Unit)
+ * hardware for accelerated cryptographic operations. The key is automatically
+ * registered in the KSU registry for lookup by crypto drivers.
+ *
+ * @param[in]  source_key_id                        PSA key ID of the source key to copy.
+ * @param[out] ksu_key_id                           Pointer to store the new KSU key ID.
+ *                                                   Can be NULL if not needed.
+ * @param[out] ksu_slot                             Pointer to store the KSU slot number.
+ *                                                   Can be NULL if not needed.
+ *
+ * @retval     PSA_SUCCESS                          Key successfully copied to KSU.
+ * @retval     PSA_ERROR_INVALID_ARGUMENT           source_key_id is invalid.
+ * @retval     PSA_ERROR_DOES_NOT_EXIST             Source key not found.
+ * @retval     PSA_ERROR_GENERIC_ERROR              Failed to copy key or determine slot.
+ *
+ * @note The caller is responsible for destroying the source key if needed.
+ * @note The new KSU key is automatically registered with sl_sec_man_register_ksu_key().
+ */
+psa_status_t sl_sec_man_copy_key_to_ksu(psa_key_id_t source_key_id,
+                                        psa_key_id_t *ksu_key_id,
+                                        uint8_t *ksu_slot);
+
+/**
  * Export the public key from the key pair.
  *
  * @param[in]  sl_psa_key_id                        Key ID used as a reference to the key.
@@ -425,5 +499,9 @@ psa_status_t sl_sec_man_verify(psa_key_id_t        sl_psa_key_id,
                                const uint8_t       *sl_dsa_signature_buf,
                                size_t              sl_dsa_signature_size,
                                bool                sl_is_hash);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SECURITY_MANAGER_H_ */

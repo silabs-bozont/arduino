@@ -74,3 +74,4 @@
 #define SL_FEM_UTIL_RUNTIME_PHY_SELECT          0
 
 #endif // SL_FEM_UTIL_CONFIG_H
+
