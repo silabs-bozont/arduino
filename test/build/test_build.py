@@ -324,7 +324,7 @@ def main():
     print("Silabs Arduino Core build test")
     print("==============================")
 
-    test_config = get_config_from_arguments()
+    test_config, board_filter = get_config_from_arguments()
     testlist = testlist_quick
     if test_config == "quick":
         testlist = testlist_quick
@@ -346,6 +346,18 @@ def main():
         testlist.update(testlist_matter)
         testlist.update(testlist_zigbee)
         arduino_cli_install_library_dependencies()
+
+    if board_filter:
+        filtered = {}
+        for sketch, cfg in testlist.items():
+            variants, ignore_warnings = get_testcase_config(cfg)
+            matched = [v for v in variants if v[0] == board_filter]
+            if matched:
+                filtered[sketch] = (matched, True) if ignore_warnings else matched
+        testlist = filtered
+        if not testlist:
+            print(f"No tests match board '{board_filter}' for config '{test_config}'")
+            exit(1)
 
     testcase_count = count_testcases(testlist)
     start_time = time.time()
@@ -507,30 +519,39 @@ def count_testcases(testlist):
 
 def get_config_from_arguments():
     """
-    Determines the test configuration from the command line arguments
+    Determines the test configuration (and optional board filter) from the command line arguments
+    Usage: test_build.py [quick|common|matter|zigbee|github|all] [board]
     """
     try:
         input_config_name = sys.argv[1]
     except Exception:
         print("Running all available tests")
-        return "all"
+        return "all", None
+
+    board = sys.argv[2] if len(sys.argv) >= 3 else None
+    if board and board not in {v[0] for v in all_variants}:
+        print(f"Unknown board '{board}'")
+        exit(1)
+    if board:
+        print(f"Filtering to board '{board}'")
 
     if input_config_name == "quick":
         print("Running quick tests")
-        return "quick"
+        return "quick", board
     elif input_config_name == "common":
         print("Running common tests")
-        return "common"
+        return "common", board
     elif input_config_name == "matter":
         print("Running Matter tests")
-        return "matter"
+        return "matter", board
     elif input_config_name == "zigbee":
         print("Running Zigbee tests")
-        return "zigbee"
+        return "zigbee", board
     elif input_config_name == "github":
         print("Running tests for GitHub CI")
-        return "github"
-    return "all"
+        return "github", board
+    print("Running all available tests")
+    return "all", board
 
 
 if __name__ == "__main__":
