@@ -1,0 +1,7 @@
+# Linux overlay: host networking + direct USB RCP device bind.
+services:
+  otbr:
+    network_mode: host
+    devices:
+      - ${MATTER_HIL_RCP_PORT}:${MATTER_HIL_RCP_PORT}
+      - /dev/net/tun:/dev/net/tun

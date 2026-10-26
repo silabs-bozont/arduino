@@ -1,0 +1,22 @@
+{
+  "name": "matter-hil-controller",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Host-side matter.js controller CLI for Silicon Labs Arduino Matter HIL",
+  "bin": {
+    "matter-hil-ctl": "./matter_hil_ctl.mjs"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "dependencies": {
+    "@matter/general": "0.18.0",
+    "@matter/main": "0.18.0",
+    "@matter/node": "0.18.0",
+    "@matter/nodejs": "0.18.0",
+    "@matter/nodejs-ble": "0.18.0",
+    "@matter/protocol": "0.18.0",
+    "@matter/types": "0.18.0"
+  }
+}

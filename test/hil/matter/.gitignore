@@ -1,0 +1,5 @@
+otbr_data/*
+!otbr_data/.gitkeep
+controller/node_modules/
+controller/storage/
+controller/package-lock.json

@@ -1,0 +1,42 @@
+# Shared OTBR service for Matter HIL (HA-style OpenThread Border Router).
+# Use with an OS overlay:
+#   Linux:  docker compose -f docker-compose.yml -f docker-compose.linux.yml up -d
+#   macOS:  docker compose -f docker-compose.yml -f docker-compose.macos.yml up -d
+#
+# Required env:
+#   MATTER_HIL_OTBR_DEVICE - serial path inside the container (host RCP path on Linux,
+#                            /tmp/ttyOTBR on macOS with NETWORK_DEVICE socat bridge)
+# Optional env:
+#   MATTER_HIL_NETWORK_DEVICE - host:port for network RCP (macOS Colima path)
+#   MATTER_HIL_BACKBONE_IF    - backbone interface (Linux host networking; default eth0)
+#   MATTER_HIL_OTBR_BAUD      - RCP baud rate (default 460800)
+#   MATTER_HIL_OTBR_FLOW      - hardware flow control 0|1 (default 0 for Silabs Arduino RCP)
+
+services:
+  otbr:
+    container_name: matter-hil-otbr
+    image: ghcr.io/ownbee/hass-otbr-docker
+    restart: unless-stopped
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    environment:
+      DEVICE: ${MATTER_HIL_OTBR_DEVICE}
+      NETWORK_DEVICE: ${MATTER_HIL_NETWORK_DEVICE:-}
+      BACKBONE_IF: ${MATTER_HIL_BACKBONE_IF:-eth0}
+      FLOW_CONTROL: ${MATTER_HIL_OTBR_FLOW:-0}
+      FIREWALL: "1"
+      NAT64: "1"
+      BAUDRATE: ${MATTER_HIL_OTBR_BAUD:-460800}
+      OTBR_REST_PORT: "8081"
+      OTBR_WEB_PORT: "8080"
+      AUTOFLASH_FIRMWARE: "0"
+      OTBR_LOG_LEVEL: notice
+    volumes:
+      - ./otbr_data:/data/thread
+    logging:
+      driver: json-file
+      options:
+        max-file: "3"
+        max-size: "1m"

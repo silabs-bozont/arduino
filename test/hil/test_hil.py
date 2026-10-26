@@ -16,6 +16,7 @@ from testcases.testcase_hil_si7021_wire import testcase_hil_si7021_wire
 from testcases.testcase_hil_ble_silabs_advertise import testcase_hil_ble_silabs_advertise
 from testcases.testcase_hil_ble_arduino_advertise import testcase_hil_ble_arduino_advertise
 from testcases.testcase_hil_matter_smoke import testcase_hil_matter_smoke
+from testcases.testcase_hil_matter_lightbulb import testcase_hil_matter_lightbulb
 from testcases.testcase_hil_zigbee_smoke import testcase_hil_zigbee_smoke
 
 all_variants = [
@@ -66,6 +67,7 @@ testcase_list = {
     "ble_silabs_advertise": testcase_hil_ble_silabs_advertise,
     "ble_arduino_advertise": testcase_hil_ble_arduino_advertise,
     "matter_smoke": testcase_hil_matter_smoke,
+    "matter_lightbulb": testcase_hil_matter_lightbulb,
     "zigbee_smoke": testcase_hil_zigbee_smoke,
 }
 
