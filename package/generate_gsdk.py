@@ -181,8 +181,11 @@ def generate_gsdk(current_platform_config):
         patch_matter_attribute_largest_for_dynamic_endpoints()
     build_project()
     if is_matter:
-        # Variant provides the strong StartAppTask stub; weaken gsdk.a's lighting-app symbol.
-        weaken_matter_start_app_task_in_archive(os.path.join(slc_output_dir, "gsdk.a"))
+        gsdk_archive = os.path.join(slc_output_dir, "gsdk.a")
+        # Variant provides the strong StartAppTask stub; weaken gsdk.a's lighting-app symbol
+        weaken_matter_start_app_task_in_archive(gsdk_archive)
+        # WatchdogTimer owns WDOG0_IRQHandler when used; weaken Matter's fault-report handler
+        weaken_matter_wdog0_irq_handler_in_archive(gsdk_archive)
     apply_license_to_unlicensed_files(slc_output_dir + "autogen")
     apply_license_to_unlicensed_files(slc_output_dir + "config")
     if prebuild:
@@ -1440,6 +1443,23 @@ def weaken_matter_start_app_task_in_archive(archive_path):
         ".apptask_tmp",
     ):
         print(f"Weakened AppTask::StartAppTask in {archive_path}")
+        return True
+    return False
+
+
+def weaken_matter_wdog0_irq_handler_in_archive(archive_path):
+    """
+    Matter SoftwareFaultReports.cpp defines a strong WDOG0_IRQHandler for fault
+    capture. Arduino WatchdogTimer also owns that vector — weaken the archive
+    symbol so the library wins when linked; Matter's handler remains as fallback.
+    """
+    if _mutate_archive_member(
+        archive_path,
+        "SoftwareFaultReports.o",
+        ["--weaken-symbol=WDOG0_IRQHandler"],
+        ".wdog_irq_tmp",
+    ):
+        print(f"Weakened WDOG0_IRQHandler in {archive_path}")
         return True
     return False
 
