@@ -175,6 +175,7 @@ def generate_gsdk(current_platform_config):
         patch_matter_device_descriptors(current_platform_config["matter_vendor_name"], current_platform_config["matter_vendor_id"])
         patch_matter_device_name()
         patch_matter_time_sync_tsc_feature()
+        verify_matter_gatt_capabilities_for_arduino_ble()
         patch_matter_attribute_singleton_flag()
         patch_matter_config_for_arduino()
         patch_matter_attribute_largest_for_dynamic_endpoints()
@@ -418,7 +419,8 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
                                      is_ble_arduino=False, is_zigbee=False, is_matter=False):
     """
     Generate directly from an SLCP under package/ (SiSDK 2026.x).
-    Uses -cpsdk -np and --sdk-package-path for sibling extensions (AIML, Matter, arduino_ble_hci).
+    Uses -cpsdk -np and --sdk-package-path for sibling extensions
+    (AIML, Matter, arduino_matter_gatt, arduino_ble_hci)
     For Zigbee/Matter, passes --tool-path so SLC uses the configured ZAP adapter pack (not PATH).
     """
     print("Starting SLC generation (direct from package SLCP)...")
@@ -439,6 +441,14 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
             print(f"Matter generation requires matter_extension_dir in generate_gsdk.cfg (got: {matter_extension_dir})")
             exit(-1)
         sdk_package_paths = sdk_package_paths + "," + os.path.abspath(matter_extension_dir.rstrip("/"))
+        # Capability-gated CHIPoBLE GATT for Matter+BLE examples (replaces matter_gatt_static)
+        arduino_matter_gatt_ext = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "slcp", "common", "arduino_matter_gatt")
+        )
+        if not os.path.isdir(arduino_matter_gatt_ext):
+            print(f"Missing arduino_matter_gatt extension at {arduino_matter_gatt_ext}")
+            exit(-1)
+        sdk_package_paths = sdk_package_paths + "," + arduino_matter_gatt_ext
     if is_ble_arduino:
         # HCI reset + ArduinoBLE name/compat without bluetooth_hci RCP/UART
         arduino_ble_hci_ext = os.path.abspath(
@@ -1003,6 +1013,26 @@ def patch_matter_time_sync_tsc_feature():
     with open(mak_path, "w") as out_file:
         out_file.write(content.replace(old, new))
     print("Patched TIME_SYNC_ENABLE_TSC_FEATURE=0 (TSC/ReadClient not enabled for Arduino)")
+
+
+def verify_matter_gatt_capabilities_for_arduino_ble():
+    """
+    arduino_matter_gatt must produce capability enums for Matter BLE examples.
+    Fail loudly if the local extension was not selected / trusted by SLC.
+    """
+    gatt_h = os.path.join(slc_output_dir, "autogen", "gatt_db.h")
+    if not os.path.exists(gatt_h):
+        print(f"Missing {gatt_h} after SLC generate")
+        exit(-1)
+    with open(gatt_h, "r") as f:
+        header = f.read()
+    if "static_service_gatt_none" not in header:
+        print(
+            "Matter GATT capabilities missing from gatt_db.h — "
+            "expected arduino_matter_gatt extension to supply capability-tagged btconf"
+        )
+        exit(-1)
+    print("Matter GATT capabilities present (arduino_matter_gatt OK)")
 
 
 def patch_matter_config_for_arduino():

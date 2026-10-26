@@ -1,0 +1,24 @@
+id: arduino_matter_gatt
+label: Arduino Matter GATT with BLE coexistence capabilities
+description: >
+  CHIPoBLE static GATT for Matter commissioning, with polymorphic GATT
+  capabilities so Arduino Matter+BLE examples can hide static services after
+  commissioning and own Generic Access via dynamic GATT.
+package: arduino_matter_gatt
+category: Stack|Bluetooth
+quality: production
+config_file:
+  - directory: btconf
+    path: gatt_configuration.btconf
+    file_id: gatt_configuration_file_id
+provides:
+  - name: arduino_matter_gatt
+  - name: matter_gatt_static
+  - name: gatt_configuration
+  - name: bluetooth_gatt_database
+    allow_multiple: true
+requires:
+  - name: bluetooth_gattdb_definition
+template_contribution:
+  - name: component_catalog
+    value: gatt_configuration

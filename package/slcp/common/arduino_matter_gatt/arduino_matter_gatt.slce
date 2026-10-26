@@ -1,0 +1,11 @@
+id: arduino_matter_gatt
+version: 1.0.0
+description: >
+  Arduino Matter static GATT with capability gates for Matter+BLE coexistence.
+  Replaces matter_gatt_static so sketches can hide CHIPoBLE/GAP/DIS via
+  sl_bt_gatt_server_set_capabilities() after commissioning.
+label: Arduino Matter GATT
+supplier: Silicon Laboratories Inc.
+component_path:
+- path: component
+vendor: silabs

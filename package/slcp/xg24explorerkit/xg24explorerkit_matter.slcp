@@ -29,7 +29,7 @@ component:
   - id: rail_util_pti
   - id: matter_ota_support
   - id: matter_crypto
-  - id: matter_gatt_static
+  - id: arduino_matter_gatt
   - id: matter_provision_default
   - id: matter_log_rtt
   - id: matter_lighting
