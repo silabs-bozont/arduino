@@ -38,9 +38,9 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(powerSourceAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::Status::Id, INT8U, 1, 0),                                              /* Status */
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::Order::Id, INT8U, 1, 0),                                               /* Order */
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::Description::Id, CHAR_STRING, DevicePowerSource::kDescriptionSize, 0), /* Description */
-DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatVoltage::Id, INT32U, 4, ATTRIBUTE_MASK_NULLABLE),                   /* BatVoltage */
-DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatPercentRemaining::Id, INT8U, 1, ATTRIBUTE_MASK_NULLABLE),           /* BatPercentRemaining */
-DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatTimeRemaining::Id, INT32U, 4, ATTRIBUTE_MASK_NULLABLE),             /* BatTimeRemaining */
+DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatVoltage::Id, INT32U, 4, MATTER_ATTRIBUTE_FLAG_NULLABLE),            /* BatVoltage */
+DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatPercentRemaining::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_NULLABLE),    /* BatPercentRemaining */
+DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatTimeRemaining::Id, INT32U, 4, MATTER_ATTRIBUTE_FLAG_NULLABLE),      /* BatTimeRemaining */
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatChargeLevel::Id, INT8U, 1, 0),                                      /* BatChargeLevel */
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatReplacementNeeded::Id, BOOLEAN, 1, 0),                              /* BatReplacementNeeded */
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatReplaceability::Id, INT8U, 1, 0),                                   /* BatReplaceability */
@@ -63,7 +63,7 @@ DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::Description::Id, CHAR_STRING,
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatChargeLevel::Id, INT8U, 1, 0),                                      /* BatChargeLevel */
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatReplacementNeeded::Id, BOOLEAN, 1, 0),                              /* BatReplacementNeeded */
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatReplaceability::Id, INT8U, 1, 0),                                   /* BatReplaceability */
-DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatPercentRemaining::Id, INT8U, 1, ATTRIBUTE_MASK_NULLABLE),           /* BatPercentRemaining */
+DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::BatPercentRemaining::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_NULLABLE),    /* BatPercentRemaining */
 DECLARE_DYNAMIC_ATTRIBUTE(PowerSource::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                       /* FeatureMap */
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                     /* ClusterRevision auto added by LIST_END */
 
@@ -116,10 +116,10 @@ bool MatterSimplePowerSource::begin()
     return false;
   }
   new_endpoint->cluster = simplePowerSourceEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(simplePowerSourceEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(simplePowerSourceEndpointClusters);
   new_endpoint->endpointSize = 0;
 
-  size_t dataversion_size = ArraySize(simplePowerSourceEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(simplePowerSourceEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_device_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_device_data_version == nullptr) {
     delete(power_source);
@@ -130,7 +130,7 @@ bool MatterSimplePowerSource::begin()
   int result = AddDeviceEndpoint(power_source,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gPowerSourceDeviceTypes),
-                                 Span<DataVersion>(new_device_data_version, ArraySize(simplePowerSourceEndpointClusters)),
+                                 Span<DataVersion>(new_device_data_version, MATTER_ARRAY_SIZE(simplePowerSourceEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(power_source);
@@ -241,10 +241,10 @@ bool MatterPowerSource::begin()
     return false;
   }
   new_endpoint->cluster = powerSourceEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(powerSourceEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(powerSourceEndpointClusters);
   new_endpoint->endpointSize = 0;
 
-  size_t dataversion_size = ArraySize(powerSourceEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(powerSourceEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_device_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_device_data_version == nullptr) {
     delete(power_source);
@@ -255,7 +255,7 @@ bool MatterPowerSource::begin()
   int result = AddDeviceEndpoint(power_source,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gPowerSourceDeviceTypes),
-                                 Span<DataVersion>(new_device_data_version, ArraySize(powerSourceEndpointClusters)),
+                                 Span<DataVersion>(new_device_data_version, MATTER_ARRAY_SIZE(powerSourceEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(power_source);

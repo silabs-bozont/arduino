@@ -79,14 +79,14 @@ private:
 
 // Valve Configuration and Control cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(waterValveConfigurationAndControlAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::OpenDuration::Id, INT32U, 4, ATTRIBUTE_MASK_NULLABLE),          /* Open Duration */
-DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::DefaultOpenDuration::Id, INT32U, 4, ATTRIBUTE_MASK_WRITABLE_NULLABLE), /* Default Open Duration */
-DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::RemainingDuration::Id, INT32U, 4, ATTRIBUTE_MASK_NULLABLE),     /* Remaining Duration */
-DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::CurrentState::Id, ENUM8, 1, ATTRIBUTE_MASK_NULLABLE),           /* Current State */
-DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::TargetState::Id, ENUM8, 1, ATTRIBUTE_MASK_NULLABLE),            /* Target State */
-DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::ValveFault::Id, BITMAP16, 2, 0),          /* Valve Fault */
-DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::FeatureMap::Id, BITMAP32, 4, 0),          /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                          /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::OpenDuration::Id, INT32U, 4, MATTER_ATTRIBUTE_FLAG_NULLABLE),                                           /* Open Duration */
+DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::DefaultOpenDuration::Id, INT32U, 4, (MATTER_ATTRIBUTE_FLAG_WRITABLE | MATTER_ATTRIBUTE_FLAG_NULLABLE)), /* Default Open Duration */
+DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::RemainingDuration::Id, INT32U, 4, MATTER_ATTRIBUTE_FLAG_NULLABLE),                                      /* Remaining Duration */
+DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::CurrentState::Id, ENUM8, 1, MATTER_ATTRIBUTE_FLAG_NULLABLE),                                            /* Current State */
+DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::TargetState::Id, ENUM8, 1, MATTER_ATTRIBUTE_FLAG_NULLABLE),                                             /* Target State */
+DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::ValveFault::Id, BITMAP16, 2, 0),                                                                        /* Valve Fault */
+DECLARE_DYNAMIC_ATTRIBUTE(ValveConfigurationAndControl::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                                                        /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                                                                       /* ClusterRevision auto added by LIST_END */
 
 // Water valve endpoint cluster list
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(waterValveEndpointClusters)
@@ -146,11 +146,11 @@ bool MatterWaterValve::begin()
     return false;
   }
   new_endpoint->cluster = waterValveEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(waterValveEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(waterValveEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(waterValveEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(waterValveEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_sensor_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_sensor_data_version == nullptr) {
     delete(new_water_valve_device);
@@ -162,7 +162,7 @@ bool MatterWaterValve::begin()
   int result = AddDeviceEndpoint(new_water_valve_device,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gWaterValveDeviceTypes),
-                                 Span<DataVersion>(new_sensor_data_version, ArraySize(waterValveEndpointClusters)),
+                                 Span<DataVersion>(new_sensor_data_version, MATTER_ARRAY_SIZE(waterValveEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(new_water_valve_device);

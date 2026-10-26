@@ -101,11 +101,11 @@ bool MatterOnOffPluginUnit::begin()
     return false;
   }
   new_endpoint->cluster = OnOffPluginUnitEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(OnOffPluginUnitEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(OnOffPluginUnitEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(OnOffPluginUnitEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(OnOffPluginUnitEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_pluginunit_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_pluginunit_data_version == nullptr) {
     delete(pluginunit_device);
@@ -117,7 +117,7 @@ bool MatterOnOffPluginUnit::begin()
   int result = AddDeviceEndpoint(pluginunit_device,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gOnOffPluginUnitDeviceType),
-                                 Span<DataVersion>(new_pluginunit_data_version, ArraySize(OnOffPluginUnitEndpointClusters)),
+                                 Span<DataVersion>(new_pluginunit_data_version, MATTER_ARRAY_SIZE(OnOffPluginUnitEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(pluginunit_device);

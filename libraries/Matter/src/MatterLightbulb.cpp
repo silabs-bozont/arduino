@@ -85,37 +85,37 @@ constexpr CommandId colorControlIncomingCommands[] = {
 
 // On/Off cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(onOffAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::OnOff::Id, BOOLEAN, 1, 0),                                       /* OnOff */
-DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::GlobalSceneControl::Id, BOOLEAN, 1, 0),                          /* GlobalSceneControl */
-DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::OnTime::Id, INT16U, 2, ATTRIBUTE_MASK_WRITABLE),                 /* OnTime */
-DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::OffWaitTime::Id, INT16U, 2, ATTRIBUTE_MASK_WRITABLE),            /* OffWaitTime */
-DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::StartUpOnOff::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE_NULLABLE),   /* StartUpOnOff */
-DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                 /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                         /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::OnOff::Id, BOOLEAN, 1, 0),                                                                      /* OnOff */
+DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::GlobalSceneControl::Id, BOOLEAN, 1, 0),                                                         /* GlobalSceneControl */
+DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::OnTime::Id, INT16U, 2, MATTER_ATTRIBUTE_FLAG_WRITABLE),                                         /* OnTime */
+DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::OffWaitTime::Id, INT16U, 2, MATTER_ATTRIBUTE_FLAG_WRITABLE),                                    /* OffWaitTime */
+DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::StartUpOnOff::Id, INT8U, 1, (MATTER_ATTRIBUTE_FLAG_WRITABLE | MATTER_ATTRIBUTE_FLAG_NULLABLE)), /* StartUpOnOff */
+DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                                                /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                                        /* ClusterRevision auto added by LIST_END */
 
 // LevelControl cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(levelControlAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::CurrentLevel::Id, INT8U, 1, ATTRIBUTE_MASK_NULLABLE),                  /* CurrentLevel */
-DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::RemainingTime::Id, INT16U, 2, 0),                                      /* RemainingTime */
-DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::MinLevel::Id, INT8U, 1, 0),                                            /* MinLevel */
-DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::MaxLevel::Id, INT8U, 1, 0),                                            /* MaxLevel */
-DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::Options::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),                       /* Options */
-DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::OnLevel::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE_NULLABLE),              /* OnLevel */
-DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::StartUpCurrentLevel::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE_NULLABLE),  /* StartupCurrentLevel */
-DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                       /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                      /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::CurrentLevel::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_NULLABLE),                                           /* CurrentLevel */
+DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::RemainingTime::Id, INT16U, 2, 0),                                                                      /* RemainingTime */
+DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::MinLevel::Id, INT8U, 1, 0),                                                                            /* MinLevel */
+DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::MaxLevel::Id, INT8U, 1, 0),                                                                            /* MaxLevel */
+DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::Options::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE),                                                /* Options */
+DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::OnLevel::Id, INT8U, 1, (MATTER_ATTRIBUTE_FLAG_WRITABLE | MATTER_ATTRIBUTE_FLAG_NULLABLE)),             /* OnLevel */
+DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::StartUpCurrentLevel::Id, INT8U, 1, (MATTER_ATTRIBUTE_FLAG_WRITABLE | MATTER_ATTRIBUTE_FLAG_NULLABLE)), /* StartupCurrentLevel */
+DECLARE_DYNAMIC_ATTRIBUTE(LevelControl::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                                                       /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                                                      /* ClusterRevision auto added by LIST_END */
 
 // ColorControl cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(colorControlAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::CurrentHue::Id, INT8U, 1, 0),                                   /* CurrentHue */
-DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::CurrentSaturation::Id, INT8U, 1, 0),                            /* CurrentSaturation */
-DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::ColorMode::Id, ENUM8, 1, 0),                                    /* ColorMode */
-DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::EnhancedColorMode::Id, ENUM8, 1, 0),                            /* EnhancedColorMode */
-DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::ColorCapabilities::Id, BITMAP16, 2, 0),                         /* ColorCapabilities */
-DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::Options::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),                /* Options */
-DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::NumberOfPrimaries::Id, INT8U, 1, ATTRIBUTE_MASK_NULLABLE),      /* NumberOfPrimaries */
-DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                               /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::CurrentHue::Id, INT8U, 1, 0),                                     /* CurrentHue */
+DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::CurrentSaturation::Id, INT8U, 1, 0),                              /* CurrentSaturation */
+DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::ColorMode::Id, ENUM8, 1, 0),                                      /* ColorMode */
+DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::EnhancedColorMode::Id, ENUM8, 1, 0),                              /* EnhancedColorMode */
+DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::ColorCapabilities::Id, BITMAP16, 2, 0),                           /* ColorCapabilities */
+DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::Options::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE),           /* Options */
+DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::NumberOfPrimaries::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_NULLABLE), /* NumberOfPrimaries */
+DECLARE_DYNAMIC_ATTRIBUTE(ColorControl::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                  /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                 /* ClusterRevision auto added by LIST_END */
 
 // Simple Lightbulb endpoint cluster list
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(SimpleLightbulbEndpointClusters)
@@ -189,7 +189,7 @@ bool MatterLightbulb::begin()
 {
   return this->begin_internal(lightbulb_simple,
                               SimpleLightbulbEndpointClusters,
-                              ArraySize(SimpleLightbulbEndpointClusters));
+                              MATTER_ARRAY_SIZE(SimpleLightbulbEndpointClusters));
 }
 
 /***************************************************************************//**
@@ -207,7 +207,7 @@ bool MatterLightbulb::begin(bool bridged_device)
   } else {
     return this->begin_internal(lightbulb_simple,
                                 SimpleLightbulbNoBridgeEndpointClusters,
-                                ArraySize(SimpleLightbulbNoBridgeEndpointClusters));
+                                MATTER_ARRAY_SIZE(SimpleLightbulbNoBridgeEndpointClusters));
   }
 }
 
@@ -450,7 +450,7 @@ bool MatterDimmableLightbulb::begin()
 {
   return this->begin_internal(lightbulb_dimmable,
                               DimmableLightbulbEndpointClusters,
-                              ArraySize(DimmableLightbulbEndpointClusters));
+                              MATTER_ARRAY_SIZE(DimmableLightbulbEndpointClusters));
 }
 
 /***************************************************************************//**
@@ -573,7 +573,7 @@ bool MatterColorLightbulb::begin()
 {
   return this->begin_internal(lightbulb_color,
                               ColorLightbulbEndpointClusters,
-                              ArraySize(ColorLightbulbEndpointClusters));
+                              MATTER_ARRAY_SIZE(ColorLightbulbEndpointClusters));
 }
 
 /***************************************************************************//**

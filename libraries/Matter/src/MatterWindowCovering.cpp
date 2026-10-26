@@ -109,11 +109,11 @@ bool MatterWindowCovering::begin()
     return false;
   }
   new_endpoint->cluster = windowCoveringEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(windowCoveringEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(windowCoveringEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(windowCoveringEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(windowCoveringEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_sensor_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_sensor_data_version == nullptr) {
     delete(device);
@@ -125,7 +125,7 @@ bool MatterWindowCovering::begin()
   int result = AddDeviceEndpoint(device,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gWindowCoveringDeviceTypes),
-                                 Span<DataVersion>(new_sensor_data_version, ArraySize(windowCoveringEndpointClusters)),
+                                 Span<DataVersion>(new_sensor_data_version, MATTER_ARRAY_SIZE(windowCoveringEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(device);

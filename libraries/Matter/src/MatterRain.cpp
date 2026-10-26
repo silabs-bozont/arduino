@@ -96,11 +96,11 @@ bool MatterRain::begin()
     return false;
   }
   new_endpoint->cluster = rainSensorEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(rainSensorEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(rainSensorEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(rainSensorEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(rainSensorEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_sensor_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_sensor_data_version == nullptr) {
     delete(sensor);
@@ -112,7 +112,7 @@ bool MatterRain::begin()
   int result = AddDeviceEndpoint(sensor,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gRainSensorDeviceTypes),
-                                 Span<DataVersion>(new_sensor_data_version, ArraySize(rainSensorEndpointClusters)),
+                                 Span<DataVersion>(new_sensor_data_version, MATTER_ARRAY_SIZE(rainSensorEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(sensor);

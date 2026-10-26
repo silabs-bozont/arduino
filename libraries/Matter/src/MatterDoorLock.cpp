@@ -41,12 +41,12 @@ constexpr CommandId doorLockIncomingCommands[] = {
 
 // Door lock cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(doorLockAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::LockState::Id, INT8U, 1, ATTRIBUTE_MASK_NULLABLE),  // LockState
-DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::LockType::Id, INT8U, 1, 0),                         // LockType
-DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::ActuatorEnabled::Id, BOOLEAN, 1, 0),                // ActuatorEnabled
-DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::OperatingMode::Id, INT8U, 1, 0),                    // OperatingMode
-DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::SupportedOperatingModes::Id, INT16U, 2, 0),         // SupportedOperatingModes
-DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                    // FeatureMap
+DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::LockState::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_NULLABLE), // LockState
+DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::LockType::Id, INT8U, 1, 0),                               // LockType
+DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::ActuatorEnabled::Id, BOOLEAN, 1, 0),                      // ActuatorEnabled
+DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::OperatingMode::Id, INT8U, 1, 0),                          // OperatingMode
+DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::SupportedOperatingModes::Id, INT16U, 2, 0),               // SupportedOperatingModes
+DECLARE_DYNAMIC_ATTRIBUTE(DoorLock::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                          // FeatureMap
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                               // ClusterRevision auto added by LIST_END
 
 // Door lock endpoint cluster list
@@ -105,11 +105,11 @@ bool MatterDoorLock::begin()
     return false;
   }
   new_endpoint->cluster = doorLockEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(doorLockEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(doorLockEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(doorLockEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(doorLockEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_device_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_device_data_version == nullptr) {
     delete(door_lock_device);
@@ -121,7 +121,7 @@ bool MatterDoorLock::begin()
   int result = AddDeviceEndpoint(door_lock_device,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gDoorLockDeviceTypes),
-                                 Span<DataVersion>(new_device_data_version, ArraySize(doorLockEndpointClusters)),
+                                 Span<DataVersion>(new_device_data_version, MATTER_ARRAY_SIZE(doorLockEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(door_lock_device);

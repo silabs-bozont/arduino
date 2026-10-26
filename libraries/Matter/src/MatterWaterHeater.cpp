@@ -167,33 +167,33 @@ private:
 
 // Thermostat cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(waterHeaterThermostatAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::LocalTemperature::Id, INT16S, 2, 0),                                /* Local Temperature */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::ControlSequenceOfOperation::Id, INT8U, 1, 0),                       /* Control Sequence Of Operation */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::SystemMode::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),                 /* System Mode */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::OccupiedHeatingSetpoint::Id, INT16S, 2, ATTRIBUTE_MASK_WRITABLE),   /* Occupied Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMinHeatSetpointLimit::Id, INT16S, 2, 0),                         /* Absolute Minimum Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMaxHeatSetpointLimit::Id, INT16S, 2, 0),                         /* Absolute Maximum Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MinHeatSetpointLimit::Id, INT16S, 2, 0),                            /* Minimum Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MaxHeatSetpointLimit::Id, INT16S, 2, 0),                            /* Maximum Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                    /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                 /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::LocalTemperature::Id, INT16S, 2, 0),                                     /* Local Temperature */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::ControlSequenceOfOperation::Id, INT8U, 1, 0),                            /* Control Sequence Of Operation */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::SystemMode::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE),               /* System Mode */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::OccupiedHeatingSetpoint::Id, INT16S, 2, MATTER_ATTRIBUTE_FLAG_WRITABLE), /* Occupied Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMinHeatSetpointLimit::Id, INT16S, 2, 0),                              /* Absolute Minimum Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMaxHeatSetpointLimit::Id, INT16S, 2, 0),                              /* Absolute Maximum Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MinHeatSetpointLimit::Id, INT16S, 2, 0),                                 /* Minimum Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MaxHeatSetpointLimit::Id, INT16S, 2, 0),                                 /* Maximum Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                         /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                      /* ClusterRevision auto added by LIST_END */
 
 // Water Heater Management cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(waterHeaterManagementAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::HeaterTypes::Id, INT8U, 1, 0),                           /* Heater Types */
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::HeatDemand::Id, INT8U, 1, 0),                            /* Heat Demand */
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::TankVolume::Id, INT16U, 2, 0),                           /* Tank Volume */
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::TankPercentage::Id, INT8U, 1, 0),                        /* Tank Percentage */
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::BoostState::Id, INT8U, 1, 0),                            /* Boost State */
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                         /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                 /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::HeaterTypes::Id, INT8U, 1, 0),    /* Heater Types */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::HeatDemand::Id, INT8U, 1, 0),     /* Heat Demand */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::TankVolume::Id, INT16U, 2, 0),    /* Tank Volume */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::TankPercentage::Id, INT8U, 1, 0), /* Tank Percentage */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::BoostState::Id, INT8U, 1, 0),     /* Boost State */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterManagement::Attributes::FeatureMap::Id, BITMAP32, 4, 0),  /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                          /* ClusterRevision auto added by LIST_END */
 
 // Water Heater Mode cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(waterHeaterModeAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterMode::Attributes::SupportedModes::Id, ARRAY, 0, 0),                              /* Supported Modes - served by WaterHeaterModeAttributeAccess */
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterMode::Attributes::CurrentMode::Id, INT8U, 1, 0),                                 /* Current Mode */
-DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterMode::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                               /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                 /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterMode::Attributes::SupportedModes::Id, ARRAY, 0, 0), /* Supported Modes - served by WaterHeaterModeAttributeAccess */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterMode::Attributes::CurrentMode::Id, INT8U, 1, 0),    /* Current Mode */
+DECLARE_DYNAMIC_ATTRIBUTE(WaterHeaterMode::Attributes::FeatureMap::Id, BITMAP32, 4, 0),  /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                    /* ClusterRevision auto added by LIST_END */
 
 // Water heater endpoint cluster list
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(waterHeaterEndpointClusters)
@@ -258,11 +258,11 @@ bool MatterWaterHeater::begin()
     return false;
   }
   new_endpoint->cluster = waterHeaterEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(waterHeaterEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(waterHeaterEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(waterHeaterEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(waterHeaterEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_sensor_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_sensor_data_version == nullptr) {
     delete(new_water_heater_device);
@@ -274,7 +274,7 @@ bool MatterWaterHeater::begin()
   int result = AddDeviceEndpoint(new_water_heater_device,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gWaterHeaterDeviceTypes),
-                                 Span<DataVersion>(new_sensor_data_version, ArraySize(waterHeaterEndpointClusters)),
+                                 Span<DataVersion>(new_sensor_data_version, MATTER_ARRAY_SIZE(waterHeaterEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(new_water_heater_device);

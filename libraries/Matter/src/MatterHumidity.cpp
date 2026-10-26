@@ -97,11 +97,11 @@ bool MatterHumidity::begin()
     return false;
   }
   new_endpoint->cluster = humidityMeasurementEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(humidityMeasurementEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(humidityMeasurementEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(humidityMeasurementEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(humidityMeasurementEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_sensor_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_sensor_data_version == nullptr) {
     delete(sensor);
@@ -113,7 +113,7 @@ bool MatterHumidity::begin()
   int result = AddDeviceEndpoint(sensor,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gHumiditySensorDeviceTypes),
-                                 Span<DataVersion>(new_sensor_data_version, ArraySize(humidityMeasurementEndpointClusters)),
+                                 Span<DataVersion>(new_sensor_data_version, MATTER_ARRAY_SIZE(humidityMeasurementEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(sensor);

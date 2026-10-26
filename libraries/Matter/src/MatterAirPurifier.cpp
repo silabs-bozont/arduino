@@ -35,21 +35,21 @@ const EmberAfDeviceType gAirPurifierDeviceTypes[] = { { DEVICE_TYPE_AIR_PURIFIER
 
 // Fan control cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(fanControlAttrsAirPurifier)
-DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FanMode::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),            /* FanMode */
-DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FanModeSequence::Id, INT8U, 1, 0),                          /* FanModeSequence */
-DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::PercentSetting::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),     /* PercentSetting */
-DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::PercentCurrent::Id, INT8U, 1, 0),                           /* PercentCurrent */
-DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::SpeedMax::Id, INT8U, 1, 0),                                 /* SpeedMax */
-DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::SpeedSetting::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),       /* SpeedSetting */
-DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::SpeedCurrent::Id, INT8U, 1, 0),                             /* SpeedCurrent */
-DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                            /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                         /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FanMode::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE),        /* FanMode */
+DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FanModeSequence::Id, INT8U, 1, 0),                             /* FanModeSequence */
+DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::PercentSetting::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE), /* PercentSetting */
+DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::PercentCurrent::Id, INT8U, 1, 0),                              /* PercentCurrent */
+DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::SpeedMax::Id, INT8U, 1, 0),                                    /* SpeedMax */
+DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::SpeedSetting::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE),   /* SpeedSetting */
+DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::SpeedCurrent::Id, INT8U, 1, 0),                                /* SpeedCurrent */
+DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                               /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                            /* ClusterRevision auto added by LIST_END */
 
 // Air quality cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(airQualitySensorAttrsAirPurifier)
-DECLARE_DYNAMIC_ATTRIBUTE(AirQuality::Attributes::AirQuality::Id, INT8U, 1, 0),            /* AirQuality */
-DECLARE_DYNAMIC_ATTRIBUTE(AirQuality::Attributes::FeatureMap::Id, BITMAP32, 4, 0),         /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                      /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(AirQuality::Attributes::AirQuality::Id, INT8U, 1, 0),    /* AirQuality */
+DECLARE_DYNAMIC_ATTRIBUTE(AirQuality::Attributes::FeatureMap::Id, BITMAP32, 4, 0), /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                              /* ClusterRevision auto added by LIST_END */
 
 // Air purifier cluster list
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(airPurifierEndpointClusters)
@@ -108,11 +108,11 @@ bool MatterAirPurifier::begin()
     return false;
   }
   new_endpoint->cluster = airPurifierEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(airPurifierEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(airPurifierEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(airPurifierEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(airPurifierEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_device_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_device_data_version == nullptr) {
     delete(device);
@@ -124,7 +124,7 @@ bool MatterAirPurifier::begin()
   int result = AddDeviceEndpoint(device,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gAirPurifierDeviceTypes),
-                                 Span<DataVersion>(new_device_data_version, ArraySize(airPurifierEndpointClusters)),
+                                 Span<DataVersion>(new_device_data_version, MATTER_ARRAY_SIZE(airPurifierEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(device);

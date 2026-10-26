@@ -47,17 +47,17 @@ constexpr CommandId switchOutgoingCommands[] = {
 
 // Switch cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(switchAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Switch::Attributes::NumberOfPositions::Id, INT8U, 1, 0),   /* NumberOfPositions */
-DECLARE_DYNAMIC_ATTRIBUTE(Switch::Attributes::CurrentPosition::Id, INT8U, 1, 0),     /* CurrentPosition */
-DECLARE_DYNAMIC_ATTRIBUTE(Switch::Attributes::MultiPressMax::Id, INT8U, 1, 0),       /* MultiPressMax */
-DECLARE_DYNAMIC_ATTRIBUTE(Switch::Attributes::FeatureMap::Id, BITMAP32, 4, 0),       /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(Switch::Attributes::NumberOfPositions::Id, INT8U, 1, 0), /* NumberOfPositions */
+DECLARE_DYNAMIC_ATTRIBUTE(Switch::Attributes::CurrentPosition::Id, INT8U, 1, 0),   /* CurrentPosition */
+DECLARE_DYNAMIC_ATTRIBUTE(Switch::Attributes::MultiPressMax::Id, INT8U, 1, 0),     /* MultiPressMax */
+DECLARE_DYNAMIC_ATTRIBUTE(Switch::Attributes::FeatureMap::Id, BITMAP32, 4, 0),     /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                              /* ClusterRevision auto added by LIST_END */
 
 // Binding cluster attributes - the `Binding` list attribute itself is served
 // by MatterBindingAttributeAccess, not by this ember buffer.
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(switchBindingAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Binding::Attributes::Binding::Id, ARRAY, 0, ATTRIBUTE_MASK_WRITABLE), /* Binding - served by MatterBindingAttributeAccess */
-DECLARE_DYNAMIC_ATTRIBUTE(Binding::Attributes::FeatureMap::Id, BITMAP32, 4, 0),      /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE(Binding::Attributes::Binding::Id, ARRAY, 0, MATTER_ATTRIBUTE_FLAG_WRITABLE), /* Binding - served by MatterBindingAttributeAccess */
+DECLARE_DYNAMIC_ATTRIBUTE(Binding::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                        /* FeatureMap */
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 // Switch cluster list
@@ -152,8 +152,8 @@ bool MatterSwitch::begin_internal(bool enable_binding)
   }
 
   const EmberAfCluster* cluster_list = enable_binding ? switchEndpointClustersWithBinding : switchEndpointClusters;
-  uint8_t cluster_count = enable_binding ? static_cast<uint8_t>(ArraySize(switchEndpointClustersWithBinding))
-                          : static_cast<uint8_t>(ArraySize(switchEndpointClusters));
+  uint8_t cluster_count = enable_binding ? static_cast<uint8_t>(MATTER_ARRAY_SIZE(switchEndpointClustersWithBinding))
+                          : static_cast<uint8_t>(MATTER_ARRAY_SIZE(switchEndpointClusters));
 
   new_endpoint->cluster = cluster_list;
   new_endpoint->clusterCount = cluster_count;

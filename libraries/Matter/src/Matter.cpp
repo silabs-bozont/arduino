@@ -65,10 +65,10 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                           
 
 // Identify cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(identifyAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Identify::Attributes::IdentifyTime::Id, INT16U, 2, ATTRIBUTE_MASK_WRITABLE),  /* IdentifyTime */
-DECLARE_DYNAMIC_ATTRIBUTE(Identify::Attributes::IdentifyType::Id, INT8U, 1, 0),                         /* IdentifyType */
-DECLARE_DYNAMIC_ATTRIBUTE(Identify::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                        /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                   /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(Identify::Attributes::IdentifyTime::Id, INT16U, 2, MATTER_ATTRIBUTE_FLAG_WRITABLE), /* IdentifyTime */
+DECLARE_DYNAMIC_ATTRIBUTE(Identify::Attributes::IdentifyType::Id, INT8U, 1, 0),                               /* IdentifyType */
+DECLARE_DYNAMIC_ATTRIBUTE(Identify::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                              /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                         /* ClusterRevision auto added by LIST_END */
 
 CommandId identifyIncomingCommands[] = {
   app::Clusters::Identify::Commands::Identify::Id,
@@ -77,9 +77,9 @@ CommandId identifyIncomingCommands[] = {
 
 // Groups cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(groupsAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Groups::Attributes::NameSupport::Id, INT8U, 1, 0),        /* NameSupport */
-DECLARE_DYNAMIC_ATTRIBUTE(Groups::Attributes::FeatureMap::Id, BITMAP32, 4, 0),      /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                               /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(Groups::Attributes::NameSupport::Id, INT8U, 1, 0),   /* NameSupport */
+DECLARE_DYNAMIC_ATTRIBUTE(Groups::Attributes::FeatureMap::Id, BITMAP32, 4, 0), /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                          /* ClusterRevision auto added by LIST_END */
 
 CommandId groupsIncomingCommands[] = {
   app::Clusters::Groups::Commands::AddGroup::Id,

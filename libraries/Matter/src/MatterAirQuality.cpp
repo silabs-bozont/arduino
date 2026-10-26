@@ -95,11 +95,11 @@ bool MatterAirQuality::begin()
     return false;
   }
   new_endpoint->cluster = airQualityEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(airQualityEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(airQualityEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(airQualityEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(airQualityEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_sensor_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_sensor_data_version == nullptr) {
     delete(sensor);
@@ -111,7 +111,7 @@ bool MatterAirQuality::begin()
   int result = AddDeviceEndpoint(sensor,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gAirQualitySensorDeviceTypes),
-                                 Span<DataVersion>(new_sensor_data_version, ArraySize(airQualityEndpointClusters)),
+                                 Span<DataVersion>(new_sensor_data_version, MATTER_ARRAY_SIZE(airQualityEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(sensor);

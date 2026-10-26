@@ -279,7 +279,7 @@ bool MatterCO2::begin()
 {
   return this->begin_internal(concentration_sensor_t::sensor_co2,
                               co2SensorEndpointClusters,
-                              ArraySize(co2SensorEndpointClusters));
+                              MATTER_ARRAY_SIZE(co2SensorEndpointClusters));
 }
 
 /***************************************************************************//**
@@ -321,7 +321,7 @@ bool MatterCO::begin()
 {
   return this->begin_internal(concentration_sensor_t::sensor_co,
                               coSensorEndpointClusters,
-                              ArraySize(coSensorEndpointClusters));
+                              MATTER_ARRAY_SIZE(coSensorEndpointClusters));
 }
 
 /***************************************************************************//**
@@ -363,7 +363,7 @@ bool MatterTVOC::begin()
 {
   return this->begin_internal(concentration_sensor_t::sensor_tvoc,
                               tvocSensorEndpointClusters,
-                              ArraySize(tvocSensorEndpointClusters));
+                              MATTER_ARRAY_SIZE(tvocSensorEndpointClusters));
 }
 
 /***************************************************************************//**

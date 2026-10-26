@@ -40,16 +40,16 @@ constexpr CommandId thermostatIncomingCommands[] = {
 
 // Thermostat cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(thermostatAttrs)
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::LocalTemperature::Id, INT16S, 2, 0),                                /* Local Temperature */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::ControlSequenceOfOperation::Id, INT8U, 1, 0),                       /* Control Sequence Of Operation */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::SystemMode::Id, INT8U, 1, ATTRIBUTE_MASK_WRITABLE),                 /* System Mode */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::OccupiedHeatingSetpoint::Id, INT16S, 2, ATTRIBUTE_MASK_WRITABLE),   /* Occupied Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMinHeatSetpointLimit::Id, INT16S, 2, 0),                         /* Absolute Minimum Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMaxHeatSetpointLimit::Id, INT16S, 2, 0),                         /* Absolute Maximum Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MinHeatSetpointLimit::Id, INT16S, 2, 0),                            /* Minimum Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MaxHeatSetpointLimit::Id, INT16S, 2, 0),                            /* Maximum Heating Setpoint */
-DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                    /* FeatureMap */
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                 /* ClusterRevision auto added by LIST_END */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::LocalTemperature::Id, INT16S, 2, 0),                                     /* Local Temperature */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::ControlSequenceOfOperation::Id, INT8U, 1, 0),                            /* Control Sequence Of Operation */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::SystemMode::Id, INT8U, 1, MATTER_ATTRIBUTE_FLAG_WRITABLE),               /* System Mode */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::OccupiedHeatingSetpoint::Id, INT16S, 2, MATTER_ATTRIBUTE_FLAG_WRITABLE), /* Occupied Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMinHeatSetpointLimit::Id, INT16S, 2, 0),                              /* Absolute Minimum Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMaxHeatSetpointLimit::Id, INT16S, 2, 0),                              /* Absolute Maximum Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MinHeatSetpointLimit::Id, INT16S, 2, 0),                                 /* Minimum Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MaxHeatSetpointLimit::Id, INT16S, 2, 0),                                 /* Maximum Heating Setpoint */
+DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::FeatureMap::Id, BITMAP32, 4, 0),                                         /* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();                                                                                      /* ClusterRevision auto added by LIST_END */
 
 // Thermostat cluster list
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(thermostatEndpointClusters)
@@ -108,11 +108,11 @@ bool MatterThermostat::begin()
     return false;
   }
   new_endpoint->cluster = thermostatEndpointClusters;
-  new_endpoint->clusterCount = ArraySize(thermostatEndpointClusters);
+  new_endpoint->clusterCount = MATTER_ARRAY_SIZE(thermostatEndpointClusters);
   new_endpoint->endpointSize = 0;
 
   // Create data version storage for the endpoint
-  size_t dataversion_size = ArraySize(thermostatEndpointClusters) * sizeof(DataVersion);
+  size_t dataversion_size = MATTER_ARRAY_SIZE(thermostatEndpointClusters) * sizeof(DataVersion);
   DataVersion* new_sensor_data_version = (DataVersion*)malloc(dataversion_size);
   if (new_sensor_data_version == nullptr) {
     delete(new_thermostat_device);
@@ -124,7 +124,7 @@ bool MatterThermostat::begin()
   int result = AddDeviceEndpoint(new_thermostat_device,
                                  new_endpoint,
                                  Span<const EmberAfDeviceType>(gThermostatDeviceTypes),
-                                 Span<DataVersion>(new_sensor_data_version, ArraySize(thermostatEndpointClusters)),
+                                 Span<DataVersion>(new_sensor_data_version, MATTER_ARRAY_SIZE(thermostatEndpointClusters)),
                                  1);
   if (result < 0) {
     delete(new_thermostat_device);
