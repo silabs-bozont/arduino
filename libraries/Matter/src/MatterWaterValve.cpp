@@ -191,6 +191,10 @@ bool MatterWaterValve::begin()
     return abort_begin();
   }
 
+  if (!this->init_identify()) {
+    return abort_begin();
+  }
+
   this->initialized = true;
   return true;
 }
@@ -216,6 +220,7 @@ void MatterWaterValve::end()
   this->device_endpoint = nullptr;
   this->endpoint_dataversion_storage = nullptr;
   this->base_matter_device = nullptr;
+  this->deinit_identify();
   this->initialized = false;
 }
 

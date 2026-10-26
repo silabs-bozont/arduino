@@ -127,14 +127,40 @@ void TriggerIdentifyEffectHandler(::Identify* identify)
 }
 
 ArduinoMatterAppliance::ArduinoMatterAppliance() :
-  base_matter_device(nullptr)
+  base_matter_device(nullptr),
+  identify_server(nullptr)
 {
   ;
 }
 
 ArduinoMatterAppliance::~ArduinoMatterAppliance()
 {
-  ;
+  this->deinit_identify();
+}
+
+bool ArduinoMatterAppliance::init_identify(chip::app::Clusters::Identify::IdentifyTypeEnum identify_type)
+{
+  if (this->identify_server != nullptr || this->base_matter_device == nullptr) {
+    return false;
+  }
+
+  ::Identify* server = new (std::nothrow)::Identify(this->base_matter_device->GetEndpointId(),
+                                                    IdentifyStartHandler,
+                                                    IdentifyStopHandler,
+                                                    identify_type,
+                                                    TriggerIdentifyEffectHandler);
+  if (server == nullptr) {
+    return false;
+  }
+
+  this->identify_server = server;
+  return true;
+}
+
+void ArduinoMatterAppliance::deinit_identify()
+{
+  delete this->identify_server;
+  this->identify_server = nullptr;
 }
 
 bool ArduinoMatterAppliance::get_identify_in_progress()

@@ -166,7 +166,6 @@ MatterLightbulb::MatterLightbulb() :
   lightbulb_device(nullptr),
   device_endpoint(nullptr),
   endpoint_dataversion_storage(nullptr),
-  identify_server(nullptr),
   initialized(false)
 {
   ;
@@ -294,13 +293,7 @@ bool MatterLightbulb::begin_internal(bulb_types_e bulb_type, EmberAfCluster* end
     return false;
   }
 
-  // Create a new Identify cluster server
-  ::Identify* identify_server = new (std::nothrow)::Identify(new_lightbulb_device->GetEndpointId(),
-                                                             IdentifyStartHandler,
-                                                             IdentifyStopHandler,
-                                                             Identify::IdentifyTypeEnum::kLightOutput,
-                                                             TriggerIdentifyEffectHandler);
-  if (identify_server == nullptr) {
+  if (!this->init_identify(Identify::IdentifyTypeEnum::kLightOutput)) {
     (void)RemoveDeviceEndpoint(new_lightbulb_device);
     delete(new_lightbulb_device);
     free(new_endpoint);
@@ -321,7 +314,6 @@ bool MatterLightbulb::begin_internal(bulb_types_e bulb_type, EmberAfCluster* end
   this->lightbulb_device = new_lightbulb_device;
   this->device_endpoint = new_endpoint;
   this->endpoint_dataversion_storage = new_bulb_data_version;
-  this->identify_server = identify_server;
   this->initialized = true;
   return true;
 }
@@ -338,7 +330,7 @@ void MatterLightbulb::end()
   free(this->device_endpoint);
   free(this->endpoint_dataversion_storage);
   delete(this->lightbulb_device);
-  delete(this->identify_server);
+  this->deinit_identify();
   this->initialized = false;
 }
 

@@ -121,6 +121,14 @@ bool MatterRain::begin()
     return false;
   }
 
+  if (!this->init_identify()) {
+    (void)RemoveDeviceEndpoint(sensor);
+    delete(sensor);
+    free(new_endpoint);
+    free(new_sensor_data_version);
+    return false;
+  }
+
   this->sensor_device = sensor;
   this->device_endpoint = new_endpoint;
   this->endpoint_dataversion_storage = new_sensor_data_version;
@@ -140,6 +148,7 @@ void MatterRain::end()
   free(this->device_endpoint);
   free(this->endpoint_dataversion_storage);
   delete(this->sensor_device);
+  this->deinit_identify();
   this->initialized = false;
 }
 

@@ -64,7 +64,6 @@ protected:
   DeviceLightbulb* lightbulb_device;
   EmberAfEndpointType* device_endpoint;
   DataVersion* endpoint_dataversion_storage;
-  ::Identify* identify_server;
   bool initialized;
 };
 

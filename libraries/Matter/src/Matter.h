@@ -67,7 +67,11 @@ public:
   bool is_online();
 
 protected:
+  bool init_identify(chip::app::Clusters::Identify::IdentifyTypeEnum identify_type = chip::app::Clusters::Identify::IdentifyTypeEnum::kVisibleIndicator);
+  void deinit_identify();
+
   Device* base_matter_device;
+  ::Identify* identify_server;
 };
 
 class MatterClass {
