@@ -41,7 +41,9 @@
 // If the model profiler is not used and TF-Lite Micro logs are disabled,
 // then strip all error strings from TF-Lite Micro. This reduces code space.
 #if !defined(SL_ML_ENABLE_SILABS_PROFILER) && TFLITE_MICRO_LOG_LEVEL >= 4
+#ifndef TF_LITE_STRIP_ERROR_STRINGS
 #define TF_LITE_STRIP_ERROR_STRINGS
+#endif
 #endif
 
 

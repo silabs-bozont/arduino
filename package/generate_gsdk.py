@@ -168,6 +168,8 @@ def generate_gsdk(current_platform_config):
         patch_ble_arduino_stack_init()
     if is_zigbee:
         patch_zigbee_includes()
+    if ai_capable:
+        patch_tflite_strip_error_strings_redefine()
     if prebuild:
         patch_makefiles()
     if is_matter:
@@ -746,6 +748,49 @@ def patch_makefiles():
             linecnt += 1
 
     print("Patching finished")
+
+
+def patch_tflite_strip_error_strings_redefine():
+    """
+    boards.txt and SDK builds already pass -DTF_LITE_STRIP_ERROR_STRINGS=1
+    AIML's tflite_micro_model_config.h also #defines it when logs are off, which
+    triggers redefine warnings. Patch in a guard for the header define.
+    """
+    candidates = [
+        os.path.join(slc_output_dir, "config", "tflite_micro_model_config.h"),
+        os.path.join(slc_output_dir, "include", "tflite_micro_model_config.h"),
+    ]
+    old = (
+        "#if !defined(SL_ML_ENABLE_SILABS_PROFILER) && TFLITE_MICRO_LOG_LEVEL >= 4\n"
+        "#define TF_LITE_STRIP_ERROR_STRINGS\n"
+        "#endif"
+    )
+    new = (
+        "#if !defined(SL_ML_ENABLE_SILABS_PROFILER) && TFLITE_MICRO_LOG_LEVEL >= 4\n"
+        "#ifndef TF_LITE_STRIP_ERROR_STRINGS\n"
+        "#define TF_LITE_STRIP_ERROR_STRINGS\n"
+        "#endif\n"
+        "#endif"
+    )
+    patched = False
+    for path in candidates:
+        if not os.path.exists(path):
+            continue
+        with open(path, "r") as f:
+            content = f.read()
+        if new in content or "ifndef TF_LITE_STRIP_ERROR_STRINGS" in content:
+            print(f"tflite_micro_model_config.h already guards TF_LITE_STRIP_ERROR_STRINGS ({path})")
+            patched = True
+            continue
+        if old not in content:
+            print(f"Warning: unexpected TF_LITE_STRIP_ERROR_STRINGS block in {path}")
+            continue
+        with open(path, "w") as f:
+            f.write(content.replace(old, new, 1))
+        print(f"Patched TF_LITE_STRIP_ERROR_STRINGS guard in {path}")
+        patched = True
+    if not patched:
+        print("Warning: tflite_micro_model_config.h not found for TF_LITE_STRIP_ERROR_STRINGS patch")
 
 
 def patch_matter_max_dynamic_endpoint_count():

@@ -46,7 +46,7 @@ sl_status_t SilabsTFLiteMicroClass::begin(size_t arena_size)
   if (this->initialized) {
     return SL_STATUS_OK;
   }
-  if (sl_tflite_model_array == nullptr || sl_tflite_model_len == 0 || arena_size == 0) {
+  if (sl_tflite_model_len == 0 || arena_size == 0) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
