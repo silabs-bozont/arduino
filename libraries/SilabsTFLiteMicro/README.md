@@ -2,6 +2,8 @@
 
 This library enables the creation of applications that use TensorFlow Lite for Microcontrollers on Arduino Silabs boards. TensorFlow Lite for Microcontrollers is a framework that provides tools for running neural network inference on microcontrollers.
 
+It wraps the Silicon Labs AI/ML 3 SDK's `sl_ml_model_*` API (`sl_ml_model_init` / `sl_ml_model_run` / `sl_ml_model_deinit`) and uses hardware-accelerated kernels from the prebuilt variant archive when available.
+
 ## Hardware-accelerated Kernel
 Silicon Labs integrates TensorFlow Lite for Microcontrollers with the Gecko SDK, providing the full framework and automatically selecting the most optimal kernel implementation for the target board.
 
@@ -49,9 +51,9 @@ The generated files will be located in the specified output directory and includ
 - `sl_tflite_micro_opcode_resolver.h`
 
 ### Copying the Generated Files into the Library
-1. Copy `sl_tflite_micro_model.c` to your sketch folder.
-2. Ignore `sl_tflite_micro_model.h`.
-3. Ignore `sl_tflite_micro_opcode_resolver.h`.
+1. Copy `sl_tflite_micro_model.c` to your sketch folder
+2. Ignore `sl_tflite_micro_model.h` (the library provides a matching declaration)
+3. Ignore `sl_tflite_micro_opcode_resolver.h`
 
 ## Usage
 
@@ -62,20 +64,19 @@ To use the library in your project, follow these steps:
     #include "SilabsTFLiteMicro.h"
     ```
 
-2. Initialize the Silabs TFLite Micro Library
+2. Initialize the model (loads the sketch flatbuffer via AIML `sl_ml_model_init`)
     ```c++
-    sl_tflite_micro_init();
+    if (SilabsTFLiteMicro.begin() != SL_STATUS_OK) {
+      // handle error
+    }
     ```
 
 3. Obtain pointers to the model's tensors
     ```c++
-    static TfLiteTensor* model_input;
-    static tflite::MicroInterpreter* interpreter;
-    static TfLiteTensor* model_output;
-
-    model_input = sl_tflite_micro_get_input_tensor();
-    interpreter = sl_tflite_micro_get_interpreter();
-    model_output = sl_tflite_micro_get_output_tensor();
+    TfLiteTensor* model_input = SilabsTFLiteMicro.input();
+    TfLiteTensor* model_output = SilabsTFLiteMicro.output();
+    // Or use the AIML handle directly:
+    // sl_ml_model_handle_t* handle = SilabsTFLiteMicro.handle();
     ```
 
 4. Feed input data to the model
@@ -84,7 +85,9 @@ To use the library in your project, follow these steps:
 
 5. Run inference
     ```c++
-    TfLiteStatus invoke_status = interpreter->Invoke();
+    if (SilabsTFLiteMicro.run() != SL_STATUS_OK) {
+      // handle error
+    }
     ```
 
 6. Read the result

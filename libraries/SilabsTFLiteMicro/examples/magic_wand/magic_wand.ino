@@ -45,9 +45,7 @@ TwoWire& IMU_Wire = Wire;
 #endif
 
 static TfLiteTensor* model_input;
-static tflite::MicroInterpreter* interpreter;
 static int input_length;
-static TfLiteTensor *output;
 
 typedef struct model_output {
   float gesture[GESTURE_COUNT];
@@ -68,12 +66,16 @@ void setup()
   Serial.println("init...");
 
   // Init TFLite model
-  sl_tflite_micro_init();
+  if (SilabsTFLiteMicro.begin() != SL_STATUS_OK) {
+    Serial.println("error: failed to load model");
+    while (1) ;
+  }
 
-  // Obtain pointer to the model's input tensor
-  model_input = sl_tflite_micro_get_input_tensor();
-  interpreter = sl_tflite_micro_get_interpreter();
-  output = sl_tflite_micro_get_output_tensor();
+  model_input = SilabsTFLiteMicro.input();
+  if (model_input == nullptr) {
+    Serial.println("error: missing input tensor");
+    while (1) ;
+  }
 
   // Print model input parameters
   Serial.print("model_input->dims->size = ");
@@ -144,17 +146,18 @@ void loop()
 
   // Run inference
   unsigned long start_time = micros();  // Start time
-  TfLiteStatus invoke_status = interpreter->Invoke();
+  sl_status_t invoke_status = SilabsTFLiteMicro.run();
   unsigned long end_time = micros();    // End time
 
-  unsigned long elapsed_time = end_time - start_time;  // Time elapsed in ms
-  Serial.print("Time taken by Invoke(): ");
+  unsigned long elapsed_time = end_time - start_time;  // Time elapsed in us
+  Serial.print("Time taken by run(): ");
   Serial.print(elapsed_time);
   Serial.println(" us");
 
-  if (invoke_status == kTfLiteOk) {
+  TfLiteTensor* model_output = SilabsTFLiteMicro.output();
+  if (invoke_status == SL_STATUS_OK && model_output != nullptr) {
     // Analyze the results to obtain a prediction
-    const model_output_t *output = (const model_output_t *)interpreter->output(0)->data.f;
+    const model_output_t *output = (const model_output_t *)model_output->data.f;
 
     // Print inference results (Gesture, probability)
     int max_i = 0;
@@ -167,7 +170,7 @@ void loop()
         case NO_GESTURE: Serial.print("No gesture"); break;
       }
       Serial.print(": ");
-      Serial.print(interpreter->output(0)->data.f[i]);
+      Serial.print(model_output->data.f[i]);
       Serial.println();
       if (output->gesture[i] > max_val) {
         max_val = output->gesture[i];

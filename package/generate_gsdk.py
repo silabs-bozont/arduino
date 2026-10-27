@@ -1325,6 +1325,31 @@ def matter_should_copy_flat_header(src_path_norm, dest_path):
     return "/freertos/kernel/include/" in src_path_norm
 
 
+def copy_aiml_compiled_model_headers(header_output_dir):
+    """
+    AIML 3.x model API headers live under compiled_model/ as .hpp (and some .h)
+    Flat include copy only walks .h by default — also install these so
+    sl_ml_tflite_micro_model.h can resolve tflite hpp headers
+    """
+    candidates = [
+        os.path.join(slc_output_dir, "aiml_" + aiml_extension_version, "compiled_model"),
+        os.path.join(aiml_extension_dir or "", "compiled_model"),
+    ]
+    compiled_model_dir = next((p for p in candidates if p and os.path.isdir(p)), None)
+    if compiled_model_dir is None:
+        print("Warning: AIML compiled_model/ not found - TfliteMicroModel headers may be missing")
+        return
+    os.makedirs(header_output_dir, exist_ok=True)
+    for name in os.listdir(compiled_model_dir):
+        if not (name.endswith(".hpp") or name.endswith(".h")):
+            continue
+        src = os.path.join(compiled_model_dir, name)
+        if not os.path.isfile(src):
+            continue
+        shutil.copy(src, os.path.join(header_output_dir, name))
+        print(f"Copying AIML compiled_model header '{name}'")
+
+
 def copy_extra_sdk_headers(header_output_dir):
     """
     Copy headers that Arduino needs but SLC -cpsdk may not place in the project tree
@@ -1590,6 +1615,7 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
                 print("Could not find tflite tensorflow headers under AIML extension")
                 exit(-1)
             shutil.copytree(tflite_src, header_output_dir + "tensorflow")
+            copy_aiml_compiled_model_headers(header_output_dir)
 
         # Headers referenced by boards.txt (-imacros) but not always copied by -cpsdk
         copy_extra_sdk_headers(header_output_dir)
@@ -1642,6 +1668,7 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
             tflm_src = os.path.join(aimlsdk_folder_path, "third_party/tflite-micro/tensorflow")
             if os.path.exists(tflm_src):
                 shutil.copytree(tflm_src, aiml_output_path + "third_party/tflite-micro/tensorflow")
+            copy_aiml_compiled_model_headers(os.path.join(aiml_output_path, "compiled_model"))
 
         # SiSDK 2026.x: sl_gcc_preinclude.h lives under platform_core and is not always
         # pulled into the -cpsdk tree; Arduino -imacros needs it on the include path.
@@ -1763,6 +1790,7 @@ def copy_output_files_prebuild(output_dir, is_matter, is_ble_arduino, is_noradio
                 print("Could not find tflite tensorflow headers under AIML extension")
                 exit(-1)
             shutil.copytree(tflite_src, header_output_dir + "tensorflow")
+            copy_aiml_compiled_model_headers(header_output_dir)
             # Remove 'cc' files
             for (root, dirs, file) in os.walk(header_output_dir):
                 for f in file:
