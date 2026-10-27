@@ -246,21 +246,7 @@
  * Human readable string identifying version of the product assigned by the device vendor.
  */
 #ifndef CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION_STRING
-/* Arduino Matter library runtime-overridable properties */
-#include <stdint.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern char arduino_matter_vendor_name[33];
-extern char arduino_matter_product_name[33];
-extern char arduino_matter_hardware_version_string[33];
-extern uint16_t arduino_matter_hardware_version;
-extern char arduino_matter_software_version_string[64];
-extern uint32_t arduino_matter_software_version;
-#ifdef __cplusplus
-}
-#endif
-#define CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION_STRING arduino_matter_hardware_version_string
+#define CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION_STRING "TEST_VERSION"
 #endif
 
 /**
@@ -314,7 +300,7 @@ extern uint32_t arduino_matter_software_version;
  * is found in Chip NV storage.
  */
 #ifndef CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER
-#define CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER "42069"
+#define CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER "TEST_SN"
 #endif
 
 /**

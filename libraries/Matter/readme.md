@@ -140,6 +140,8 @@ The class has the following methods available:
 ```void begin();```
 Starts Matter and the dynamic endpoint handler on the device. Must be called before calling ```begin()``` on any appliance class.
 
+Root vendor/product/hardware/serial are served by an Arduino ```DeviceInstanceInfoProvider``` wrapper: factory NVM wins when present, otherwise the ```Matter.set_*``` buffers (filled in ```Matter.begin()``` for serial with the chip unique ID if unset). Software version still uses a ConfigurationManager config remap.
+
 ```void set_vendor_name(const char* vendor_name);```
 Sets the manufacturer/vendor name exposed on the root Basic Information cluster. Call this in ```setup()``` before commissioning. Has no effect if the device was factory-provisioned with a vendor name in NVM (provisioned values take precedence). Maximum length is 32 characters.
 

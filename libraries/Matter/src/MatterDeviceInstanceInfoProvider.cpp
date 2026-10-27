@@ -28,6 +28,7 @@
 #include <silabs_stubs.h>
 #include <platform/CHIPDeviceError.h>
 #include <platform/PlatformManager.h>
+#include <platform/silabs/SilabsConfig.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/CHIPMemString.h>
 #include <app/util/af-types.h>
@@ -37,12 +38,14 @@
 
 using namespace chip;
 using namespace chip::DeviceLayer;
+using SilabsConfig = chip::DeviceLayer::Internal::SilabsConfig;
 
 namespace {
 
 /**
- * Delegates to the Silabs provision DeviceInstanceInfoProvider, with an
- * Arduino-owned fallback for when factory NVM has no data.
+ * Delegates to the Silabs provision DeviceInstanceInfoProvider with Arduino-owned
+ * NVM-then-buffer fallbacks for root BasicInformation strings/versions that sketches
+ * set via Matter.set_* (factory NVM still wins when present)
  */
 class ArduinoMatterDeviceInstanceInfoProvider : public DeviceInstanceInfoProvider
 {
@@ -54,7 +57,7 @@ public:
 
   CHIP_ERROR GetVendorName(char * buf, size_t bufSize) override
   {
-    return mBase->GetVendorName(buf, bufSize);
+    return GetNvmStringOrFallback(SilabsConfig::kConfigKey_VendorName, buf, bufSize, arduino_matter_vendor_name);
   }
 
   CHIP_ERROR GetVendorId(uint16_t & vendorId) override
@@ -64,7 +67,7 @@ public:
 
   CHIP_ERROR GetProductName(char * buf, size_t bufSize) override
   {
-    return mBase->GetProductName(buf, bufSize);
+    return GetNvmStringOrFallback(SilabsConfig::kConfigKey_ProductName, buf, bufSize, arduino_matter_product_name);
   }
 
   CHIP_ERROR GetProductId(uint16_t & productId) override
@@ -89,14 +92,7 @@ public:
 
   CHIP_ERROR GetSerialNumber(char * buf, size_t bufSize) override
   {
-    CHIP_ERROR err = mBase->GetSerialNumber(buf, bufSize);
-    if (err == CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND) {
-      VerifyOrReturnError(buf != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
-      VerifyOrReturnError(bufSize > strlen(arduino_matter_serial_number), CHIP_ERROR_BUFFER_TOO_SMALL);
-      Platform::CopyString(buf, bufSize, arduino_matter_serial_number);
-      return CHIP_NO_ERROR;
-    }
-    return err;
+    return GetNvmStringOrFallback(SilabsConfig::kConfigKey_SerialNum, buf, bufSize, arduino_matter_serial_number);
   }
 
   CHIP_ERROR GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day) override
@@ -111,12 +107,17 @@ public:
 
   CHIP_ERROR GetHardwareVersion(uint16_t & hardwareVersion) override
   {
-    return mBase->GetHardwareVersion(hardwareVersion);
+    CHIP_ERROR err = SilabsConfig::ReadConfigValue(SilabsConfig::kConfigKey_HardwareVersion, hardwareVersion);
+    if (err == CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND) {
+      hardwareVersion = arduino_matter_hardware_version;
+      return CHIP_NO_ERROR;
+    }
+    return err;
   }
 
   CHIP_ERROR GetHardwareVersionString(char * buf, size_t bufSize) override
   {
-    return mBase->GetHardwareVersionString(buf, bufSize);
+    return GetNvmStringOrFallback(SilabsConfig::kConfigKey_HardwareVersionString, buf, bufSize, arduino_matter_hardware_version_string);
   }
 
   CHIP_ERROR GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan) override
@@ -156,6 +157,19 @@ public:
 
 private:
   DeviceInstanceInfoProvider * mBase;
+
+  CHIP_ERROR GetNvmStringOrFallback(SilabsConfig::Key key, char * buf, size_t bufSize, const char * fallback) {
+    size_t len = 0;
+    CHIP_ERROR err = SilabsConfig::ReadConfigValueStr(key, buf, bufSize, len);
+    if (err == CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND) {
+      VerifyOrReturnError(buf != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
+      VerifyOrReturnError(fallback != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
+      VerifyOrReturnError(bufSize > strlen(fallback), CHIP_ERROR_BUFFER_TOO_SMALL);
+      Platform::CopyString(buf, bufSize, fallback);
+      return CHIP_NO_ERROR;
+    }
+    return err;
+  }
 };
 
 ArduinoMatterDeviceInstanceInfoProvider * gArduinoProvider = nullptr;

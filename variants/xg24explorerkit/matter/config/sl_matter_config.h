@@ -71,10 +71,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern char arduino_matter_vendor_name[33];
-extern char arduino_matter_product_name[33];
-extern char arduino_matter_hardware_version_string[33];
-extern uint16_t arduino_matter_hardware_version;
 extern char arduino_matter_software_version_string[64];
 extern uint32_t arduino_matter_software_version;
 #ifdef __cplusplus
@@ -88,7 +84,7 @@ extern uint32_t arduino_matter_software_version;
 
 // <o CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION> Device hardware version
 // <i> Default: 1
-#define CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION arduino_matter_hardware_version
+#define CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION 1
 
 // <q SL_MATTER_CLI_ARG_PARSER> Enable CLI Argument Parser
 // <i> Default: 1
