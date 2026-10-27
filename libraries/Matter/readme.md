@@ -146,6 +146,9 @@ Sets the manufacturer/vendor name exposed on the root Basic Information cluster.
 ```void set_product_name(const char* product_name);```
 Sets the product/model name exposed on the root Basic Information cluster. Call this in ```setup()``` before commissioning. Has no effect if the device was factory-provisioned with a product name in NVM (provisioned values take precedence). Maximum length is 32 characters.
 
+```void set_serial_number(const char* serial_number);```
+Sets the serial number exposed on the root Basic Information cluster (what Home Assistant / matter.js show as the device Serial). Call this in ```setup()``` before ```Matter.begin()``` to override. If unset, ```Matter.begin()``` defaults to the chip unique ID (`0x` + 16 hex digits from ```getDeviceUniqueIdStr()```). Has no effect if the device was factory-provisioned with a serial number in NVM (provisioned values take precedence). Maximum length is 32 characters. Bridged appliances use ```appliance.set_serial_number()``` separately.
+
 ```void set_hardware_version(uint16_t hardware_version);```
 Sets the hardware version number exposed on the root Basic Information cluster. Call this in ```setup()``` before commissioning. Has no effect if the device was factory-provisioned with a hardware version in NVM.
 
@@ -195,7 +198,7 @@ When this function returns *true* it means that your appliance is able to commun
 
 All appliance classes have the following methods for setting it's custom properties.
 These apply to the appliance's bridged endpoint (`BridgedDeviceBasicInformation`), not the root node.
-Use ```Matter.set_vendor_name()``` / ```Matter.set_product_name()``` to configure the root Basic Information cluster.
+Use ```Matter.set_vendor_name()``` / ```Matter.set_product_name()``` / ```Matter.set_serial_number()``` to configure the root Basic Information cluster.
 
 ```void set_device_name(const char* device_name);```
 Sets the name of the device.
@@ -207,7 +210,7 @@ Sets the manufacturer/vendor name of the bridged endpoint.
 Sets the model/product name of the bridged endpoint.
 
 ```void set_serial_number(const char* serial_number);```
-Sets the serial number of the device.
+Sets the serial number of the bridged endpoint.
 
 ## class MatterAirPurifier
 

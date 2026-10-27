@@ -38,6 +38,8 @@ static constexpr size_t kArduinoMatterSoftwareVersionStringCapacity = 64;
 extern "C" {
 extern char arduino_matter_vendor_name[kArduinoMatterDeviceNameCapacity];
 extern char arduino_matter_product_name[kArduinoMatterDeviceNameCapacity];
+extern char arduino_matter_serial_number[kArduinoMatterDeviceNameCapacity];
+extern bool arduino_matter_serial_number_user_set;
 extern char arduino_matter_hardware_version_string[kArduinoMatterHardwareVersionStringCapacity];
 extern uint16_t arduino_matter_hardware_version;
 extern char arduino_matter_software_version_string[kArduinoMatterSoftwareVersionStringCapacity];

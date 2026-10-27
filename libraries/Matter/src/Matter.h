@@ -86,6 +86,7 @@ public:
   void decommission();
   void set_vendor_name(const char* vendor_name);
   void set_product_name(const char* product_name);
+  void set_serial_number(const char* serial_number);
   void set_hardware_version(uint16_t hardware_version);
   void set_hardware_version_string(const char* hardware_version);
   void set_software_version(uint32_t software_version);

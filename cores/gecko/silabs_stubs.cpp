@@ -44,6 +44,8 @@ char arduino_matter_vendor_name[kArduinoMatterDeviceNameCapacity] = "Arduino";
 char arduino_matter_vendor_name[kArduinoMatterDeviceNameCapacity] = "Silicon Labs";
 #endif
 char arduino_matter_product_name[kArduinoMatterDeviceNameCapacity] = "Matter device";
+char arduino_matter_serial_number[kArduinoMatterDeviceNameCapacity] = "";
+bool arduino_matter_serial_number_user_set = false;
 char arduino_matter_hardware_version_string[kArduinoMatterHardwareVersionStringCapacity] = "v1.0";
 uint16_t arduino_matter_hardware_version = 1;
 char arduino_matter_software_version_string[kArduinoMatterSoftwareVersionStringCapacity] = "v1.0";

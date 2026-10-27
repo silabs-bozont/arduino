@@ -25,6 +25,7 @@
  */
 
 #include "Matter.h"
+#include "MatterDeviceInstanceInfoProvider.h"
 #include <silabs_stubs.h>
 #include <util/endpoint-config-api.h>
 #include <zap-generated/endpoint_config.h>
@@ -217,6 +218,14 @@ void ArduinoMatterAppliance::set_device_change_callback(void (*matter_device_cha
 void MatterClass::begin()
 {
   InitDynamicEndpointHandler();
+
+  if (!arduino_matter_serial_number_user_set) {
+    this->set_matter_device_property_string(
+      arduino_matter_serial_number,
+      kArduinoMatterDeviceNameCapacity,
+      getDeviceUniqueIdStr().c_str());
+  }
+  InstallArduinoMatterDeviceInstanceInfoProvider();
 }
 
 void MatterClass::set_vendor_name(const char* vendor_name)
@@ -233,6 +242,18 @@ void MatterClass::set_product_name(const char* product_name)
     arduino_matter_product_name,
     kArduinoMatterDeviceNameCapacity,
     product_name);
+}
+
+void MatterClass::set_serial_number(const char* serial_number)
+{
+  if (!serial_number) {
+    return;
+  }
+  this->set_matter_device_property_string(
+    arduino_matter_serial_number,
+    kArduinoMatterDeviceNameCapacity,
+    serial_number);
+  arduino_matter_serial_number_user_set = true;
 }
 
 void MatterClass::set_hardware_version(uint16_t hardware_version)

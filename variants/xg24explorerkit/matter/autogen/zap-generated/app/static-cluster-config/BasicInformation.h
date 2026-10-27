@@ -46,6 +46,7 @@ inline constexpr AttributeId kEndpoint0EnabledAttributes[] = {
     Attributes::HardwareVersionString::Id,
     Attributes::SoftwareVersion::Id,
     Attributes::SoftwareVersionString::Id,
+    Attributes::SerialNumber::Id,
     Attributes::Reachable::Id,
     Attributes::UniqueID::Id,
     Attributes::CapabilityMinima::Id,
@@ -94,6 +95,8 @@ inline constexpr bool IsAttributeEnabledOnSomeEndpoint(AttributeId attributeId) 
     case Attributes::SoftwareVersion::Id:
       return true;
     case Attributes::SoftwareVersionString::Id:
+      return true;
+    case Attributes::SerialNumber::Id:
       return true;
     case Attributes::Reachable::Id:
       return true;

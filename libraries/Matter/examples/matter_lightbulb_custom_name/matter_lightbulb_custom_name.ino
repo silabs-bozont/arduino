@@ -5,11 +5,12 @@
    product name and serial number can be set to customize Matter devices.
 
    There are two identity layers:
-   - Root Basic Information (the Matter device itself): Matter.set_vendor_name() / Matter.set_product_name()
+   - Root Basic Information (the Matter device itself): Matter.set_vendor_name() /
+     Matter.set_product_name() / Matter.set_serial_number()
    - Bridged endpoints (the lightbulb appliance): matter_bulb.set_* APIs
 
-   Root names are used when NVM has not been factory-provisioned; provisioned NVM values
-   take precedence over Matter.set_*().
+   Root names/serial are used when NVM has not been factory-provisioned; provisioned NVM
+   values take precedence over Matter.set_*().
 
    NOTE: some Matter ecosystems may ignore or choose not to display the values set here.
 
@@ -41,6 +42,7 @@ void setup()
   Matter.set_hardware_version_string("v9.999");
   Matter.set_software_version(1957);
   Matter.set_software_version_string("1.9.57");
+  Matter.set_serial_number("A-9999-1957");
 
   Matter.begin();
   matter_bulb.begin();
@@ -52,8 +54,7 @@ void setup()
   matter_bulb.set_vendor_name("Aperture Science");
   // Product/model name - cannot be changed by users
   matter_bulb.set_product_name("Weighted Storage Bulb");
-  // Serial number - cannot be changed by users
-  // Set the serial number to the chip's unique ID
+  // Bulb serial number serial - cannot be changed by users
   matter_bulb.set_serial_number(getDeviceUniqueIdStr().c_str());
 
   pinMode(LED_BUILTIN, OUTPUT);
