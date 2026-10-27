@@ -26,7 +26,6 @@
 
 #include "SilabsMicrophoneAnalog.h"
 #include "sl_status.h"
-#include "dmadrv.h"
 #include "adc.h"
 
 /***************************************************************************//**
