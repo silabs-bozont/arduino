@@ -2,7 +2,7 @@
 ###########################
 
 name=Silicon Labs
-version=5.0.0
+version=6.0.0
 
 # Compiler variables
 ####################
@@ -12,7 +12,7 @@ compiler.warning_flags.none=-w
 compiler.warning_flags.default=
 compiler.warning_flags.more=-Wall
 compiler.warning_flags.all=-Wall -Wextra
-compiler.path={runtime.tools.gcc-arm-none-eabi-12.2.rel1.path}/bin/
+compiler.path={runtime.tools.gcc-arm-none-eabi-14.2.rel1.path}/bin/
 compiler.c.cmd=arm-none-eabi-gcc
 compiler.c.flags={build.c_flags}
 compiler.c.elf.cmd=arm-none-eabi-gcc
@@ -99,13 +99,13 @@ recipe.output.save_file={build.project_name}.{build.variant}.hex
 
 # Debugger configuration
 # ----------------------------------------
-tools.gdb.path={runtime.tools.arm-none-eabi-gcc-12.2.rel1.path}/bin/
+tools.gdb.path={runtime.tools.arm-none-eabi-gcc-14.2.rel1.path}/bin/
 tools.gdb.cmd=arm-none-eabi-gdb
 tools.gdb.cmd.windows=arm-none-eabi-gdb.exe
 
 debug.executable={build.path}/{build.project_name}.elf
 debug.toolchain=gcc
-debug.toolchain.path={runtime.tools.gcc-arm-none-eabi-12.2.rel1.path}/bin/
+debug.toolchain.path={runtime.tools.gcc-arm-none-eabi-14.2.rel1.path}/bin/
 debug.toolchain.prefix=arm-none-eabi
 
 debug.server.openocd.path={runtime.tools.openocd-0.12.0-arduino1-static.path}/bin/openocd
@@ -144,21 +144,21 @@ tools.simplicitycommander.bootloader.pattern="{path}/{cmd}" flash {runtime.platf
 # OpenOCD (flashing/erasing)
 ##########################
 
-tools.openocd.path={runtime.tools.openocd-0.12.0-arduino1-static.path}
+tools.openocd.path={runtime.tools.openocd-0.12.0-zephyr-1.0.1-static.path}
 tools.openocd.cmd={path}/bin/openocd
 
 tools.openocd.upload.params.verbose=-d2
 tools.openocd.upload.params.quiet=-d0
-tools.openocd.upload.pattern="{cmd}" {upload.verbose} -s "{path}/share/openocd/scripts/" -f interface/cmsis-dap.cfg -f target/efm32s2_g23.cfg -c "init; reset_config srst_nogate; reset halt; program {{build.path}/{build.project_name}.hex}; reset; exit"
+tools.openocd.upload.pattern="{cmd}" {upload.verbose} -s "{path}/share/openocd/scripts/" -f interface/cmsis-dap.cfg -f target/silabs/xg24.cfg -c "init; reset_config srst_nogate; reset halt; program {{build.path}/{build.project_name}.hex}; reset; exit"
 
 tools.openocd.program.params.verbose=-d2
 tools.openocd.program.params.quiet=-d0
-tools.openocd.program.pattern="{cmd}" {program.verbose} -s "{path}/share/openocd/scripts/" -f interface/cmsis-dap.cfg -f target/efm32s2_g23.cfg -c "init; reset_config srst_nogate; reset halt; program {{build.path}/{build.project_name}.hex}; reset; exit"
+tools.openocd.program.pattern="{cmd}" {program.verbose} -s "{path}/share/openocd/scripts/" -f interface/cmsis-dap.cfg -f target/silabs/xg24.cfg -c "init; reset_config srst_nogate; reset halt; program {{build.path}/{build.project_name}.hex}; reset; exit"
 
 tools.openocd.erase.params.verbose=-d2
 tools.openocd.erase.params.quiet=-d0
-tools.openocd.erase.pattern="{cmd}" {erase.verbose} -s "{path}/share/openocd/scripts/" -f interface/cmsis-dap.cfg -f target/efm32s2_g23.cfg -c "init; reset_config srst_nogate; reset halt; flash erase_sector 0 1 last; exit"
+tools.openocd.erase.pattern="{cmd}" {erase.verbose} -s "{path}/share/openocd/scripts/" -f interface/cmsis-dap.cfg -f target/silabs/xg24.cfg -c "init; reset_config srst_nogate; reset halt; flash erase_sector 0 1 last; exit"
 
 tools.openocd.bootloader.params.verbose=-d2
 tools.openocd.bootloader.params.quiet=-d0
-tools.openocd.bootloader.pattern="{cmd}" {bootloader.verbose} -s "{path}/share/openocd/scripts/" -f interface/cmsis-dap.cfg -f target/efm32s2_g23.cfg -c "init; reset_config srst_nogate; reset halt; program {{runtime.platform.path}/bootloaders/{bootloader.file}}; reset; exit"
+tools.openocd.bootloader.pattern="{cmd}" {bootloader.verbose} -s "{path}/share/openocd/scripts/" -f interface/cmsis-dap.cfg -f target/silabs/xg24.cfg -c "init; reset_config srst_nogate; reset halt; program {{runtime.platform.path}/bootloaders/{bootloader.file}}; reset; exit"

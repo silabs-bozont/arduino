@@ -378,7 +378,7 @@
                 {
                     "category": "Silicon Labs",
                     "name": "Silicon Labs",
-                    "url": "!!local-install-url/silabs_arduino_core-5.0.0.zst",
+                    "url": "https://github.com/SiliconLabsSoftware/arduino/releases/download/5.0.0/silabs_arduino_core-5.0.0.zst",
                     "version": "5.0.0",
                     "architecture": "silabs",
                     "archiveFileName": "silabs_arduino_core-5.0.0.zst",
@@ -428,8 +428,64 @@
                     "help": {
                         "online": "https://github.com/SiliconLabs/arduino"
                     },
-                    "size": 370773700,
-                    "checksum": "SHA-256:138248fe50e0066144fd660c258479abfd0518b048943dfbd9920f85c26f3aca"
+                    "size": 649429391,
+                    "checksum": "SHA-256:df7cac7b2958939af45606dda80257cdac5af71b7e47903b8e8c9b5761444b22"
+                },
+                {
+                    "category": "Silicon Labs",
+                    "name": "Silicon Labs",
+                    "url": "!!local-install-url/silabs_arduino_core-6.0.0.zst",
+                    "version": "6.0.0",
+                    "architecture": "silabs",
+                    "archiveFileName": "silabs_arduino_core-6.0.0.zst",
+                    "boards": [
+                        {
+                            "name": "Arduino Nano Matter"
+                        },
+                        {
+                            "name": "SparkFun Thing Plus Matter"
+                        },
+                        {
+                            "name": "xG24 Explorer Kit"
+                        },
+                        {
+                            "name": "xG24 Dev Kit"
+                        },
+                        {
+                            "name": "xG27 Dev Kit"
+                        },
+                        {
+                            "name": "BGM220 Explorer Kit"
+                        },
+                        {
+                            "name": "Ezurio Lyra 24P 20dBm Dev Kit"
+                        },
+                        {
+                            "name": "Seeed Studio XIAO MG24 (Sense)"
+                        }
+                    ],
+                    "toolsDependencies": [
+                        {
+                            "packager": "SiliconLabs",
+                            "version": "14.2.rel1",
+                            "name": "gcc-arm-none-eabi"
+                        },
+                        {
+                            "packager": "SiliconLabs",
+                            "version": "1.25.1",
+                            "name": "simplicitycommander"
+                        },
+                        {
+                            "packager": "SiliconLabs",
+                            "version": "0.12.0-zephyr-1.0.1-static",
+                            "name": "openocd"
+                        }
+                    ],
+                    "help": {
+                        "online": "https://github.com/SiliconLabsSoftware/arduino"
+                    },
+                    "size": 649429391,
+                    "checksum": "SHA-256:df7cac7b2958939af45606dda80257cdac5af71b7e47903b8e8c9b5761444b22"
                 }
             ],
             "tools": [
@@ -471,6 +527,47 @@
                             "archiveFileName": "arm-gnu-toolchain-12.2.rel1-aarch64-arm-none-eabi.tar.zst",
                             "checksum": "SHA-256:5bd04462c236d81d68da5179ae8aed8bb067f2d7be2d7ee278bc2ef2fab337bb",
                             "size": "249798724"
+                        }
+                    ]
+                },
+                {
+                    "version": "14.2.rel1",
+                    "name": "gcc-arm-none-eabi",
+                    "systems": [
+                        {
+                            "host": "x86_64-apple-darwin",
+                            "url": "!!local-install-url/arm-gnu-toolchain-14.2.rel1-darwin-x86_64-arm-none-eabi.tar.zst",
+                            "archiveFileName": "arm-gnu-toolchain-14.2.rel1-darwin-x86_64-arm-none-eabi.tar.zst",
+                            "checksum": "SHA-256:a459f0a86b7bb57bd23d6274edf5bf626c8ad301fd8159969f6b4fa5871beac2",
+                            "size": "233760782"
+                        },
+                        {
+                            "host": "arm64-apple-darwin",
+                            "url": "!!local-install-url/arm-gnu-toolchain-14.2.rel1-darwin-arm64-arm-none-eabi.tar.zst",
+                            "archiveFileName": "arm-gnu-toolchain-14.2.rel1-darwin-arm64-arm-none-eabi.tar.zst",
+                            "checksum": "SHA-256:587366328909893d06d351f88defed8182b104436ab2534099324816b4d7ec24",
+                            "size": "226168717"
+                        },
+                        {
+                            "host": "i686-mingw32",
+                            "url": "!!local-install-url/arm-gnu-toolchain-14.2.rel1-mingw-w64-i686-arm-none-eabi.zst",
+                            "archiveFileName": "arm-gnu-toolchain-14.2.rel1-mingw-w64-i686-arm-none-eabi.zst",
+                            "checksum": "SHA-256:f6ceb48246b35319d08190113deedb15a84d5b5a031a5db7843fa4a7e11143ef",
+                            "size": "269189450"
+                        },
+                        {
+                            "host": "x86_64-pc-linux-gnu",
+                            "url": "!!local-install-url/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.zst",
+                            "archiveFileName": "arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.zst",
+                            "checksum": "SHA-256:7a6eddaaeba9ba7aa73181257cba45f6f89e2b663f9102293c32b9fdd2162e28",
+                            "size": "243786344"
+                        },
+                        {
+                            "host": "aarch64-linux-gnu",
+                            "url": "!!local-install-url/arm-gnu-toolchain-14.2.rel1-aarch64-arm-none-eabi.tar.zst",
+                            "archiveFileName": "arm-gnu-toolchain-14.2.rel1-aarch64-arm-none-eabi.tar.zst",
+                            "checksum": "SHA-256:b3a302d83bd4cf89f42677183db6b331388457b19931ce7efea89be91233e674",
+                            "size": "245818948"
                         }
                     ]
                 },
@@ -536,6 +633,40 @@
                     ]
                 },
                 {
+                    "version": "1.25.1",
+                    "name": "simplicitycommander",
+                    "systems": [
+                        {
+                            "host": "x86_64-apple-darwin",
+                            "url": "!!local-install-url/Commander_osx_1v25p1b2000.zst",
+                            "archiveFileName": "Commander_osx_1v25p1b2000.zst",
+                            "checksum": "SHA-256:f6b4398d9359a83bd13ec8c2ff6fc9c109d30ac8195dcb333233037065689252",
+                            "size": "68059540"
+                        },
+                        {
+                            "host": "i686-mingw32",
+                            "url": "!!local-install-url/Commander_win32_x64_1v25p1b2000.zst",
+                            "archiveFileName": "Commander_win32_x64_1v25p1b2000.zst",
+                            "checksum": "SHA-256:d3535c7f367fbea2396f3ef0b9b137851ea7f145066ef856fe9bb04f7646a6af",
+                            "size": "43257561"
+                        },
+                        {
+                            "host": "x86_64-pc-linux-gnu",
+                            "url": "!!local-install-url/Commander_linux_x86_64_1v25p1b2000.zst",
+                            "archiveFileName": "Commander_linux_x86_64_1v25p1b2000.zst",
+                            "checksum": "SHA-256:93e75926c0342a67e7adc2e76f30184def8584ffb3f70f83df5432b15234e502",
+                            "size": "43477588"
+                        },
+                        {
+                            "host": "aarch64-linux-gnu",
+                            "url": "!!local-install-url/Commander_linux_aarch64_1v25p1b2000.zst",
+                            "archiveFileName": "Commander_linux_aarch64_1v25p1b2000.zst",
+                            "checksum": "SHA-256:1bdc18bf3bb9ed7a9323d1d8f631477dcdda949c7449d0d61cb65a277ea97200",
+                            "size": "29128153"
+                        }
+                    ]
+                },
+                {
                     "version": "0.12.0-arduino1-static",
                     "name": "openocd",
                     "systems": [
@@ -566,6 +697,47 @@
                             "archiveFileName": "openocd-0.12.0-arduino1-static-aarch64-linux-gnu.tar.bz2",
                             "checksum": "SHA-256:d6d78fb9f422647a7606213925f037593e5dbd6ad4d6670c3a54ab9ec1cc0cd1",
                             "size": "7156521"
+                        }
+                    ]
+                },
+                {
+                    "version": "0.12.0-zephyr-1.0.1-static",
+                    "name": "openocd",
+                    "systems": [
+                        {
+                            "host": "x86_64-apple-darwin",
+                            "url": "!!local-install-url/openocd-zephyr-1.0.1-x86-darwin.zst",
+                            "archiveFileName": "openocd-zephyr-1.0.1-x86-darwin.zst",
+                            "checksum": "SHA-256:459acdaa59c08e2beed66c072daedf196dac2bf15d7764c0801f47cd356b866a",
+                            "size": "2042701"
+                        },
+                        {
+                            "host": "arm64-apple-darwin",
+                            "url": "!!local-install-url/openocd-zephyr-1.0.1-aarch64-darwin.zst",
+                            "archiveFileName": "openocd-zephyr-1.0.1-aarch64-darwin.zst",
+                            "checksum": "SHA-256:db24cdfca2ab5f68793ce9ea256cf33dc4a9803981b4c50bc3cfe9ba5afaaca6",
+                            "size": "2151573"
+                        },
+                        {
+                            "host": "i686-mingw32",
+                            "url": "!!local-install-url/openocd-zephyr-1.0.1-x86-windows.zst",
+                            "archiveFileName": "openocd-zephyr-1.0.1-x86-windows.zst",
+                            "checksum": "SHA-256:d8d68804f9f0af78ef7d7ac5e06c414e1dc8233383db487e899adf39fae3f801",
+                            "size": "8125950"
+                        },
+                        {
+                            "host": "x86_64-pc-linux-gnu",
+                            "url": "!!local-install-url/openocd-zephyr-1.0.1-x86-linux.tar.zst",
+                            "archiveFileName": "openocd-zephyr-1.0.1-x86-linux.tar.zst",
+                            "checksum": "SHA-256:7c5b65303ad3ec0fbf50f86eba4502d905bf7dbe0321eb77801cdf20f3b10313",
+                            "size": "2222609"
+                        },
+                        {
+                            "host": "aarch64-linux-gnu",
+                            "url": "!!local-install-url/openocd-zephyr-1.0.1-aarch64-linux.tar.zst",
+                            "archiveFileName": "openocd-zephyr-1.0.1-aarch64-linux.tar.zst",
+                            "checksum": "SHA-256:06b89b30d1e2435567595e18e8b0bdc43b41d5997728cb7ea8bc6df06b0519c4",
+                            "size": "2226189"
                         }
                     ]
                 }
