@@ -120,6 +120,7 @@ private:
 
   static const uint8_t level_control_min_level = 1u;
   static const uint8_t level_control_max_level = 254u;
+  static const uint8_t level_control_null_value = 255u;           // Nullable LevelControl attrs encode null as 0xFF
   static const uint16_t level_control_remaining_time = 0u;
 
   static const uint8_t color_control_number_of_primaries = 0u;    // No color primaries

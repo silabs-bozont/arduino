@@ -35,13 +35,10 @@ DeviceLightbulb::DeviceLightbulb(const char* device_name) :
   startup_on_off(0u),
   hue(0u),
   saturation(0u),
-  // CurrentLevel is nullable; 255 means null and breaks On/Off <-> LevelControl
-  // coupling (Off never completes) - start at max valid level instead
-  // ToDo: properly null this attribute
-  level(254u),
+  level(level_control_max_level),
   level_control_options(0u),
-  level_control_on_level(254u),
-  level_control_startup_current_level(254u),
+  level_control_on_level(level_control_null_value),
+  level_control_startup_current_level(level_control_null_value),
   color_control_options(0u)
 {
   this->SetDeviceType(device_type_t::kDeviceType_Lightbulb);
@@ -82,8 +79,8 @@ bool DeviceLightbulb::SetLevel(uint8_t level)
 
   bool level_in_bounds = (level >= this->level_control_min_level) && (level <= this->level_control_max_level);
 
-  // The value 255 represents the NULL value for the level attribute
-  if (!level_in_bounds && level != 255) {
+  // 255 encodes null for nullable LevelControl level attributes
+  if (!level_in_bounds && level != level_control_null_value) {
     return false;
   }
 
