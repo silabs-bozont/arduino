@@ -29,6 +29,7 @@
 #include <silabs_stubs.h>
 #include <util/endpoint-config-api.h>
 #include <zap-generated/endpoint_config.h>
+#include <platform/PlatformManager.h>
 #include <QRCodeSetupPayloadParser.h>
 #include <ManualSetupPayloadGenerator.h>
 #include <ProvisionManager.h>
@@ -284,8 +285,11 @@ void MatterClass::set_software_version_string(const char* software_version)
 
 void MatterClass::disableBridgeEndpoint()
 {
-  // The bridge endpoint is on index 1
-  emberAfEndpointEnableDisable(emberAfEndpointFromIndex(1), false);
+  constexpr EndpointId kBridgeEndpoint = 1;
+  DeviceLayer::StackLock lock;
+  if (!emberAfEndpointEnableDisable(kBridgeEndpoint, false)) {
+    ChipLogError(DeviceLayer, "Failed to disable bridge endpoint %u", kBridgeEndpoint);
+  }
 }
 
 String MatterClass::getManualPairingCode()
