@@ -47,6 +47,7 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 
 - on/off lightbulb (`matter_lightbulb`)
 - dimmable lightbulb on/off + random brightness % (`matter_lightbulb_dimmable`)
+- on/off outlet (`matter_on_off_outlet`)
 - temperature sensor CPU reading (`matter_temp_sensor`)
 - humidity sensor +0.5% increment (`matter_humidity_sensor`)
 - CO2 sensor +15 ppm increment (`matter_co2_sensor`)
