@@ -4,6 +4,7 @@ import signal
 import sys
 import time
 import util.hil_util as hil_util
+import util.matter_otbr_util as matter_otbr_util
 from util.hil_util import bcolors as bcolors
 from testcases.testcase_hil_basic_smoke import testcase_hil_basic_smoke
 from testcases.testcase_hil_serial_echo import testcase_hil_serial_echo
@@ -16,6 +17,7 @@ from testcases.testcase_hil_si7021_wire import testcase_hil_si7021_wire
 from testcases.testcase_hil_ble_silabs_advertise import testcase_hil_ble_silabs_advertise
 from testcases.testcase_hil_ble_arduino_advertise import testcase_hil_ble_arduino_advertise
 from testcases.testcase_hil_matter_smoke import testcase_hil_matter_smoke
+from testcases.testcase_hil_matter_lightbulb import testcase_hil_matter_lightbulb
 from testcases.testcase_hil_zigbee_smoke import testcase_hil_zigbee_smoke
 
 all_variants = [
@@ -66,13 +68,29 @@ testcase_list = {
     "ble_silabs_advertise": testcase_hil_ble_silabs_advertise,
     "ble_arduino_advertise": testcase_hil_ble_arduino_advertise,
     "matter_smoke": testcase_hil_matter_smoke,
+    "matter_lightbulb": testcase_hil_matter_lightbulb,
     "zigbee_smoke": testcase_hil_zigbee_smoke,
 }
+
+# Matter Hub (Pi) HIL cases — used by --matter-only
+matter_otbr_testcase_list = {
+    "matter_lightbulb": testcase_hil_matter_lightbulb,
+}
+
+# Set by CLI flags
+matter_only = False
+
+
+def active_testcase_list():
+    if matter_only:
+        return matter_otbr_testcase_list
+    return testcase_list
 
 
 def main():
     signal.signal(signal.SIGINT, sigint_handler)
     print(f"{bcolors.HEADER}Silabs Arduino Core HIL test{bcolors.ENDC}")
+    parse_optional_cli_arguments()
     current_board, current_board_port, config_file = get_board_and_port_and_cfg_file_from_arguments()
 
     completed_tests = 0
@@ -112,24 +130,41 @@ def main():
         print(f"{bcolors.FAIL}{failed_tests} testcases failed!{bcolors.ENDC}")
 
 
+def board_variants_for(current_board):
+    board_variants = []
+    for variant in all_variants:
+        if variant[0] != current_board:
+            continue
+        # Matter Pi HIL only needs the matter protocol stack variant
+        if matter_only and variant[1] != "matter":
+            continue
+        board_variants.append(variant[1])
+    return board_variants
+
+
 def run_tests(current_board, current_board_port, global_total_tests=0, global_completed_tests=0):
     """
     Runs all available tests for a specified board
     """
-    board_variants = []
-    for variant in all_variants:
-        if variant[0] == current_board:
-            board_variants.append(variant[1])
+    board_variants = board_variants_for(current_board)
+    cases = active_testcase_list()
 
     print("")
     print(f"Board: '{current_board}'")
     print(f"Port: '{current_board_port}'")
     print(f"Variants: {board_variants}")
+    if matter_only:
+        print(f"Matter-only mode: {list(cases.keys())}")
 
-    testcase_count = len(testcase_list) * len(board_variants)
+    testcase_count = len(cases) * len(board_variants)
     completed_tests = 0
     successful_tests = 0
     failing_tests = []
+
+    if not board_variants:
+        print(f"{bcolors.FAIL}No matching variants for '{current_board}' (matter-only requires a matter-capable board){bcolors.ENDC}")
+        failing_tests.append(f"ALL TESTS ON '{current_board}'")
+        return max(testcase_count, 1), successful_tests, failing_tests
 
     # Check if the serial port is available
     if not hil_util.check_serial_port_available(current_board_port):
@@ -143,7 +178,7 @@ def run_tests(current_board, current_board_port, global_total_tests=0, global_co
 
     # Run tests for each variant
     for variant in board_variants:
-        for test_name, test_function in testcase_list.items():
+        for test_name, test_function in cases.items():
             current_percent = int(((global_completed_tests + completed_tests + 1) / (global_total_tests)) * 100)
             print(f"{bcolors.OKGREEN}")
             print("-"*40)
@@ -197,11 +232,10 @@ def get_boards_and_ports_from_config_file(config_file):
 
 def count_number_of_tests(boards):
     total_tests = 0
+    cases = active_testcase_list()
     for board in boards:
-        for variant in all_variants:
-            if variant[0] == board:
-                total_tests += 1
-    return total_tests * len(testcase_list)
+        total_tests += len(board_variants_for(board))
+    return total_tests * len(cases)
 
 
 def print_available_board_configs():
@@ -215,11 +249,56 @@ def print_available_board_configs():
         print(f"  {board}")
 
 
+def parse_optional_cli_arguments():
+    """
+    Optional flags (stripped from sys.argv before positional board/port parsing):
+      --matter-otbr <pi-ip>  Enable Matter Hub (Pi) HIL and prompt for SSH password
+      --matter-only          Run only Matter Pi tests (implies needing --matter-otbr)
+    """
+    global matter_only
+
+    args = sys.argv[1:]
+    filtered = []
+    i = 0
+    host = None
+    only = False
+    while i < len(args):
+        if args[i] == "--matter-otbr":
+            if i + 1 >= len(args):
+                print("Please provide the Matter Hub (Pi) IP after --matter-otbr")
+                exit(-1)
+            host = args[i + 1]
+            i += 2
+        elif args[i] == "--matter-only":
+            only = True
+            i += 1
+        else:
+            filtered.append(args[i])
+            i += 1
+
+    sys.argv = [sys.argv[0]] + filtered
+    matter_only = only
+    matter_otbr_util.otbr_host = host
+
+    if only and not host:
+        print("--matter-only requires --matter-otbr <pi-ip>")
+        exit(-1)
+
+    if host:
+        print(f"Matter Hub (OTBR) address: {host}")
+        if only:
+            print("Matter-only mode: running Matter Pi HIL tests only")
+        matter_otbr_util.ensure_ssh_password()
+    else:
+        print("Matter Hub (OTBR) not specified; Matter lightbulb HIL will be skipped")
+
+
 def get_board_and_port_and_cfg_file_from_arguments():
     try:
         input_board_name = sys.argv[1]
     except Exception:
         print("Please provide a target board name or config file path in the first argument!")
+        print("Optional: --matter-otbr <pi-ip> [--matter-only]")
         print_available_board_configs()
         exit(-1)
 
