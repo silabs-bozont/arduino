@@ -53,7 +53,7 @@ def testcase_hil_matter_humidity_sensor(current_board, variant, current_board_po
     Testcase: HIL Matter humidity sensor
     Description: Flashes the Matter humidity sensor example, commissions it via
     SSH chip-tool on a Silicon Labs Matter Hub (Pi), then verifies one humidity
-    increment (+0.5%, wrapping 100% → 0%) on Serial and via MeasuredValue.
+    increment (+0.5%, wrapping 100% -> 0%) on Serial and via MeasuredValue.
 
     Opt-in only: requires test_hil.py --matter-otbr <pi-ip>.
     """

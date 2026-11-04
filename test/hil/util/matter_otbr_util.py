@@ -359,6 +359,33 @@ def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPO
     return True, percent
 
 
+def matter_read_co2_ppm(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read CarbonDioxideConcentrationMeasurement MeasuredValue via chip-tool.
+    Value is a float in ppm (Matter single/float attribute).
+    Returns (success, ppm_float_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter CO2 from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} carbondioxideconcentrationmeasurement read measured-value "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = ssh_bash(script, timeout=60)
+    if not ok:
+        return False, None
+
+    m = re.search(r"MeasuredValue:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)", output)
+    if not m:
+        print("Failed to parse MeasuredValue from chip-tool output")
+        return False, None
+
+    ppm = float(m.group(1))
+    print(f"MeasuredValue -> {ppm:.0f} ppm")
+    return True, ppm
+
+
 def app_lift_percent_to_matter_100ths(app_percent):
     """
     Arduino MatterWindowCovering app percent: 100%=fully open, 0%=fully closed.
