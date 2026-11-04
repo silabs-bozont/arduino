@@ -222,6 +222,8 @@ class SerialMonitor:
             except Exception:
                 break
             if chunk:
+                # println() often emits \r\n while printf("...\n") is \n-only; normalize so waits for "...\n" match both
+                chunk = chunk.replace("\r\n", "\n").replace("\r", "\n")
                 print(chunk, end="", flush=True)
                 with self._lock:
                     self.buf += chunk
