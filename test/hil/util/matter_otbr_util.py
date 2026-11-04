@@ -267,6 +267,34 @@ def matter_read_onoff(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     return ok
 
 
+def matter_read_temperature_celsius(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read TemperatureMeasurement MeasuredValue via chip-tool.
+    Matter encodes the value in hundredths of a degree Celsius (int16).
+    Returns (success, celsius_float_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter temperature from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} temperaturemeasurement read measured-value "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = ssh_bash(script, timeout=60)
+    if not ok:
+        return False, None
+
+    m = re.search(r"MeasuredValue:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse MeasuredValue from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    celsius = raw / 100.0
+    print(f"MeasuredValue raw={raw} -> {celsius:.2f} C")
+    return True, celsius
+
+
 def commission_with_defaults(node_id=DEFAULT_NODE_ID):
     """
     Start Thread on the Pi and BLE-commission the DUT using the default

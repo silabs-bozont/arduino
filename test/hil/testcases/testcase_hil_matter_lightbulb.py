@@ -35,6 +35,11 @@ def testcase_hil_matter_lightbulb(current_board, variant, current_board_port):
         print(f"Cannot SSH to Matter Hub at {matter_otbr_util.otbr_host}")
         return did_run, False
 
+    # Clear Matter commissioning / NVM from any previous run
+    if not hil_util.arduino_cli_burn_bootloader(current_board, current_board_port):
+        print(f"Bootloader burn failed for '{current_board}'")
+        return did_run, False
+
     success = hil_util.arduino_cli_build_and_flash(
         current_board, variant, LIGHTBULB_SKETCH, current_board_port
     )

@@ -251,4 +251,4 @@ class SerialMonitor:
             self._ser.close()
         except Exception:
             pass
-        print(f"SerialMonitor closed on '{self.port}'")
+        print(f"Serial Monitor closed on '{self.port}'")
