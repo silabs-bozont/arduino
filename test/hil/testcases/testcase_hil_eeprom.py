@@ -7,6 +7,12 @@ def testcase_hil_eeprom(current_board, variant, current_board_port):
     Description: Tests the EEPROM library by writing and reading back a random payload
     """
     did_run = True
+
+    # Clear the NVM by burning the bootloader
+    if not hil_util.arduino_cli_burn_bootloader(current_board, current_board_port):
+        print(f"Bootloader burn failed for '{current_board}'")
+        return did_run, False
+
     success = hil_util.arduino_cli_build_and_flash(current_board, variant, "sketches/hil_eeprom/hil_eeprom.ino", current_board_port)
     if not success:
         print(f"Build/upload failed for '{variant}' on '{current_board}'")
