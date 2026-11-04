@@ -359,6 +359,90 @@ def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPO
     return True, percent
 
 
+def app_lift_percent_to_matter_100ths(app_percent):
+    """
+    Arduino MatterWindowCovering app percent: 100%=fully open, 0%=fully closed.
+    Matter LiftPercent100ths: 0=fully open, 10000=fully closed.
+    """
+    app_percent = max(0, min(100, int(app_percent)))
+    return 10000 - app_percent * 100
+
+
+def matter_read_window_covering_position(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read CurrentPositionLiftPercent100ths (marks the appliance online on first read).
+    Returns (success, matter_percent100ths_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading window covering position from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} windowcovering read current-position-lift-percent100ths "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = ssh_bash(script, timeout=60)
+    if not ok:
+        return False, None
+
+    m = re.search(r"CurrentPositionLiftPercent100ths:\s*(-?\d+)", output)
+    if not m:
+        # Some chip-tool builds print a generic AttributeValue / Data line
+        m = re.search(r"Percent100ths:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse CurrentPositionLiftPercent100ths from chip-tool output")
+        return False, None
+
+    value = int(m.group(1))
+    print(f"CurrentPositionLiftPercent100ths={value}")
+    return True, value
+
+
+def matter_window_covering_up_or_open(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    print("-" * 40)
+    print(f"Window covering up-or-open node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = f"{CHIPTOOL_PATH} windowcovering up-or-open {int(node_id)} {int(endpoint)}"
+    ok, _ = ssh_bash(script, timeout=60)
+    return ok
+
+
+def matter_window_covering_down_or_close(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    print("-" * 40)
+    print(f"Window covering down-or-close node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = f"{CHIPTOOL_PATH} windowcovering down-or-close {int(node_id)} {int(endpoint)}"
+    ok, _ = ssh_bash(script, timeout=60)
+    return ok
+
+
+def matter_window_covering_stop_motion(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    print("-" * 40)
+    print(f"Window covering stop-motion node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = f"{CHIPTOOL_PATH} windowcovering stop-motion {int(node_id)} {int(endpoint)}"
+    ok, _ = ssh_bash(script, timeout=60)
+    return ok
+
+
+def matter_window_covering_go_to_app_percent(app_percent, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    GoToLiftPercentage using Arduino app percent (100%=open, 0%=closed).
+    """
+    matter_100ths = app_lift_percent_to_matter_100ths(app_percent)
+    print("-" * 40)
+    print(
+        f"Window covering go-to-lift-percentage app={app_percent}% "
+        f"(Matter {matter_100ths}) node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} windowcovering go-to-lift-percentage "
+        f"{matter_100ths} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = ssh_bash(script, timeout=60)
+    return ok
+
+
 def commission_with_defaults(node_id=DEFAULT_NODE_ID):
     """
     Start Thread on the Pi and BLE-commission the DUT using the default
