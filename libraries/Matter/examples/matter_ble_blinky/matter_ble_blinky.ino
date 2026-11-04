@@ -38,6 +38,7 @@ static uint16_t ble_generic_access_service_handle;
 static uint16_t ble_name_characteristic_handle;
 static uint16_t ble_blinky_service_handle;
 static uint16_t ble_led_control_characteristic_handle;
+static uint16_t ble_btn_report_characteristic_handle;
 static uint8_t ble_connection_handle = SL_BT_INVALID_CONNECTION_HANDLE;
 static bool matter_commissioning = false;
 
@@ -291,6 +292,24 @@ static void ble_initialize_gatt_db()
                                                sizeof(led_char_init_value),     // initial value length
                                                &led_char_init_value,            // initial value
                                                &ble_led_control_characteristic_handle);
+
+  // Add the 'Button report' characteristic to the Blinky service
+  // UUID: 61a885a4-41c3-60d0-9a53-6d652a70d29c
+  const uuid_128 btn_report_characteristic_uuid = {
+    .data = { 0x9c, 0xd2, 0x70, 0x2a, 0x65, 0x6d, 0x53, 0x9a, 0xd0, 0x60, 0xc3, 0x41, 0xa4, 0x85, 0xa8, 0x61 }
+  };
+  uint8_t btn_char_init_value = 0;
+  sc = sl_bt_gattdb_add_uuid128_characteristic(ble_gattdb_session_id,
+                                               ble_blinky_service_handle,
+                                               SL_BT_GATTDB_CHARACTERISTIC_READ | SL_BT_GATTDB_CHARACTERISTIC_NOTIFY,
+                                               0x00,
+                                               0x00,
+                                               btn_report_characteristic_uuid,
+                                               sl_bt_gattdb_fixed_length_value,
+                                               1,                               // max length
+                                               sizeof(btn_char_init_value),     // initial value length
+                                               &btn_char_init_value,            // initial value
+                                               &ble_btn_report_characteristic_handle);
 
   // Start the Blinky service
   sc = sl_bt_gattdb_start_service(ble_gattdb_session_id, ble_blinky_service_handle);
