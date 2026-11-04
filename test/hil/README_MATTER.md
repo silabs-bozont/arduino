@@ -43,5 +43,7 @@ python3 test_hil.py <board> <port> --matter-otbr <pi-ip>
 python3 test_hil.py <board> <port> --matter-otbr <pi-ip> --matter-only
 ```
 
-Without `--matter-otbr`, `matter_lightbulb` is skipped. Current coverage: on/off
-lightbulb example only (`libraries/Matter/examples/matter_lightbulb`).
+Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
+
+- on/off lightbulb (`matter_lightbulb`)
+- temperature sensor CPU reading (`matter_temp_sensor`)
