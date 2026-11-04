@@ -2,6 +2,7 @@ import serial
 import subprocess
 import time
 import asyncio
+import threading
 from bleak import BleakScanner
 
 
@@ -197,3 +198,57 @@ def arduino_cli_burn_bootloader(board, port):
     print("Bootloader burn successful!")
     print(f"Time: {total_burn_time // 60}m {total_burn_time % 60}s")
     return True
+
+
+class SerialMonitor:
+    """
+    Background serial reader so DUT output is not missed while SSH/commissioning runs.
+    """
+
+    def __init__(self, port, baudrate=115200):
+        self.port = port
+        self.buf = ""
+        self._lock = threading.Lock()
+        self._stop = threading.Event()
+        self._ser = serial.Serial(port, baudrate=baudrate, timeout=0.5)
+        self._thread = threading.Thread(target=self._read_loop, daemon=True)
+        self._thread.start()
+        print(f"Serial Monitor started on '{port}'")
+
+    def _read_loop(self):
+        while not self._stop.is_set():
+            try:
+                chunk = self._ser.read(4096).decode("utf-8", errors="ignore")
+            except Exception:
+                break
+            if chunk:
+                print(chunk, end="", flush=True)
+                with self._lock:
+                    self.buf += chunk
+
+    def text(self):
+        with self._lock:
+            return self.buf
+
+    def wait_for(self, expected_response, timeout=60):
+        print("-"*40)
+        print(f"Serial Monitor waiting up to {timeout}s for: {expected_response!r}")
+        print("-"*40)
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            with self._lock:
+                if expected_response in self.buf:
+                    print("Serial response matched!")
+                    return True
+            time.sleep(0.1)
+        print(f"Timed out waiting for: {expected_response!r}")
+        return False
+
+    def close(self):
+        self._stop.set()
+        self._thread.join(timeout=2)
+        try:
+            self._ser.close()
+        except Exception:
+            pass
+        print(f"SerialMonitor closed on '{self.port}'")
