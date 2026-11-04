@@ -8,6 +8,7 @@ in memory for the process lifetime — never written to disk by this module.
 """
 
 import getpass
+import math
 import os
 import re
 import shlex
@@ -28,6 +29,17 @@ DEFAULT_PINCODE = "20202021"
 DEFAULT_DISCRIMINATOR = "3840"
 # Prefer the prebuilt chip-tool binary directly (avoids matterTool.sh → activate.sh).
 CHIPTOOL_PATH = "$HOME/connectedhomeip/out/standalone/chip-tool"
+# Matter LevelControl CurrentLevel range used by Arduino MatterDimmableLightbulb
+LEVEL_CONTROL_MAX = 254
+
+
+def percent_to_matter_level(percent):
+    """
+    Match MatterDimmableLightbulb::set_brightness_percent():
+    ceil(percent * max_level / 100), percent clamped to 0-100.
+    """
+    percent = max(0, min(100, int(percent)))
+    return int(math.ceil(percent * LEVEL_CONTROL_MAX / 100.0))
 
 
 def is_enabled():
@@ -265,6 +277,30 @@ def matter_read_onoff(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     script = f"{CHIPTOOL_PATH} onoff read on-off {int(node_id)} {int(endpoint)}"
     ok, _ = ssh_bash(script, timeout=60)
     return ok
+
+
+def matter_move_to_level(level, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    LevelControl move-to-level (CurrentLevel is 0-254 on Arduino Matter bulbs).
+    """
+    level = max(0, min(LEVEL_CONTROL_MAX, int(level)))
+    print("-" * 40)
+    print(f"Sending Matter move-to-level {level} to node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    # Level, TransitionTime, OptionsMask, OptionsOverride, node, endpoint
+    script = (
+        f"{CHIPTOOL_PATH} levelcontrol move-to-level "
+        f"{level} 0 0 0 {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = ssh_bash(script, timeout=60)
+    return ok
+
+
+def matter_set_brightness_percent(percent, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Set dimmable bulb brightness to a 0-100 percent via LevelControl."""
+    level = percent_to_matter_level(percent)
+    print(f"Brightness {percent}% -> Matter level {level}")
+    return matter_move_to_level(level, node_id=node_id, endpoint=endpoint)
 
 
 def matter_read_temperature_celsius(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):

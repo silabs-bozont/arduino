@@ -18,6 +18,7 @@ from testcases.testcase_hil_ble_silabs_advertise import testcase_hil_ble_silabs_
 from testcases.testcase_hil_ble_arduino_advertise import testcase_hil_ble_arduino_advertise
 from testcases.testcase_hil_matter_smoke import testcase_hil_matter_smoke
 from testcases.testcase_hil_matter_lightbulb import testcase_hil_matter_lightbulb
+from testcases.testcase_hil_matter_lightbulb_dimmable import testcase_hil_matter_lightbulb_dimmable
 from testcases.testcase_hil_matter_temp_sensor import testcase_hil_matter_temp_sensor
 from testcases.testcase_hil_zigbee_smoke import testcase_hil_zigbee_smoke
 
@@ -70,6 +71,7 @@ testcase_list = {
     "ble_arduino_advertise": testcase_hil_ble_arduino_advertise,
     "matter_smoke": testcase_hil_matter_smoke,
     "matter_lightbulb": testcase_hil_matter_lightbulb,
+    "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "zigbee_smoke": testcase_hil_zigbee_smoke,
 }
@@ -77,6 +79,7 @@ testcase_list = {
 # Matter Hub (Pi) HIL cases — used by --matter-only
 matter_otbr_testcase_list = {
     "matter_lightbulb": testcase_hil_matter_lightbulb,
+    "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
 }
 
