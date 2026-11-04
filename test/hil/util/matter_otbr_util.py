@@ -331,6 +331,34 @@ def matter_read_temperature_celsius(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_EN
     return True, celsius
 
 
+def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read RelativeHumidityMeasurement MeasuredValue via chip-tool.
+    Matter encodes the value in hundredths of a percent (uint16, 0-10000).
+    Returns (success, percent_float_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter humidity from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} relativehumiditymeasurement read measured-value "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = ssh_bash(script, timeout=60)
+    if not ok:
+        return False, None
+
+    m = re.search(r"MeasuredValue:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse MeasuredValue from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    percent = raw / 100.0
+    print(f"MeasuredValue raw={raw} -> {percent:.2f} %RH")
+    return True, percent
+
+
 def commission_with_defaults(node_id=DEFAULT_NODE_ID):
     """
     Start Thread on the Pi and BLE-commission the DUT using the default

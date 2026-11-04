@@ -20,6 +20,7 @@ from testcases.testcase_hil_matter_smoke import testcase_hil_matter_smoke
 from testcases.testcase_hil_matter_lightbulb import testcase_hil_matter_lightbulb
 from testcases.testcase_hil_matter_lightbulb_dimmable import testcase_hil_matter_lightbulb_dimmable
 from testcases.testcase_hil_matter_temp_sensor import testcase_hil_matter_temp_sensor
+from testcases.testcase_hil_matter_humidity_sensor import testcase_hil_matter_humidity_sensor
 from testcases.testcase_hil_zigbee_smoke import testcase_hil_zigbee_smoke
 
 all_variants = [
@@ -73,22 +74,24 @@ testcase_list = {
     "matter_lightbulb": testcase_hil_matter_lightbulb,
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
+    "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "zigbee_smoke": testcase_hil_zigbee_smoke,
 }
 
-# Matter Hub (Pi) HIL cases — used by --matter-only
+# Matter Hub (Pi) HIL cases — used by --matter-otbr-only
 matter_otbr_testcase_list = {
     "matter_lightbulb": testcase_hil_matter_lightbulb,
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
+    "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
 }
 
 # Set by CLI flags
-matter_only = False
+matter_otbr_only = False
 
 
 def active_testcase_list():
-    if matter_only:
+    if matter_otbr_only:
         return matter_otbr_testcase_list
     return testcase_list
 
@@ -142,7 +145,7 @@ def board_variants_for(current_board):
         if variant[0] != current_board:
             continue
         # Matter Pi HIL only needs the matter protocol stack variant
-        if matter_only and variant[1] != "matter":
+        if matter_otbr_only and variant[1] != "matter":
             continue
         board_variants.append(variant[1])
     return board_variants
@@ -159,8 +162,8 @@ def run_tests(current_board, current_board_port, global_total_tests=0, global_co
     print(f"Board: '{current_board}'")
     print(f"Port: '{current_board_port}'")
     print(f"Variants: {board_variants}")
-    if matter_only:
-        print(f"Matter-only mode: {list(cases.keys())}")
+    if matter_otbr_only:
+        print(f"Matter OTBR specific test cases: {list(cases.keys())}")
 
     testcase_count = len(cases) * len(board_variants)
     completed_tests = 0
@@ -261,13 +264,13 @@ def parse_optional_cli_arguments():
       --matter-otbr <pi-ip>  Enable Matter Hub (Pi) HIL and prompt for SSH password
       --matter-only          Run only Matter Pi tests (implies needing --matter-otbr)
     """
-    global matter_only
+    global matter_otbr_only
 
     args = sys.argv[1:]
     filtered = []
     i = 0
     host = None
-    only = False
+    otbr_only = False
     while i < len(args):
         if args[i] == "--matter-otbr":
             if i + 1 >= len(args):
@@ -275,28 +278,28 @@ def parse_optional_cli_arguments():
                 exit(-1)
             host = args[i + 1]
             i += 2
-        elif args[i] == "--matter-only":
-            only = True
+        elif args[i] == "--matter-otbr-only":
+            otbr_only = True
             i += 1
         else:
             filtered.append(args[i])
             i += 1
 
     sys.argv = [sys.argv[0]] + filtered
-    matter_only = only
+    matter_otbr_only = otbr_only
     matter_otbr_util.otbr_host = host
 
-    if only and not host:
-        print("--matter-only requires --matter-otbr <pi-ip>")
+    if otbr_only and not host:
+        print("--matter-otbr-only requires --matter-otbr <pi-ip>")
         exit(-1)
 
     if host:
         print(f"Matter Hub (OTBR) address: {host}")
-        if only:
-            print("Matter-only mode: running Matter Pi HIL tests only")
+        if otbr_only:
+            print("Matter OTBR only mode: running just the Matter Pi HIL tests")
         matter_otbr_util.ensure_ssh_password()
     else:
-        print("Matter Hub (OTBR) not specified; Matter lightbulb HIL will be skipped")
+        print("Matter Hub (OTBR) not specified; Matter OTBR specific tests will be skipped")
 
 
 def get_board_and_port_and_cfg_file_from_arguments():
