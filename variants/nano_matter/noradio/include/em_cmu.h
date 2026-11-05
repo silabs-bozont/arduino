@@ -123,6 +123,18 @@ extern "C" {
 #if defined(VDAC_PRESENT) && (VDAC_COUNT > 1)
 #define CMU_VDAC1_BRANCH           25
 #endif
+#if defined(_CMU_CANCLKCTRL_MASK)
+#define CMU_CANCLK_BRANCH         26
+#endif
+#if defined(_CMU_ADC0CLKCTRL_MASK)
+#define CMU_ADC0CLK_BRANCH         27
+#endif
+#if defined(_CMU_ADC1CLKCTRL_MASK)
+#define CMU_ADC1CLK_BRANCH         28
+#endif
+#if defined(_CMU_LEDSINK0CLKCTRL_MASK)
+#define CMU_LEDSINK0CLK_BRANCH     29
+#endif
 #define CMU_CLK_BRANCH_POS         7U
 #define CMU_CLK_BRANCH_MASK        0x1FU
 #endif  // (_SILICON_LABS_32B_SERIES_2_CONFIG > 1)
@@ -187,6 +199,11 @@ SL_ENUM_GENERIC(CMU_HFRCODPLLFreq_TypeDef, uint32_t) {
   cmuHFRCODPLLFreq_56M0Hz           = 56000000U,        /**< 56MHz RC band. */
   cmuHFRCODPLLFreq_64M0Hz           = 64000000U,        /**< 64MHz RC band. */
   cmuHFRCODPLLFreq_80M0Hz           = 80000000U,        /**< 80MHz RC band. */
+#if !defined(HFRCOEM23_PRESENT)
+  cmuHFRCODPLLFreq_5M0Hz            = 5000000U,         /**< 5MHz RC band.  */
+  cmuHFRCODPLLFreq_10M0Hz           = 10000000U,        /**< 10MHz RC band. */
+  cmuHFRCODPLLFreq_20M0Hz           = 20000000U,        /**< 20MHz RC band. */
+#endif
 #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
   cmuHFRCODPLLFreq_100M0Hz          = 100000000U,       /**< 100MHz RC band. */
 #endif
@@ -228,6 +245,11 @@ SL_ENUM_GENERIC(CMU_HFRCOEM23Freq_TypeDef, uint32_t) {
   cmuHFRCOEM23Freq_26M0Hz           = 26000000U,        /**< 26MHz RC band. */
   cmuHFRCOEM23Freq_32M0Hz           = 32000000U,        /**< 32MHz RC band. */
   cmuHFRCOEM23Freq_40M0Hz           = 40000000U,        /**< 40MHz RC band. */
+#if !defined(_SILICON_LABS_32B_SERIES_2_CONFIG_1)
+  cmuHFRCOEM23Freq_5M0Hz            = 5000000U,         /**< 5MHz RC band.  */
+  cmuHFRCOEM23Freq_10M0Hz           = 10000000U,        /**< 10MHz RC band. */
+  cmuHFRCOEM23Freq_20M0Hz           = 20000000U,        /**< 20MHz RC band. */
+#endif
   cmuHFRCOEM23Freq_UserDefined      = 0,
 };
 
@@ -351,6 +373,18 @@ SL_ENUM_GENERIC(CMU_Clock_TypeDef, uint32_t) {
 #if defined(LESENSE_PRESENT)
   cmuClock_LESENSEHFCLK = (CMU_LESENSEHF_BRANCH << CMU_CLK_BRANCH_POS),         /**< LESENSE high frequency clock. */
   cmuClock_LESENSECLK = (CMU_LESENSE_BRANCH << CMU_CLK_BRANCH_POS),             /**< LESENSE low frequency clock. */
+#endif
+#if defined(_CMU_CANCLKCTRL_MASK)
+  cmuClock_CANCLK = (CMU_CANCLK_BRANCH << CMU_CLK_BRANCH_POS),                /**< CAN clock. */
+#endif
+#if defined(_CMU_ADC0CLKCTRL_MASK)
+  cmuClock_ADC0CLK = (CMU_ADC0CLK_BRANCH << CMU_CLK_BRANCH_POS),                /**< ADC0 clock. */
+#endif
+#if defined(_CMU_ADC1CLKCTRL_MASK)
+  cmuClock_ADC1CLK = (CMU_ADC1CLK_BRANCH << CMU_CLK_BRANCH_POS),                /**< ADC1 clock. */
+#endif
+#if defined(_CMU_LEDSINK0CLKCTRL_MASK)
+  cmuClock_LEDSINK0CLK = (CMU_LEDSINK0CLK_BRANCH << CMU_CLK_BRANCH_POS),        /**< LEDSINK0 clock. */
 #endif
 
   cmuClock_CORE = (CMU_CORE_BRANCH << CMU_CLK_BRANCH_POS),                      /**< Cortex-M33 core clock. */
@@ -843,7 +877,7 @@ typedef struct {
 /** Default LFXO initialization values for XTAL mode. */
 #define CMU_LFXOINIT_DEFAULT                      \
   {                                               \
-    1,                                            \
+    _LFXO_CAL_GAIN_DEFAULT,                       \
     38,                                           \
     cmuLfxoStartupDelay_4KCycles,                 \
     cmuLfxoOscMode_Crystal,                       \
@@ -919,7 +953,8 @@ typedef struct {
 #if defined(HFXO_CTRL_EM23ONDEMAND)
 
 #if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_3) \
-  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8)
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8) \
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_13)
 // See [PM-2871] for details.
 /** Default configuration of fixed tuning capacitance on XI or XO for EFR32XG23 and EFR32XG28. */
 #define CMU_HFXOINIT_CTUNEFIXANA_DEFAULT cmuHfxoCtuneFixCap_Xo
@@ -972,53 +1007,53 @@ typedef struct {
   }
 
 /** Default HFXO initialization values for external sine mode. */
-#define CMU_HFXOINIT_EXTERNAL_SINE                                               \
-  {                                                                              \
-    (CMU_HfxoCbLsbTimeout_TypeDef)0,       /* timeoutCbLsb                    */ \
-    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, first lock       */ \
-    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, subseq. locks    */ \
-    0U,                         /* ctuneXoStartup                             */ \
-    0U,                         /* ctuneXiStartup                             */ \
-    0U,                         /* coreBiasStartup                            */ \
-    0U,                         /* imCoreBiasStartup                          */ \
-    cmuHfxoCoreDegen_None,                                                       \
-    cmuHfxoCtuneFixCap_None,                                                     \
-    0U,                         /* ctuneXoAna                                 */ \
-    0U,                         /* ctuneXiAna                                 */ \
-    0U,                         /* coreBiasAna                                */ \
-    false, /* enXiDcBiasAna, false=DC true=AC coupling of signal              */ \
-    cmuHfxoOscMode_ExternalSine,                                                 \
-    false,                      /* forceXo2GndAna                             */ \
-    false,                      /* forceXi2GndAna (Never enable in sine mode) */ \
-    false,                      /* DisOndemand                                */ \
-    false,                      /* ForceEn                                    */ \
-    false,                      /* em23OnDemand                               */ \
-    false                       /* Lock registers                             */ \
+#define CMU_HFXOINIT_EXTERNAL_SINE                                                                         \
+  {                                                                                                        \
+    (CMU_HfxoCbLsbTimeout_TypeDef)0,       /* timeoutCbLsb                    */                           \
+    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, first lock       */                           \
+    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, subseq. locks    */                           \
+    0U,                         /* ctuneXoStartup                             */                           \
+    0U,                         /* ctuneXiStartup                             */                           \
+    0U,                         /* coreBiasStartup                            */                           \
+    0U,                         /* imCoreBiasStartup                          */                           \
+    cmuHfxoCoreDegen_None,                                                                                 \
+    cmuHfxoCtuneFixCap_None,                                                                               \
+    0U,                         /* ctuneXoAna                                 */                           \
+    0U,                         /* ctuneXiAna                                 */                           \
+    0U,                         /* coreBiasAna                                */                           \
+    _HFXO_CFG_ENXIDCBIASANA_DEFAULT, /* enXiDcBiasAna, false=DC true=AC coupling of signal              */ \
+    cmuHfxoOscMode_ExternalSine,                                                                           \
+    false,                      /* forceXo2GndAna                             */                           \
+    false,                      /* forceXi2GndAna (Never enable in sine mode) */                           \
+    false,                      /* DisOndemand                                */                           \
+    false,                      /* ForceEn                                    */                           \
+    false,                      /* em23OnDemand                               */                           \
+    false                       /* Lock registers                             */                           \
   }
 
 /** Default HFXO initialization values for external sine mode with peak detector. */
-#define CMU_HFXOINIT_EXTERNAL_SINEPKDET                                          \
-  {                                                                              \
-    (CMU_HfxoCbLsbTimeout_TypeDef)0,       /* timeoutCbLsb                    */ \
-    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, first lock       */ \
-    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, subseq. locks    */ \
-    0U,                         /* ctuneXoStartup                             */ \
-    0U,                         /* ctuneXiStartup                             */ \
-    0U,                         /* coreBiasStartup                            */ \
-    0U,                         /* imCoreBiasStartup                          */ \
-    cmuHfxoCoreDegen_None,                                                       \
-    cmuHfxoCtuneFixCap_None,                                                     \
-    0U,                         /* ctuneXoAna                                 */ \
-    0U,                         /* ctuneXiAna                                 */ \
-    0U,                         /* coreBiasAna                                */ \
-    false, /* enXiDcBiasAna, false=DC true=AC coupling of signal              */ \
-    cmuHfxoOscMode_ExternalSinePkDet,                                            \
-    false,                      /* forceXo2GndAna                             */ \
-    false,                      /* forceXi2GndAna (Never enable in sine mode) */ \
-    false,                      /* DisOndemand                                */ \
-    false,                      /* ForceEn                                    */ \
-    false,                      /* em23OnDemand                               */ \
-    false                       /* Lock registers                             */ \
+#define CMU_HFXOINIT_EXTERNAL_SINEPKDET                                                       \
+  {                                                                                           \
+    (CMU_HfxoCbLsbTimeout_TypeDef)0,       /* timeoutCbLsb                    */              \
+    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, first lock       */              \
+    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, subseq. locks    */              \
+    0U,                         /* ctuneXoStartup                             */              \
+    0U,                         /* ctuneXiStartup                             */              \
+    0U,                         /* coreBiasStartup                            */              \
+    0U,                         /* imCoreBiasStartup                          */              \
+    cmuHfxoCoreDegen_None,                                                                    \
+    cmuHfxoCtuneFixCap_None,                                                                  \
+    0U,                         /* ctuneXoAna                                 */              \
+    0U,                         /* ctuneXiAna                                 */              \
+    0U,                         /* coreBiasAna                                */              \
+    _HFXO_CFG_ENXIDCBIASANA_DEFAULT, /* enXiDcBiasAna, false=DC true=AC coupling of signal */ \
+    cmuHfxoOscMode_ExternalSinePkDet,                                                         \
+    false,                      /* forceXo2GndAna                             */              \
+    false,                      /* forceXi2GndAna (Never enable in sine mode) */              \
+    false,                      /* DisOndemand                                */              \
+    false,                      /* ForceEn                                    */              \
+    false,                      /* em23OnDemand                               */              \
+    false                       /* Lock registers                             */              \
   }
 #else
 /** Default HFXO initialization values for XTAL mode. */
@@ -1046,51 +1081,51 @@ typedef struct {
   }
 
 /** Default HFXO initialization values for external sine mode. */
-#define CMU_HFXOINIT_EXTERNAL_SINE                                               \
-  {                                                                              \
-    (CMU_HfxoCbLsbTimeout_TypeDef)0,       /* timeoutCbLsb                    */ \
-    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, first lock       */ \
-    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, subseq. locks    */ \
-    0U,                         /* ctuneXoStartup                             */ \
-    0U,                         /* ctuneXiStartup                             */ \
-    0U,                         /* coreBiasStartup                            */ \
-    0U,                         /* imCoreBiasStartup                          */ \
-    cmuHfxoCoreDegen_None,                                                       \
-    cmuHfxoCtuneFixCap_None,                                                     \
-    0U,                         /* ctuneXoAna                                 */ \
-    0U,                         /* ctuneXiAna                                 */ \
-    0U,                         /* coreBiasAna                                */ \
-    false, /* enXiDcBiasAna, false=DC true=AC coupling of signal              */ \
-    cmuHfxoOscMode_ExternalSine,                                                 \
-    false,                      /* forceXo2GndAna                             */ \
-    false,                      /* forceXi2GndAna (Never enable in sine mode) */ \
-    false,                      /* DisOndemand                                */ \
-    false,                      /* ForceEn                                    */ \
-    false                       /* Lock registers                             */ \
+#define CMU_HFXOINIT_EXTERNAL_SINE                                                                         \
+  {                                                                                                        \
+    (CMU_HfxoCbLsbTimeout_TypeDef)0,       /* timeoutCbLsb                    */                           \
+    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, first lock       */                           \
+    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, subseq. locks    */                           \
+    0U,                         /* ctuneXoStartup                             */                           \
+    0U,                         /* ctuneXiStartup                             */                           \
+    0U,                         /* coreBiasStartup                            */                           \
+    0U,                         /* imCoreBiasStartup                          */                           \
+    cmuHfxoCoreDegen_None,                                                                                 \
+    cmuHfxoCtuneFixCap_None,                                                                               \
+    0U,                         /* ctuneXoAna                                 */                           \
+    0U,                         /* ctuneXiAna                                 */                           \
+    0U,                         /* coreBiasAna                                */                           \
+    _HFXO_CFG_ENXIDCBIASANA_DEFAULT, /* enXiDcBiasAna, false=DC true=AC coupling of signal              */ \
+    cmuHfxoOscMode_ExternalSine,                                                                           \
+    false,                      /* forceXo2GndAna                             */                           \
+    false,                      /* forceXi2GndAna (Never enable in sine mode) */                           \
+    false,                      /* DisOndemand                                */                           \
+    false,                      /* ForceEn                                    */                           \
+    false                       /* Lock registers                             */                           \
   }
 
 /** Default HFXO initialization values for external sine mode with peak detector. */
-#define CMU_HFXOINIT_EXTERNAL_SINEPKDET                                          \
-  {                                                                              \
-    (CMU_HfxoCbLsbTimeout_TypeDef)0,       /* timeoutCbLsb                    */ \
-    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, first lock       */ \
-    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, subseq. locks    */ \
-    0U,                         /* ctuneXoStartup                             */ \
-    0U,                         /* ctuneXiStartup                             */ \
-    0U,                         /* coreBiasStartup                            */ \
-    0U,                         /* imCoreBiasStartup                          */ \
-    cmuHfxoCoreDegen_None,                                                       \
-    cmuHfxoCtuneFixCap_None,                                                     \
-    0U,                         /* ctuneXoAna                                 */ \
-    0U,                         /* ctuneXiAna                                 */ \
-    0U,                         /* coreBiasAna                                */ \
-    false, /* enXiDcBiasAna, false=DC true=AC coupling of signal              */ \
-    cmuHfxoOscMode_ExternalSinePkDet,                                            \
-    false,                      /* forceXo2GndAna                             */ \
-    false,                      /* forceXi2GndAna (Never enable in sine mode) */ \
-    false,                      /* DisOndemand                                */ \
-    false,                      /* ForceEn                                    */ \
-    false                       /* Lock registers                             */ \
+#define CMU_HFXOINIT_EXTERNAL_SINEPKDET                                                                    \
+  {                                                                                                        \
+    (CMU_HfxoCbLsbTimeout_TypeDef)0,       /* timeoutCbLsb                    */                           \
+    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, first lock       */                           \
+    (CMU_HfxoSteadyStateTimeout_TypeDef)0, /* timeoutSteady, subseq. locks    */                           \
+    0U,                         /* ctuneXoStartup                             */                           \
+    0U,                         /* ctuneXiStartup                             */                           \
+    0U,                         /* coreBiasStartup                            */                           \
+    0U,                         /* imCoreBiasStartup                          */                           \
+    cmuHfxoCoreDegen_None,                                                                                 \
+    cmuHfxoCtuneFixCap_None,                                                                               \
+    0U,                         /* ctuneXoAna                                 */                           \
+    0U,                         /* ctuneXiAna                                 */                           \
+    0U,                         /* coreBiasAna                                */                           \
+    _HFXO_CFG_ENXIDCBIASANA_DEFAULT, /* enXiDcBiasAna, false=DC true=AC coupling of signal              */ \
+    cmuHfxoOscMode_ExternalSinePkDet,                                                                      \
+    false,                      /* forceXo2GndAna                             */                           \
+    false,                      /* forceXi2GndAna (Never enable in sine mode) */                           \
+    false,                      /* DisOndemand                                */                           \
+    false,                      /* ForceEn                                    */                           \
+    false                       /* Lock registers                             */                           \
   }
 #endif
 
@@ -1479,6 +1514,7 @@ __STATIC_INLINE void CMU_DPLLUnlock(void)
   DPLL0->EN_CLR = DPLL_EN_EN;
 #if defined(DPLL_EN_DISABLING)
   while ((DPLL0->EN & DPLL_EN_DISABLING) != 0U) {
+    // Wait for DPLL disabling.
   }
 #endif
 }
@@ -3515,7 +3551,11 @@ __STATIC_INLINE void CMU_IntClear(uint32_t flags)
  ******************************************************************************/
 __STATIC_INLINE void CMU_IntDisable(uint32_t flags)
 {
+#if defined (CMU_HAS_SET_CLEAR)
+  CMU->IEN_CLR = flags;
+#else
   CMU->IEN &= ~flags;
+#endif
 }
 
 /***************************************************************************//**
@@ -3532,7 +3572,11 @@ __STATIC_INLINE void CMU_IntDisable(uint32_t flags)
  ******************************************************************************/
 __STATIC_INLINE void CMU_IntEnable(uint32_t flags)
 {
+#if defined (CMU_HAS_SET_CLEAR)
+  CMU->IEN_SET = flags;
+#else
   CMU->IEN |= flags;
+#endif
 }
 
 /***************************************************************************//**

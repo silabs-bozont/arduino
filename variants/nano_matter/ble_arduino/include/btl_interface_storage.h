@@ -172,7 +172,7 @@ typedef struct BootloaderStorageFunctions {
   int32_t (*erase)(uint32_t slotId);
   // ------------------------------
   /// Mark a list of slots for bootload
-  int32_t (*setImagesToBootload)(int32_t *slotIds, size_t length);
+  int32_t (*setImagesToBootload)(const int32_t *slotIds, size_t length);
   /// Mark a list of slots for bootload
   int32_t (*getImagesToBootload)(int32_t *slotIds, size_t length);
   /// Append a slot to bootload list
@@ -194,11 +194,14 @@ typedef struct BootloaderStorageFunctions {
   /// Read raw bytes from storage
   int32_t (*readRaw)(uint32_t address, uint8_t *buffer, size_t length);
   /// Write bytes to raw storage
-  int32_t (*writeRaw)(uint32_t address, uint8_t *buffer, size_t length);
+  int32_t (*writeRaw)(uint32_t address, const uint8_t *buffer, size_t length);
   /// Erase storage
   int32_t (*eraseRaw)(uint32_t address, size_t length);
   /// Get configured DMA channel
   int32_t (*getDMAchannel)(void);
+  /// When non-NULL, copy SMP switch record page bases (\c BTL_SMP_PAGE_1_BASE / \c BTL_SMP_PAGE_2_BASE).
+  /// Set to NULL in non-SMP builds.
+  void (*getSmpSwitchPageBases)(uint32_t *page1Base, uint32_t *page2Base);
 } BootloaderStorageFunctions_t;
 
 // -----------------------------------------------------------------------------
@@ -208,12 +211,12 @@ typedef struct BootloaderStorageFunctions {
 #if defined(_SILICON_LABS_32B_SERIES_2)
 #if defined(SEMAILBOX_PRESENT)
 /// Context size(701) includes counter(16) plus stream_block(16 (block size) * 8 (Maximum blocks))
-#define BOOTLOADER_STORAGE_VERIFICATION_CONTEXT_SIZE            (705)
+#define BOOTLOADER_STORAGE_VERIFICATION_CONTEXT_SIZE            (713)
 #else
-#define BOOTLOADER_STORAGE_VERIFICATION_CONTEXT_SIZE            (593)
+#define BOOTLOADER_STORAGE_VERIFICATION_CONTEXT_SIZE            (601)
 #endif
 #else
-#define BOOTLOADER_STORAGE_VERIFICATION_CONTEXT_SIZE            (384)
+#define BOOTLOADER_STORAGE_VERIFICATION_CONTEXT_SIZE            (392)
 #endif
 
 /// Current version of the BootloaderStorageInformation_t struct

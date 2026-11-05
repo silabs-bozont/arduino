@@ -17,7 +17,7 @@ filter:
 
 sdk_extension:
   - id: aiml
-    version: 2.0.0
+    version: 3.0.2
 
 component:
   - id: bluetooth_stack
@@ -36,7 +36,7 @@ component:
   - id: component_catalog
   - id: mpu
   - id: bt_post_build
-  - id: sl_system
+  - id: sl_main
   - id: clock_manager
   - id: device_init
   - id: bluetooth_feature_dynamic_gattdb
@@ -76,7 +76,6 @@ component:
     from: aiml
 
 source:
-  - path: main.c
   - path: app.c
 
 include:

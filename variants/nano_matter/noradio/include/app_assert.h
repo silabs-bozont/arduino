@@ -54,9 +54,7 @@
 #if defined(APP_ASSERT_ENABLE) && APP_ASSERT_ENABLE
 
 #if APP_ASSERT_BREAKPOINT
-#if !(defined (__arm__) || defined (__ICCARM__))
-#error "The breakpoint feature of app_assert is only supported on ARM"
-#endif // !(defined (__arm__) || defined (__ICCARM__))
+#if (!defined(__unix__) && defined (__arm__)) || defined (__ICCARM__)
 // Workaround for compiler specific instruction
 #if defined(__ICCARM__)
 #define _app_assert_breakpoint() __asm("BKPT 0x01")
@@ -65,9 +63,13 @@
 #else
   #error "Unsupported toolchain"
 #endif // defined(__ICCARM__)
-#else
-#define _app_assert_breakpoint()
+#endif // (defined (__arm__) || defined (__ICCARM__))
 #endif // APP_ASSERT_BREAKPOINT
+
+// default definition for MSYS2 environments
+#if !defined(_app_assert_breakpoint)
+#define _app_assert_breakpoint()
+#endif
 
 #if APP_ASSERT_SCHEDULE_LOCK && defined(SL_CATALOG_FREERTOS_KERNEL_PRESENT)
 #define _app_assert_sched_lock() vTaskSuspendAll()
@@ -81,7 +83,7 @@
 #define _app_assert_sched_lock()
 #endif // APP_ASSERT_SCHEDULE_LOCK
 
-#if defined(HOST_TOOLCHAIN)
+#if defined(__linux__) || defined(__APPLE__) || defined(_WIN32) || defined(__MSYS__)
 #include <stdlib.h>
 #define _app_assert_abort() abort()
 #else
@@ -90,7 +92,7 @@
     _app_assert_breakpoint(); \
     _app_assert_sched_lock(); \
   } while (1)
-#endif // HOST_TOOLCHAIN
+#endif
 
 #if defined(APP_ASSERT_TRACE_ENABLE) && APP_ASSERT_TRACE_ENABLE
 #define _app_assert_trace() app_log_print_trace()

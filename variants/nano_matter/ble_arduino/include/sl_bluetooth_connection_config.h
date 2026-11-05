@@ -42,7 +42,8 @@
 // <i> Define the preferred maximum TX payload octets that will be used on connections.
 // <i> This value is set to the controller as the default suggested data length when
 // <i> Bluetooth stack is started.
-#define SL_BT_CONFIG_CONNECTION_DATA_LENGTH     (251)
+#define SL_BT_CONFIG_CONNECTION_DATA_LENGTH     27
 
 // <<< end of configuration section >>>
 #endif
+

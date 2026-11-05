@@ -107,7 +107,12 @@ class GreedyMemoryPlanner : public MicroMemoryPlanner {
     return per_buffer_size;
   }
 
- private:
+  // Returns False because the GreedyMemoryPlanner doesn't preserves all tensors
+  // after invocation. Do to the fact that tensors that tensor data for tensors
+  // that aren't being used during a phase of invocation are overwritten.
+  bool preserves_all_tensors() const override { return false; }
+
+  public:
   // Whether a buffer is active in a given time range.
   bool DoesEntryOverlapInTime(const ListEntry* entry, const int first_time_used,
                               const int last_time_used) const;

@@ -35,8 +35,14 @@
 #ifndef OPENTHREAD_NETDATA_H_
 #define OPENTHREAD_NETDATA_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <openthread/commissioner.h>
+#include <openthread/error.h>
+#include <openthread/instance.h>
 #include <openthread/ip6.h>
+#include <openthread/platform/radio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,9 +82,10 @@ typedef struct otBorderRouterConfig
  */
 typedef struct otLowpanContextInfo
 {
-    uint8_t     mContextId;    ///< The 6LoWPAN Context ID.
-    bool        mCompressFlag; ///< The compress flag.
-    otIp6Prefix mPrefix;       ///< The associated IPv6 prefix.
+    uint8_t     mContextId;        ///< The 6LoWPAN Context ID.
+    bool        mCompressFlag : 1; ///< The compress flag.
+    bool        mStable : 1;       ///< Whether the Context TLV is marked as Stable Network Data.
+    otIp6Prefix mPrefix;           ///< The associated IPv6 prefix.
 } otLowpanContextInfo;
 
 /**

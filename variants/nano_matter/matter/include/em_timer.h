@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 /***************************************************************************//**
- * @addtogroup timer
+ * @addtogroup timer TIMER - Timer/Counter
  * @{
  ******************************************************************************
  * @deprecated
@@ -877,6 +877,7 @@ __STATIC_INLINE void TIMER_CounterSet(TIMER_TypeDef *timer, uint32_t val)
     timer->EN_CLR = TIMER_EN_EN;
 #if defined(_TIMER_EN_DISABLING_MASK)
     while (timer->EN & _TIMER_EN_DISABLING_MASK) {
+      // Wait for hardware to complete disabling.
     }
 #endif
   }
@@ -930,6 +931,7 @@ __STATIC_INLINE void TIMER_EnableDTI(TIMER_TypeDef *timer, bool enable)
   timer->EN_CLR = TIMER_EN_EN;
 #if defined(_TIMER_EN_DISABLING_MASK)
   while (timer->EN & _TIMER_EN_DISABLING_MASK) {
+    // Wait for hardware to complete disabling.
   }
 #endif
   if (enable) {
@@ -1025,7 +1027,11 @@ __STATIC_INLINE void TIMER_IntClear(TIMER_TypeDef *timer, uint32_t flags)
  ******************************************************************************/
 __STATIC_INLINE void TIMER_IntDisable(TIMER_TypeDef *timer, uint32_t flags)
 {
+#if defined (TIMER_HAS_SET_CLEAR)
+  timer->IEN_CLR = flags;
+#else
   timer->IEN &= ~flags;
+#endif
 }
 
 /***************************************************************************//**
@@ -1047,7 +1053,11 @@ __STATIC_INLINE void TIMER_IntDisable(TIMER_TypeDef *timer, uint32_t flags)
  ******************************************************************************/
 __STATIC_INLINE void TIMER_IntEnable(TIMER_TypeDef *timer, uint32_t flags)
 {
+#if defined (TIMER_HAS_SET_CLEAR)
+  timer->IEN_SET = flags;
+#else
   timer->IEN |= flags;
+#endif
 }
 
 /***************************************************************************//**

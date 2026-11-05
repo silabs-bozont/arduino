@@ -1,0 +1,6 @@
+{
+  "sdkRoot" : "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/",
+  "apackRoot" : "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/bluetooth_bgbuild",
+  "partOpn" : "mgm240sd22vna",
+  "boards" : "brd2707arevA00,brd4002arevA07"
+}

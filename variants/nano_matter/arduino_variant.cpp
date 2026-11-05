@@ -29,14 +29,19 @@
 
 #ifdef ARDUINO_MATTER
 
- #include "AppTask.h"
-using namespace ::chip;
+#include "AppTask.h"
 
-AppTask AppTask::sAppTask;
-
+// Matter 2.9 lighting-app StartAppTask starts AppTaskMain; Arduino uses setup()/loop()
+// instead. gsdk.a's StartAppTask is weakened at package time so this strong stub wins.
 CHIP_ERROR AppTask::StartAppTask()
 {
   return CHIP_NO_ERROR;
+}
+
+// OpenThread sleep.c calls this; OT iostream_uart (vcom CLI) is dropped for Nano Matter
+extern "C" bool efr32UartIsDataReady(void)
+{
+  return false;
 }
 
 #endif // ARDUINO_MATTER

@@ -64,3 +64,4 @@
 // <<< end of configuration section >>>
 
 #endif // SL_DEVICE_INIT_LFXO_CONFIG_H
+

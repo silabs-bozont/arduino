@@ -34,7 +34,7 @@
 #include "api/application_properties.h"
 
 // Bitfield representing type of application
-#define APPLICATION_TYPE  APPLICATION_TYPE_BLUETOOTH_APP
+#define APPLICATION_TYPE  APPLICATION_TYPE_BLUETOOTH_APP | APPLICATION_TYPE_THREAD
 
 
 #endif // SL_APPLICATION_TYPE_H

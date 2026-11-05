@@ -16,6 +16,10 @@ limitations under the License.
 #ifndef THIRD_PARTY_TFLITE_MICRO_TENSORFLOW_LITE_MICRO_FLATBUFFER_UTILS_H_
 #define THIRD_PARTY_TFLITE_MICRO_TENSORFLOW_LITE_MICRO_FLATBUFFER_UTILS_H_
 
+// This works around a name collision between the BitWidth enum in flexbuffers 917 I2C header defines
+#undef BIT_WIDTH_8
+#undef BIT_WIDTH_16
+#undef BIT_WIDTH_32
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/flexbuffers.h"
 #include "tensorflow/lite/c/common.h"

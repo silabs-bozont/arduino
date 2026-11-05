@@ -24,17 +24,9 @@
 #include "mbedtls/threading.h"
 #endif
 
-/**
- * Tell if PSA is ready for this hash.
- *
- * \note            For now, only checks the state of the driver subsystem,
- *                  not the algorithm. Might do more in the future.
- *
- * \param hash_alg  The hash algorithm (ignored for now).
- *
- * \return 1 if the driver subsytem is ready, 0 otherwise.
- */
-int psa_can_do_hash(psa_algorithm_t hash_alg);
+#if !defined(PSA_CRYPTO_SE_H)
+typedef struct psa_se_drv_table_entry_s psa_se_drv_table_entry_t;
+#endif
 
 /**
  * Tell if PSA is ready for this cipher.
@@ -155,7 +147,11 @@ typedef struct {
     /* Dynamically allocated key data buffer.
      * Format as specified in psa_export_key(). */
     struct key_data {
+#if defined(MBEDTLS_PSA_STATIC_KEY_SLOTS)
+        uint8_t data[MBEDTLS_PSA_STATIC_KEY_SLOT_BUFFER_SIZE];
+#else
         uint8_t *data;
+#endif
         size_t bytes;
     } key;
 } psa_key_slot_t;
@@ -999,5 +995,43 @@ psa_status_t psa_crypto_local_output_alloc(uint8_t *output, size_t output_len,
  *                              could not be copied back to the original.
  */
 psa_status_t psa_crypto_local_output_free(psa_crypto_local_output_t *local_output);
+
+/** \brief Retrieve a key slot, validating usage policy.
+ *
+ * On success, the key slot is locked. It is the caller's responsibility
+ * to unlock it when done via psa_unregister_read().
+ */
+psa_status_t psa_get_and_lock_key_slot_with_policy(
+    mbedtls_svc_key_id_t key,
+    psa_key_slot_t **p_slot,
+    psa_key_usage_t usage,
+    psa_algorithm_t alg);
+
+/** \brief Start the creation of a key.
+ *
+ * Allocates a key slot and sets it up for the key creation process.
+ */
+psa_status_t psa_start_key_creation(
+    psa_key_creation_method_t method,
+    const psa_key_attributes_t *attributes,
+    psa_key_slot_t **p_slot,
+    psa_se_drv_table_entry_t **p_drv);
+
+/** \brief Finish the creation of a key.
+ *
+ * Finalises the key slot, persists the key if needed, and outputs
+ * the key identifier.
+ */
+psa_status_t psa_finish_key_creation(
+    psa_key_slot_t *slot,
+    psa_se_drv_table_entry_t *driver,
+    mbedtls_svc_key_id_t *key);
+
+/** \brief Abort the creation of a key.
+ *
+ * Wipes the key slot and releases any associated resources.
+ */
+void psa_fail_key_creation(psa_key_slot_t *slot,
+                           psa_se_drv_table_entry_t *driver);
 
 #endif /* PSA_CRYPTO_CORE_H */

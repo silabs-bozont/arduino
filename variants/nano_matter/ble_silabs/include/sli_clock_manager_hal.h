@@ -71,8 +71,16 @@ sl_status_t sli_clock_manager_hal_get_clock_branch_precision(sl_clock_branch_t c
 /***************************************************************************//**
  * Enables/Disables the bus clock associated with the given module.
  ******************************************************************************/
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_CLOCK_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
 sl_status_t sli_clock_manager_hal_enable_bus_clock(sl_bus_clock_t module,
                                                    bool enable);
+
+/***************************************************************************//**
+ * Gets the enable status of the given module's bus clock.
+ ******************************************************************************/
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_CLOCK_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
+sl_status_t sli_clock_manager_hal_is_bus_clock_enabled(sl_bus_clock_t module,
+                                                       bool *enabled);
 
 /***************************************************************************//**
  * Configures the exported clock feature on CMU to output user selected
@@ -120,6 +128,11 @@ sl_status_t sli_clock_manager_hal_hfxo_get_ctune(uint32_t *ctune);
  * Updates the tuning capacitances and calibrate the Core Bias Current.
  ******************************************************************************/
 sl_status_t sli_clock_manager_hal_hfxo_calibrate_ctune(uint32_t ctune);
+
+/***************************************************************************//**
+ * Gets the HFXO's average startup time.
+ ******************************************************************************/
+sl_status_t sli_clock_manager_hal_get_hfxo_average_startup_time(uint32_t *val);
 
 /***************************************************************************//**
  * Sets the LFXO frequency tuning control.
@@ -190,6 +203,34 @@ sl_status_t sli_clock_manager_hal_set_ext_flash_clk(sl_oscillator_t oscillator);
  ******************************************************************************/
 SL_CODE_CLASSIFY(SL_CODE_COMPONENT_CLOCK_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
 sl_status_t sli_clock_manager_hal_get_ext_flash_clk(sl_oscillator_t *oscillator);
+
+/***************************************************************************//**
+ * Retrieves the FREQPLAN NWP SOCPLL config.
+ ******************************************************************************/
+sl_status_t sli_clock_manager_hal_get_nwp_socpll_freqplan_config(const uint16_t **socpll_freqplan_config,
+                                                                 uint8_t *target_frequency_index);
+
+/***************************************************************************//**
+ * Retrieves the FREQPLAN NWP CLKMULT config.
+ ******************************************************************************/
+sl_status_t sli_clock_manager_hal_get_nwp_clkmult_freqplan_config(uint8_t clkmult_index,
+                                                                  const uint8_t **nwp_clkmult_freqplan_config,
+                                                                  uint8_t *target_frequency_index);
+
+#if defined(CLOCK_MANAGER_RUNTIME_HAL_INTERNAL_PRESENT)
+/***************************************************************************//**
+ * Gets frequency of given internal clock branch.
+ ******************************************************************************/
+SL_CODE_CLASSIFY(SL_CODE_COMPONENT_CLOCK_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
+sl_status_t sli_clock_manager_hal_get_clock_branch_frequency_internal(sl_clock_branch_t clock_branch,
+                                                                      uint32_t          *frequency);
+
+/***************************************************************************//**
+ * Gets precision of given internal clock branch.
+ ******************************************************************************/
+sl_status_t sli_clock_manager_hal_get_clock_branch_precision_internal(sl_clock_branch_t clock_branch,
+                                                                      uint16_t          *precision);
+#endif
 
 #ifdef __cplusplus
 }

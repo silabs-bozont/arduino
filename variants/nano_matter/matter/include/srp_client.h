@@ -31,8 +31,8 @@
  *   This file includes compile-time configurations for the SRP (Service Registration Protocol) Client.
  */
 
-#ifndef CONFIG_SRP_CLIENT_H_
-#define CONFIG_SRP_CLIENT_H_
+#ifndef OT_CORE_CONFIG_SRP_CLIENT_H_
+#define OT_CORE_CONFIG_SRP_CLIENT_H_
 
 /**
  * @addtogroup config-srp-client
@@ -278,7 +278,11 @@
  * This config is applicable only when `OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_ENABLE` is enabled.
  */
 #ifndef OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES
+#if OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE
+#define OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES 8
+#else
 #define OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES 2
+#endif
 #endif
 
 /**
@@ -356,4 +360,4 @@
  * @}
  */
 
-#endif // CONFIG_SRP_CLIENT_H_
+#endif // OT_CORE_CONFIG_SRP_CLIENT_H_

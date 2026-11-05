@@ -42,3 +42,4 @@
 #define GP_TX_MAX_TIMEOUT_IN_MICRO_SECONDS  5000000
 // </e>
 // <<< end of configuration section >>>
+

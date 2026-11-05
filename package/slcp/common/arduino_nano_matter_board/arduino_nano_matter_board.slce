@@ -1,0 +1,10 @@
+id: arduino_nano_matter_board
+version: 1.0.0
+description: >
+  Arduino Nano Matter (BRD2707A) board support for SiSDK generate.
+  Provides brd2707a / brd2707a_config which are not shipped in Simplicity SDK.
+label: Arduino Nano Matter board
+supplier: Silicon Laboratories Inc.
+component_path:
+- path: component
+vendor: silabs

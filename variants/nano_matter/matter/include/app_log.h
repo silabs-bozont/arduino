@@ -3,7 +3,7 @@
  * @brief Application logging interface
  *******************************************************************************
  * # License
- * <b>Copyright 2023 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2025 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -95,6 +95,13 @@ extern "C" {
 
 #define APP_LOG_NL                               APP_LOG_NEW_LINE
 
+#define APP_LOG_LEVEL_MASK                                 \
+  ((APP_LOG_LEVEL_MASK_CRITICAL << APP_LOG_LEVEL_CRITICAL) \
+   | (APP_LOG_LEVEL_MASK_ERROR << APP_LOG_LEVEL_ERROR)     \
+   | (APP_LOG_LEVEL_MASK_WARNING << APP_LOG_LEVEL_WARNING) \
+   | (APP_LOG_LEVEL_MASK_INFO << APP_LOG_LEVEL_INFO)       \
+   | (APP_LOG_LEVEL_MASK_DEBUG << APP_LOG_LEVEL_DEBUG))
+
 // -----------------------------------------------------------------------------
 // Global variables
 
@@ -137,52 +144,52 @@ void _app_log_time();
  ******************************************************************************/
 void _app_log_counter();
 
-// -----------------------------------------------------------------------------
-// Public API functions
+#if defined(APP_LOG_LEVEL_FILTER_DYNAMIC) && APP_LOG_LEVEL_FILTER_DYNAMIC == 1
 /***************************************************************************//**
  * Checking log level
  * @param[in] level log level to check
  * @return true if the given level should be printed
  ******************************************************************************/
-bool app_log_check_level(uint8_t level);
+bool _app_log_check_level(uint8_t level);
 
 /***************************************************************************//**
  * Enable or disable simple log level filter threshold
  * @param[in] enable true if simple threshold filter needs to be enabled
  ******************************************************************************/
-void app_log_filter_threshold_enable(bool enable);
+void _app_log_filter_threshold_enable(bool enable);
 
 /***************************************************************************//**
  * Enable or disable masking for log levels
  * @param[in] enable true if masking needs to be enabled
  ******************************************************************************/
-void app_log_filter_mask_enable(bool enable);
+void _app_log_filter_mask_enable(bool enable);
 
 /***************************************************************************//**
  * Set simple filter threshold log level
  * @param[in] level log level threshold
  * @return SL_STATUS_OK if set correctly
  ******************************************************************************/
-sl_status_t app_log_filter_threshold_set(uint8_t level);
+sl_status_t _app_log_filter_threshold_set(uint8_t level);
 
 /***************************************************************************//**
  * Set masks for log levels
  * @param[in] mask bitfield of log levels to be enabled
  * @return SL_STATUS_OK if set correctly
  ******************************************************************************/
-sl_status_t app_log_filter_mask_set(uint8_t mask);
+sl_status_t _app_log_filter_mask_set(uint8_t mask);
 
 /***************************************************************************//**
  * Get simple filter threshold log level
  * @return log level threshold
  ******************************************************************************/
-uint8_t app_log_filter_threshold_get(void);
+uint8_t _app_log_filter_threshold_get(void);
 
 /***************************************************************************//**
  * Get masks for log levels
  * @return bitfield of log levels that are enabled
  ******************************************************************************/
-uint8_t app_log_filter_mask_get(void);
+uint8_t _app_log_filter_mask_get(void);
+#endif // APP_LOG_LEVEL_FILTER_DYNAMIC
 
 // -----------------------------------------------------------------------------
 // Logging macro definitions
@@ -439,6 +446,26 @@ uint8_t app_log_filter_mask_get(void);
     }                                                                                                                             \
   } while (0)
 
+#if defined(APP_LOG_LEVEL_FILTER_DYNAMIC) && APP_LOG_LEVEL_FILTER_DYNAMIC == 1
+#define app_log_check_level             _app_log_check_level
+#define app_log_filter_threshold_enable _app_log_filter_threshold_enable
+#define app_log_filter_mask_enable      _app_log_filter_mask_enable
+#define app_log_filter_threshold_set    _app_log_filter_threshold_set
+#define app_log_filter_mask_set         _app_log_filter_mask_set
+#define app_log_filter_threshold_get    _app_log_filter_threshold_get
+#define app_log_filter_mask_get         _app_log_filter_mask_get
+#else // APP_LOG_LEVEL_FILTER_DYNAMIC == 0
+#define app_log_check_level(level)                                                     \
+  (((APP_LOG_LEVEL_FILTER_ENABLE == 0) || (level <= (APP_LOG_LEVEL_FILTER_THRESHOLD))) \
+   && ((APP_LOG_LEVEL_MASK_ENABLE == 0) || ((APP_LOG_LEVEL_MASK & (1 << level)) != 0)))
+#define app_log_filter_threshold_enable(...)
+#define app_log_filter_mask_enable(...)
+#define app_log_filter_threshold_set(...)   SL_STATUS_NOT_SUPPORTED
+#define app_log_filter_mask_set(...)        SL_STATUS_NOT_SUPPORTED
+#define app_log_filter_threshold_get        APP_LOG_LEVEL_FILTER_THRESHOLD
+#define app_log_filter_mask_get             APP_LOG_LEVEL_MASK
+#endif // APP_LOG_LEVEL_FILTER_DYNAMIC
+
 #else // APP_LOG_ENABLE
 
 #define app_log(...)
@@ -456,6 +483,13 @@ uint8_t app_log_filter_mask_get(void);
 #define app_log_array_dump_reverse_level_s(level, separator, p_data, len, format)
 #define app_log_custom_array_dump_level_s(level, separator, array, array_len, array_data_type, iterator_ptr, format, ...)
 #define app_log_custom_array_dump_reverse_level_s(level, separator, array, array_len, array_data_type, iterator_ptr, format, ...)
+#define app_log_check_level(...)
+#define app_log_filter_threshold_enable(...)
+#define app_log_filter_mask_enable(...)
+#define app_log_filter_threshold_set(...)   SL_STATUS_NOT_SUPPORTED
+#define app_log_filter_mask_set(...)        SL_STATUS_NOT_SUPPORTED
+#define app_log_filter_threshold_get        APP_LOG_LEVEL_FILTER_THRESHOLD
+#define app_log_filter_mask_get             APP_LOG_LEVEL_MASK
 
 #endif // APP_LOG_ENABLE
 

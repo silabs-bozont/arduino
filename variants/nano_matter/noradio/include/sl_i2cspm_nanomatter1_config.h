@@ -58,14 +58,15 @@
 #define SL_I2CSPM_NANOMATTER1_PERIPHERAL_NO           1
 
 // I2C1 SCL on PC8
-#define SL_I2CSPM_NANOMATTER1_SCL_PORT                gpioPortC
+#define SL_I2CSPM_NANOMATTER1_SCL_PORT                SL_GPIO_PORT_C
 #define SL_I2CSPM_NANOMATTER1_SCL_PIN                 8
 
 // I2C1 SDA on PC7
-#define SL_I2CSPM_NANOMATTER1_SDA_PORT                gpioPortC
+#define SL_I2CSPM_NANOMATTER1_SDA_PORT                SL_GPIO_PORT_C
 #define SL_I2CSPM_NANOMATTER1_SDA_PIN                 7
 
 // [I2C_SL_I2CSPM_NANOMATTER]$
 // <<< sl:end pin_tool >>>
 
 #endif // SL_I2CSPM_NANOMATTER1_CONFIG_H
+

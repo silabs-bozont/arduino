@@ -29,6 +29,12 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/micro_ops.h"
 #include "tensorflow/lite/micro/micro_log.h"
 
+#ifdef TFLITE_MICRO_RECORDER_ENABLED
+#include "tflite_micro_recorder.hpp"
+#else
+#define NPU_TOOLKIT_RECORD_POOL_PARAMS(...)
+#endif
+
 namespace tflite {
 
 extern const int kPoolingInputTensor;
@@ -75,6 +81,9 @@ void AveragePoolingEvalQuantized(TfLiteContext* context, const TfLiteNode* node,
   op_params.quantized_activation_min = data->activation_min;
   op_params.quantized_activation_max = data->activation_max;
 
+  op_params.padding_type = tflite::micro::RuntimePaddingType(params->padding);
+  NPU_TOOLKIT_RECORD_POOL_PARAMS(op_params);
+
   reference_integer_ops::AveragePool(op_params,
                                      tflite::micro::GetTensorShape(input),
                                      tflite::micro::GetTensorData<T>(input),
@@ -104,6 +113,9 @@ void MaxPoolingEvalQuantized(TfLiteContext* context, TfLiteNode* node,
   op_params.padding_values.width = data->padding.width;
   op_params.quantized_activation_min = data->activation_min;
   op_params.quantized_activation_max = data->activation_max;
+
+  op_params.padding_type = tflite::micro::RuntimePaddingType(params->padding);
+  NPU_TOOLKIT_RECORD_POOL_PARAMS(op_params);
 
   reference_integer_ops::MaxPool(op_params,
                                  tflite::micro::GetTensorShape(input),

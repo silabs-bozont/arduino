@@ -48,10 +48,14 @@
 // for them.
 
 #include <stddef.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 int sli_nv_seed_read(unsigned char *buf, size_t buf_len);
 int sli_nv_seed_write(unsigned char *buf, size_t buf_len);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // MBEDTLS_PLATFORM_NV_SEED_ALT
 
 // -----------------------------------------------------------------------------
@@ -68,10 +72,14 @@ int sli_nv_seed_write(unsigned char *buf, size_t buf_len);
 // selecting mbedtls_platform_dynamic_memory_allocation_config_init_runtime.
 
 #include <stddef.h>
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern void *MBEDTLS_PLATFORM_CALLOC_MACRO(size_t n, size_t size);
 extern void MBEDTLS_PLATFORM_FREE_MACRO(void *ptr);
-
+#ifdef __cplusplus
+}
+#endif
 #endif // MBEDTLS_PLATFORM_CALLOC_MACRO && MBEDTLS_PLATFORM_FREE_MACRO
 
 // -----------------------------------------------------------------------------
@@ -114,6 +122,9 @@ extern void MBEDTLS_PLATFORM_FREE_MACRO(void *ptr);
   #define SLI_MBEDTLS_DEVICE_S3
   #define SLI_MBEDTLS_DEVICE_HC
 
+  #if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301) && defined(SYMCRYPTO_PRESENT)
+    #define SLI_MBEDTLS_DEVICE_HC_LPW
+  #endif
   #define SLI_MBEDTLS_DEVICE_HSE
   #define SLI_MBEDTLS_DEVICE_SE_V2
   #define SLI_MBEDTLS_DEVICE_HSE_V2
@@ -150,6 +161,19 @@ extern void MBEDTLS_PLATFORM_FREE_MACRO(void *ptr);
 
 #elif defined(SLI_CRYPTOACC_PRESENT_SI91X)
   #define SLI_MBEDTLS_DEVICE_SI91X
+
+#endif
+
+// -----------------------------------------------------------------------------
+// TrustZone Non-Secure adjustments
+//
+// On NS the legacy AES implementation is not compiled in (PSA reaches it via
+// TF-M across the TZ boundary). Route CTR_DRBG through its PSA path so
+// mbedtls/ctr_drbg.h does not transitively include mbedtls/aes.h, which is
+// intentionally not exposed on NS.
+
+#if defined(SL_TRUSTZONE_NONSECURE)
+#define MBEDTLS_CTR_DRBG_USE_PSA_CRYPTO
 #endif
 
 #endif // SLI_MBEDTLS_OMIPRESENT_H

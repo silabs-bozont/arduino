@@ -31,8 +31,8 @@
  *   This file includes compile-time configurations for TLS/DTLS.
  */
 
-#ifndef CONFIG_SECURE_TRANSPORT_H_
-#define CONFIG_SECURE_TRANSPORT_H_
+#ifndef OT_CORE_CONFIG_SECURE_TRANSPORT_H_
+#define OT_CORE_CONFIG_SECURE_TRANSPORT_H_
 
 /**
  * @addtogroup config-secure-transport
@@ -68,12 +68,8 @@
      OPENTHREAD_CONFIG_COMMISSIONER_ENABLE || OPENTHREAD_CONFIG_JOINER_ENABLE || OPENTHREAD_CONFIG_BLE_TCAT_ENABLE)
 #endif
 
-#ifdef OPENTHREAD_CONFIG_DTLS_ENABLE
-#error "OPENTHREAD_CONFIG_DTLS_ENABLE is deprecated please use OPENTHREAD_CONFIG_SECURE_TRANSPORT_ENABLE instead"
-#endif
-
 /**
  * @}
  */
 
-#endif // CONFIG_SECURE_TRANSPORT_H_
+#endif // OT_CORE_CONFIG_SECURE_TRANSPORT_H_

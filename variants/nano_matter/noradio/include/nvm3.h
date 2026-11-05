@@ -47,8 +47,14 @@ extern "C" {
  ******************************************************************************/
 
 #define NVM3_MIN_FRAGMENT_COUNT         (2U)                            ///< The minimum number of fragments
+#define PAGE_SIZE_4096                  (4096U)
 #if defined(FLASH_PAGE_SIZE)
+#if (FLASH_PAGE_SIZE == PAGE_SIZE_4096)
+// For a 4096-byte page size, the largest object may span up to three pages. Adjust for an object header.
+#define NVM3_MAX_OBJECT_SIZE_X          (NVM3_MAX_OBJECT_SIZE_HIGH_LIMIT + 8)
+#else
 #define NVM3_MAX_OBJECT_SIZE_X          (NVM3_MAX_OBJECT_SIZE + 8)      // Adjust for an object header
+#endif
 #define FLASH_PAGE_SIZE_X               (FLASH_PAGE_SIZE - 20)          // Adjust for a page header
 #define NVM3_FRAGMENT_COUNT             (((NVM3_MAX_OBJECT_SIZE_X - 1) / FLASH_PAGE_SIZE_X) + NVM3_MIN_FRAGMENT_COUNT)
 #endif

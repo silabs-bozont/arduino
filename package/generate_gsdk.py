@@ -181,6 +181,7 @@ def generate_gsdk(current_platform_config):
         patch_matter_attribute_singleton_flag()
         patch_matter_config_for_arduino()
         patch_matter_attribute_largest_for_dynamic_endpoints()
+        patch_matter_openthread_iostream_uart()
     build_project()
     if is_matter:
         gsdk_archive = os.path.join(slc_output_dir, "gsdk.a")
@@ -420,12 +421,49 @@ def prepare_matter_workspace_for_project(project_slcp_file, matter_zap_file, add
     return staged_slcp
 
 
+def prepare_arduino_nano_matter_board_extension():
+    """
+    Local .slce for BRD2707A (not in SiSDK). Symlink shared brd4318a_* board
+    config headers from the configured SDK so brd2707a_config root_path resolves.
+    Returns absolute path to the extension directory.
+    """
+    ext = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "slcp", "common", "arduino_nano_matter_board")
+    )
+    if not os.path.isdir(ext) or not os.path.isfile(os.path.join(ext, "arduino_nano_matter_board.slce")):
+        print(f"Missing arduino_nano_matter_board extension at {ext}")
+        exit(-1)
+
+    config_root = os.path.join(ext, "hardware", "board", "config")
+    os.makedirs(config_root, exist_ok=True)
+    sdk_config = os.path.join(
+        os.path.abspath(gsdk_dir.rstrip("/")), "boards", "hardware", "board", "config"
+    )
+    for name in ("brd4318a_brd4001a", "brd4318a_brd4002a"):
+        target = os.path.join(sdk_config, name)
+        dest = os.path.join(config_root, name)
+        if not os.path.isdir(target):
+            print(f"Missing board config dir in SDK: {target}")
+            exit(-1)
+        # Copy (not symlink): SLC config_file resolution may not follow symlinks
+        if os.path.isdir(dest):
+            # Refresh if empty or clearly stale marker missing
+            marker = os.path.join(dest, "sl_pwm_init_led0_config.h")
+            if os.path.isfile(marker):
+                continue
+            shutil.rmtree(dest)
+        elif os.path.islink(dest) or os.path.isfile(dest):
+            os.unlink(dest)
+        shutil.copytree(target, dest)
+    return ext
+
+
 def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
                                      is_ble_arduino=False, is_zigbee=False, is_matter=False):
     """
     Generate directly from an SLCP under package/ (SiSDK 2026.x).
     Uses -cpsdk -np and --sdk-package-path for sibling extensions
-    (AIML, Matter, arduino_matter_gatt, arduino_ble_hci)
+    (AIML, Matter, arduino_matter_gatt, arduino_ble_hci, arduino_nano_matter_board)
     For Zigbee/Matter, passes --tool-path so SLC uses the configured ZAP adapter pack (not PATH).
     """
     print("Starting SLC generation (direct from package SLCP)...")
@@ -463,6 +501,9 @@ def generate_project_with_slc_direct(project_slcp_file, board_opn, project_name,
             print(f"Missing arduino_ble_hci extension at {arduino_ble_hci_ext}")
             exit(-1)
         sdk_package_paths = sdk_package_paths + "," + arduino_ble_hci_ext
+    if "brd2707a" in {p.strip() for p in board_opn.split(",")}:
+        # Custom Nano Matter board not present in SiSDK
+        sdk_package_paths = sdk_package_paths + "," + prepare_arduino_nano_matter_board_extension()
 
     generator_timeout = "1800" if is_matter else "600"
     cmd = [
@@ -1035,6 +1076,57 @@ def verify_matter_gatt_capabilities_for_arduino_ble():
         )
         exit(-1)
     print("Matter GATT capabilities present (arduino_matter_gatt OK)")
+
+
+def patch_matter_openthread_iostream_uart():
+    """
+    Drop OpenThread iostream_uart.c from the prebuild when the project has no
+    iostream vcom instance. That file hardcodes sl_iostream_*_vcom_config.h and
+    sl_iostream_*_vcom_handle; Arduino boards that use custom instance names
+    (e.g. nanomatter) cannot satisfy it without adding a vcom iostream.
+
+    Only removes the object from OBJS/CDEPS (recipe can stay unused). OT CLI
+    UART is unused for Arduino Matter (CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=0);
+    efr32UartProcess already has a weak empty stub in the OT platform.
+    """
+    config_dir = os.path.join(slc_output_dir, "config")
+    has_vcom = any(
+        os.path.isfile(os.path.join(config_dir, name))
+        for name in (
+            "sl_iostream_eusart_vcom_config.h",
+            "sl_iostream_usart_vcom_config.h",
+        )
+    )
+    if has_vcom:
+        print("OpenThread iostream_uart kept (vcom iostream config present)")
+        return
+
+    project_mak = find_type_of_file_in_dir(".project.mak", slc_output_dir)
+    if not project_mak:
+        print("No .project.mak found; cannot drop OpenThread iostream_uart")
+        exit(-1)
+    path = os.path.join(slc_output_dir, project_mak)
+    with open(path, "r") as in_file:
+        lines = in_file.readlines()
+
+    # Match OT platform-abstraction/efr32/iostream_uart only — not sl_iostream_uart.o
+    marker = "openthread/platform-abstraction/efr32/iostream_uart."
+    kept = []
+    removed = 0
+    for line in lines:
+        # Drop membership only — leave the unused recipe block intact
+        if marker in line and (line.lstrip().startswith("OBJS +=") or line.lstrip().startswith("CDEPS +=")):
+            removed += 1
+            continue
+        kept.append(line)
+
+    if removed == 0:
+        print("OpenThread iostream_uart not listed in project.mak (nothing to drop)")
+        return
+
+    with open(path, "w") as out_file:
+        out_file.writelines(kept)
+    print(f"Dropped OpenThread iostream_uart from {project_mak} ({removed} OBJS/CDEPS lines)")
 
 
 def patch_matter_config_for_arduino():
@@ -2592,7 +2684,7 @@ bgm220explorerkit_ble_silabs_prebuilt_platform_config = {
 nanomatter_noradio_platform_config = {
     "name": "nano_matter_noradio",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": False,
     "protocol_stack": 'noradio',
@@ -2602,15 +2694,13 @@ nanomatter_noradio_platform_config = {
                          "slcp/nano_matter/sl_iostream_usart_nanomatter_config.h",
                          "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"]]
+                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",]
 }
 
 nanomatter_noradio_prebuilt_platform_config = {
     "name": "nano_matter_noradio_precomp",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": True,
     "protocol_stack": 'noradio',
@@ -2620,15 +2710,13 @@ nanomatter_noradio_prebuilt_platform_config = {
                          "slcp/nano_matter/sl_iostream_usart_nanomatter_config.h",
                          "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"]]
+                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",]
 }
 
 nanomatter_ble_arduino_platform_config = {
     "name": "nano_matter_ble_arduino",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
@@ -2639,7 +2727,7 @@ nanomatter_ble_arduino_platform_config = {
 nanomatter_ble_arduino_prebuilt_platform_config = {
     "name": "nano_matter_ble_arduino_precomp",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
@@ -2650,7 +2738,7 @@ nanomatter_ble_arduino_prebuilt_platform_config = {
 nanomatter_ble_silabs_platform_config = {
     "name": "nano_matter_ble_silabs",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": False,
     "protocol_stack": 'ble_silabs',
@@ -2660,15 +2748,13 @@ nanomatter_ble_silabs_platform_config = {
                          "slcp/nano_matter/sl_iostream_usart_nanomatter_config.h",
                          "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"]]
+                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",]
 }
 
 nanomatter_ble_silabs_prebuilt_platform_config = {
     "name": "nano_matter_ble_silabs_precomp",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": True,
     "protocol_stack": 'ble_silabs',
@@ -2678,15 +2764,13 @@ nanomatter_ble_silabs_prebuilt_platform_config = {
                          "slcp/nano_matter/sl_iostream_usart_nanomatter_config.h",
                          "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"]]
+                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",]
 }
 
 nanomatter_matter_platform_config = {
     "name": "nano_matter_matter",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": False,
     "protocol_stack": 'matter',
@@ -2697,8 +2781,6 @@ nanomatter_matter_platform_config = {
                          "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"],
                          ["slcp/common/MatterBLE.h", "extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/include/"]],
     "matter_zap_file": "slcp/common/arduino_matter.zap",
     "matter_vendor_name": "Arduino",
@@ -2708,7 +2790,7 @@ nanomatter_matter_platform_config = {
 nanomatter_matter_prebuilt_platform_config = {
     "name": "nano_matter_matter_precomp",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": True,
     "protocol_stack": 'matter',
@@ -2719,8 +2801,6 @@ nanomatter_matter_prebuilt_platform_config = {
                          "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"],
                          ["slcp/common/MatterBLE.h", "extension/matter_extension/third_party/matter_sdk/examples/lighting-app/silabs/include/"]],
     "matter_zap_file": "slcp/common/arduino_matter.zap",
     "matter_vendor_name": "Arduino",
@@ -2730,7 +2810,7 @@ nanomatter_matter_prebuilt_platform_config = {
 nanomatter_zigbee_platform_config = {
     "name": "nano_matter_zigbee",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": False,
     "protocol_stack": 'zigbee',
@@ -2740,16 +2820,14 @@ nanomatter_zigbee_platform_config = {
                          "slcp/nano_matter/sl_iostream_usart_nanomatter_config.h",
                          "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"]],
+                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",],
     "zigbee_zap_file": "slcp/common/arduino_zigbee.zap"
 }
 
 nanomatter_zigbee_prebuilt_platform_config = {
     "name": "nano_matter_zigbee_precomp",
     "arduino_variant_name": "nano_matter",
-    "board_opn": "brd2707a",
+    "board_opn": "brd2707a,brd4002a",
     "ai_capable": True,
     "prebuild": True,
     "protocol_stack": 'zigbee',
@@ -2759,9 +2837,7 @@ nanomatter_zigbee_prebuilt_platform_config = {
                          "slcp/nano_matter/sl_iostream_usart_nanomatter_config.h",
                          "slcp/nano_matter/sl_iostream_eusart_nanomatter1_config.h",
                          "slcp/nano_matter/sl_i2cspm_nanomatter_config.h",
-                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",
-                         ["slcp/nano_matter/brd2707a.slcc", "hardware/board/component/"],
-                         ["slcp/nano_matter/brd2707a_config.slcc", "hardware/board/config/component/"]],
+                         "slcp/nano_matter/sl_i2cspm_nanomatter1_config.h",],
     "zigbee_zap_file": "slcp/common/arduino_zigbee.zap"
 }
 

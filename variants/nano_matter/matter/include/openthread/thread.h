@@ -35,9 +35,15 @@
 #ifndef OPENTHREAD_THREAD_H_
 #define OPENTHREAD_THREAD_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <openthread/dataset.h>
+#include <openthread/error.h>
+#include <openthread/instance.h>
+#include <openthread/ip6.h>
 #include <openthread/link.h>
-#include <openthread/message.h>
+#include <openthread/platform/radio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -178,11 +184,6 @@ typedef struct otMleCounters
     uint16_t mBetterPartitionAttachAttempts; ///< Number of attempts to attach to a better partition.
     uint16_t mBetterParentAttachAttempts;    ///< Number of attempts to attach to find a better parent (parent search).
 
-    /**
-     * Role time tracking.
-     *
-     * When uptime feature is enabled (OPENTHREAD_CONFIG_UPTIME_ENABLE = 1) time spent in each MLE role is tracked.
-     */
     uint64_t mDisabledTime; ///< Number of milliseconds device has been in OT_DEVICE_ROLE_DISABLED role.
     uint64_t mDetachedTime; ///< Number of milliseconds device has been in OT_DEVICE_ROLE_DETACHED role.
     uint64_t mChildTime;    ///< Number of milliseconds device has been in OT_DEVICE_ROLE_CHILD role.
@@ -302,17 +303,24 @@ otError otThreadDiscover(otInstance              *aInstance,
 bool otThreadIsDiscoverInProgress(otInstance *aInstance);
 
 /**
- * Sets the Thread Joiner Advertisement when discovering Thread network.
+ * Sets the Thread Joiner Advertisement used when discovering a Thread network.
  *
- * Thread Joiner Advertisement is used to allow a Joiner to advertise its own application-specific information
- * (such as Vendor ID, Product ID, Discriminator, etc.) via a newly-proposed Joiner Advertisement TLV,
- * and to make this information available to Commissioners or Commissioner Candidates without human interaction.
+ * Requires `OPENTHREAD_CONFIG_JOINER_ADV_EXPERIMENTAL_ENABLE`.
+ *
+ * @note This is an experimental feature and is not part of the Thread specification. OpenThread's implementation is
+ *       partial: it provides the mechanism for a Joiner to include a new Joiner Adv TLV in its emitted Discovery Scan
+ *       Request messages, but does not include the corresponding logic for the receiver of Scan Request to read or
+ *       parse this TLV.
+ *
+ * A Joiner can use this to advertise its own application-specific information (such as Vendor ID, Product ID,
+ * Discriminator, etc.) using a newly proposed Joiner Advertisement TLV (`OT_MESHCOP_TLV_JOINERADVERTISEMENT`).
+ * This TLV is appended as a sub-TLV within the MLE Discovery TLV in an MLE Discovery Scan Request message.
  *
  * @param[in]  aInstance        A pointer to an OpenThread instance.
  * @param[in]  aOui             The Vendor IEEE OUI value that will be included in the Joiner Advertisement. Only the
  *                              least significant 3 bytes will be used, and the most significant byte will be ignored.
  * @param[in]  aAdvData         A pointer to the AdvData that will be included in the Joiner Advertisement.
- * @param[in]  aAdvDataLength   The length of AdvData in bytes.
+ * @param[in]  aAdvDataLength   The length of AdvData in bytes. Must not exceed `OT_JOINER_ADVDATA_MAX_LENGTH`.
  *
  * @retval OT_ERROR_NONE         Successfully set Joiner Advertisement.
  * @retval OT_ERROR_INVALID_ARGS Invalid AdvData.
@@ -932,6 +940,21 @@ const otMleCounters *otThreadGetMleCounters(otInstance *aInstance);
 void otThreadResetMleCounters(otInstance *aInstance);
 
 /**
+ * Gets the current attach duration (number of seconds since the device last attached).
+ *
+ * If the device is not currently attached, zero will be returned.
+ *
+ * Unlike the role-tracking variables in `otMleCounters`, which track the cumulative time the device is in each role,
+ * this function tracks the time since the last successful attachment, indicating how long the device has been
+ * connected to the Thread mesh (regardless of its role, whether acting as a child, router, or leader).
+ *
+ * @param[in] aInstance  A pointer to an OpenThread instance.
+ *
+ * @returns The number of seconds since last attached.
+ */
+uint32_t otThreadGetCurrentAttachDuration(otInstance *aInstance);
+
+/**
  * Pointer is called every time an MLE Parent Response message is received.
  *
  * This is used in `otThreadRegisterParentResponseCallback()`.
@@ -974,6 +997,8 @@ typedef void (*otThreadDiscoveryRequestCallback)(const otThreadDiscoveryRequestI
 
 /**
  * Sets a callback to receive MLE Discovery Request data.
+ *
+ * Requires `OPENTHREAD_CONFIG_MLE_DISCOVERY_SCAN_REQUEST_CALLBACK_ENABLE`.
  *
  * @param[in]  aInstance  A pointer to an OpenThread instance.
  * @param[in]  aCallback  A pointer to a function that is called upon receiving an MLE Discovery Request message.
@@ -1142,7 +1167,7 @@ uint32_t otThreadGetStoreFrameCounterAhead(otInstance *aInstance);
  * @param[in] aWakeupIntervalUs An interval between consecutive wake-up frames (in microseconds).
  * @param[in] aWakeupDurationMs Duration of the wake-up sequence (in milliseconds).
  * @param[in] aCallback         A pointer to function that is called when the wake-up succeeds or fails.
- * @param[in] aContext          A pointer to callback application-specific context.
+ * @param[in] aCallbackContext  A pointer to callback application-specific context.
  *
  * @retval OT_ERROR_NONE          Successfully started the wake-up.
  * @retval OT_ERROR_INVALID_STATE Another attachment request is still in progress.

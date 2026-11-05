@@ -35,9 +35,6 @@
 #include <openthread-system.h>
 #include <openthread/link.h>
 #include <openthread/platform/radio.h>
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-#include <openthread/platform/multipan.h>
-#endif
 
 #include "board_config.h"
 #include "platform-efr32.h"
@@ -46,6 +43,10 @@
 #include "common/debug.hpp"
 #include "common/logging.hpp"
 #include "utils/code_utils.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SL_INVALID_TX_POWER (127)
 
@@ -93,11 +94,11 @@ void sli_set_tx_power_in_rail(int8_t tx_power);
 /**
  * Update the Tx power following a RAIL config change.
  *
- * @param[in]   tx_power_config    Tx power configuration
+ * @param[in]   pa_mode            RAIL PA mode configuration
  * @param[in]   tx_power           Desired tx power in dbm.
  *
  */
-void sli_update_tx_power_after_config_update(const RAIL_TxPowerConfig_t *tx_power_config, int8_t tx_power);
+void sli_update_tx_power_after_config_update(sl_rail_tx_pa_mode_t pa_mode, int8_t tx_power);
 
 /**
  * Initialize the power manager.
@@ -171,3 +172,7 @@ otError sl_parse_raw_power_calibration_cb(uint8_t  *raw_power_calibration,
  *
  */
 void sl_configure_fem_cb(uint8_t *fem_setting, uint16_t fem_setting_length);
+
+#ifdef __cplusplus
+}
+#endif

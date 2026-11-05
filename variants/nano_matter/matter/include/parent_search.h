@@ -31,8 +31,8 @@
  *   This file includes compile-time configurations for Parent Search.
  */
 
-#ifndef CONFIG_PARENT_SEARCH_H_
-#define CONFIG_PARENT_SEARCH_H_
+#ifndef OT_CORE_CONFIG_PARENT_SEARCH_H_
+#define OT_CORE_CONFIG_PARENT_SEARCH_H_
 
 /**
  * @addtogroup config-parent-search
@@ -130,7 +130,6 @@
  * timeout expires.
  *
  * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
- *
  */
 #ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT
 #define OPENTHREAD_CONFIG_PARENT_SEARCH_RESELECT_TIMEOUT (90 * 60)
@@ -141,7 +140,6 @@
  *
  * Specifies the RSS margin over the current parent RSS for allowing selection of a neighboring router as a potential
  * new parent to attach to. Used on FTD child devices.
- *
  */
 #ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN
 #define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_MARGIN 7
@@ -151,4 +149,4 @@
  * @}
  */
 
-#endif // CONFIG_PARENT_SEARCH_H_
+#endif // OT_CORE_CONFIG_PARENT_SEARCH_H_

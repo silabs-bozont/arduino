@@ -55,3 +55,4 @@
 // <<< end of configuration section >>>
 
 #endif // SL_DEVICE_INIT_HFXO_CONFIG_H
+

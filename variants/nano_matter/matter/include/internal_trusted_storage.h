@@ -20,7 +20,7 @@
 // We need to add condition for TFM internal_trusted_storage.h, in case that
 // -cp option is not selected.
 #if defined(SL_TRUSTZONE_SECURE)
-#include "trusted-firmware-m/interface/include/psa/internal_trusted_storage.h"
+#include "interface/include/psa/internal_trusted_storage.h"
 #else
 #include "psa_crypto_its.h"
 #include "sli_internal_trusted_storage.h"

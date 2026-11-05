@@ -28,8 +28,8 @@
  *
  ******************************************************************************/
 
-#ifndef _SL_HAL_SYSTEM_H
-#define _SL_HAL_SYSTEM_H
+#ifndef SL_HAL_SYSTEM_H
+#define SL_HAL_SYSTEM_H
 
 #include "em_device.h"
 #include "sl_hal_system_generic.h"
@@ -54,6 +54,132 @@ extern "C" {
 /*******************************************************************************
  ********************************   ENUMS   ************************************
  ******************************************************************************/
+#if defined(_SILICON_LABS_32B_SERIES_2)
+
+#if defined(_CMU_HFRCOCTRL_BAND_MASK)
+/// High-frequency system RCO bands.
+SL_ENUM_GENERIC(sl_hal_system_hfrco_band_t, uint32_t) {
+  SL_HAL_SYSTEM_HFRCO_BAND_1MHz  = _CMU_HFRCOCTRL_BAND_1MHZ,     ///< 1 MHz HFRCO band.
+  SL_HAL_SYSTEM_HFRCO_BAND_7MHz  = _CMU_HFRCOCTRL_BAND_7MHZ,     ///< 7 MHz HFRCO band.
+  SL_HAL_SYSTEM_HFRCO_BAND_11MHz = _CMU_HFRCOCTRL_BAND_11MHZ,    ///< 11 MHz HFRCO band.
+  SL_HAL_SYSTEM_HFRCO_BAND_14MHz = _CMU_HFRCOCTRL_BAND_14MHZ,    ///< 14 MHz HFRCO band.
+  SL_HAL_SYSTEM_HFRCO_BAND_21MHz = _CMU_HFRCOCTRL_BAND_21MHZ,    ///< 21 MHz HFRCO band.
+#if defined(CMU_HFRCOCTRL_BAND_28MHZ)
+  SL_HAL_SYSTEM_HFRCO_BAND_28MHz = _CMU_HFRCOCTRL_BAND_28MHZ,    ///< 28 MHz HFRCO band.
+#endif
+};
+#elif defined(_CMU_HFRCOCTRL_FREQRANGE_MASK)
+/// High-frequency system RCO bands.
+SL_ENUM_GENERIC(sl_hal_system_hfrco_freq_t, uint32_t) {
+  SL_HAL_SYSTEM_HFRCO_FREQ_1M0Hz            = 1000000U,             ///< 1 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_2M0Hz            = 2000000U,             ///< 2 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_4M0Hz            = 4000000U,             ///< 4 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_7M0Hz            = 7000000U,             ///< 7 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_13M0Hz           = 13000000U,            ///< 13 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_16M0Hz           = 16000000U,            ///< 16 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_19M0Hz           = 19000000U,            ///< 19 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_26M0Hz           = 26000000U,            ///< 26 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_32M0Hz           = 32000000U,            ///< 32 MHz RC band.
+  SL_HAL_SYSTEM_HFRCO_FREQ_38M0Hz           = 38000000U,            ///< 38 MHz RC band.
+#if defined(_DEVINFO_HFRCOCAL13_MASK)
+  SL_HAL_SYSTEM_HFRCO_FREQ_48M0Hz           = 48000000U,            ///< 48 MHz RC band.
+#endif
+#if defined(_DEVINFO_HFRCOCAL14_MASK)
+  SL_HAL_SYSTEM_HFRCO_FREQ_56M0Hz           = 56000000U,            ///< 56 MHz RC band.
+#endif
+#if defined(_DEVINFO_HFRCOCAL15_MASK)
+  SL_HAL_SYSTEM_HFRCO_FREQ_64M0Hz           = 64000000U,            ///< 64 MHz RC band.
+#endif
+#if defined(_DEVINFO_HFRCOCAL16_MASK)
+  SL_HAL_SYSTEM_HFRCO_FREQ_72M0Hz           = 72000000U,            ///< 72 MHz RC band.
+#endif
+  SL_HAL_SYSTEM_HFRCO_FREQ_USER_DEFINED     = 0,
+};
+
+/// HFRCO minimum frequency.
+#define SL_HAL_SYSTEM_HFRCO_MIN           SL_HAL_SYSTEM_HFRCO_FREQ_1M0Hz
+#if defined(_DEVINFO_HFRCOCAL16_MASK)
+/// HFRCO maximum frequency.
+#define SL_HAL_SYSTEM_HFRCO_MAX           SL_HAL_SYSTEM_HFRCO_FREQ_72M0Hz
+#elif defined(_DEVINFO_HFRCOCAL15_MASK)
+/// HFRCO maximum frequency.
+#define SL_HAL_SYSTEM_HFRCO_MAX           SL_HAL_SYSTEM_HFRCO_FREQ_64M0Hz
+#elif defined(_DEVINFO_HFRCOCAL14_MASK)
+/// HFRCO maximum frequency.
+#define SL_HAL_SYSTEM_HFRCO_MAX           SL_HAL_SYSTEM_HFRCO_FREQ_56M0Hz
+#elif defined(_DEVINFO_HFRCOCAL13_MASK)
+/// HFRCO maximum frequency.
+#define SL_HAL_SYSTEM_HFRCO_MAX           SL_HAL_SYSTEM_HFRCO_FREQ_48M0Hz
+#else
+/// HFRCO maximum frequency.
+#define SL_HAL_SYSTEM_HFRCO_MAX           SL_HAL_SYSTEM_HFRCO_FREQ_38M0Hz
+#endif
+#endif /* _CMU_HFRCOCTRL_BAND_MASK */
+
+/** HFRCODPLL frequency bands */
+SL_ENUM_GENERIC(sl_hal_system_hfrcodpll_freq_t, uint32_t) {
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_1M0Hz            = 1000000U,         /**< 1MHz RC band.  */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_2M0Hz            = 2000000U,         /**< 2MHz RC band.  */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_4M0Hz            = 4000000U,         /**< 4MHz RC band.  */
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_2) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_4) \
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_7)  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9) \
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_11) \
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_14)
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_5M0Hz            = 5000000U,         /**< 5MHz RC band.  */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_10M0Hz           = 10000000U,        /**< 10MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_20M0Hz           = 20000000U,        /**< 20MHz RC band. */
+#endif
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_7M0Hz            = 7000000U,         /**< 7MHz RC band.  */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_13M0Hz           = 13000000U,        /**< 13MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_16M0Hz           = 16000000U,        /**< 16MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_19M0Hz           = 19000000U,        /**< 19MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_26M0Hz           = 26000000U,        /**< 26MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_32M0Hz           = 32000000U,        /**< 32MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_38M0Hz           = 38000000U,        /**< 38MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_48M0Hz           = 48000000U,        /**< 48MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_56M0Hz           = 56000000U,        /**< 56MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_64M0Hz           = 64000000U,        /**< 64MHz RC band. */
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_80M0Hz           = 80000000U,        /**< 80MHz RC band. */
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5)
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_100M0Hz          = 100000000U,       /**< 100MHz RC band. */
+#endif
+  SL_HAL_SYSTEM_HFRCODPLL_FREQ_USER_DEFINED     = 0,
+};
+
+/** HFRCODPLL minimum frequency */
+#define SL_HAL_SYSTEM_HFRCODPLL_MIN       SL_HAL_SYSTEM_HFRCODPLL_FREQ_1M0Hz
+/** HFRCODPLL maximum frequency */
+#define SL_HAL_SYSTEM_HFRCODPLL_MAX       SL_HAL_SYSTEM_HFRCODPLL_FREQ_80M0Hz
+
+#if defined(HFRCOEM23_PRESENT)
+/** HFRCOEM23 frequency bands */
+SL_ENUM_GENERIC(sl_hal_system_hfrcoem23_freq_t, uint32_t) {
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_1M0Hz            = 1000000U,         /**< 1MHz RC band.  */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_2M0Hz            = 2000000U,         /**< 2MHz RC band.  */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_4M0Hz            = 4000000U,         /**< 4MHz RC band.  */
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_3) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) \
+  || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_8) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_13)
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_5M0Hz            = 5000000U,         /**< 5MHz RC band.  */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_10M0Hz           = 10000000U,        /**< 10MHz RC band. */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_20M0Hz           = 20000000U,        /**< 20MHz RC band. */
+#endif
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_7M0Hz            = 7000000U,         /**< 7MHz RC band.  */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_13M0Hz           = 13000000U,        /**< 13MHz RC band. */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_16M0Hz           = 16000000U,        /**< 16MHz RC band. */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_19M0Hz           = 19000000U,        /**< 19MHz RC band. */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_26M0Hz           = 26000000U,        /**< 26MHz RC band. */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_32M0Hz           = 32000000U,        /**< 32MHz RC band. */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_40M0Hz           = 40000000U,        /**< 40MHz RC band. */
+  SL_HAL_SYSTEM_HFRCOEM23_FREQ_USER_DEFINED     = 0,
+};
+
+/** HFRCOEM23 minimum frequency */
+#define SL_HAL_SYSTEM_HFRCOEM23_MIN         SL_HAL_SYSTEM_HFRCOEM23_FREQ_1M0Hz
+/** HFRCOEM23 maximum frequency */
+#define SL_HAL_SYSTEM_HFRCOEM23_MAX         SL_HAL_SYSTEM_HFRCOEM23_FREQ_40M0Hz
+
+#endif
+#endif
 
 /// Family identifiers.
 SL_ENUM_GENERIC(sl_hal_system_part_family_t, uint32_t) {
@@ -98,6 +224,20 @@ SL_ENUM_GENERIC(sl_hal_system_part_family_t, uint32_t) {
   SL_HAL_SYSTEM_PART_FAMILY_SIDEWALK_28 = DEVINFO_PART_FAMILY_SG | (28 << _DEVINFO_PART_FAMILYNUM_SHIFT),   ///< EFR32 Side Walk Gecko Series 2 Config 8 Value Device Family
   SL_HAL_SYSTEM_PART_FAMILY_EFM32_PEARL_28 = DEVINFO_PART_FAMILY_PG | (28 << _DEVINFO_PART_FAMILYNUM_SHIFT),  ///< EFM32 Pearl Gecko Series 2 Config 8 Value Device Family
 #endif
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
+  SL_HAL_SYSTEM_PART_FAMILY_MIGHTY_29 = DEVINFO_PART_FAMILY_MG | (29 << _DEVINFO_PART_FAMILYNUM_SHIFT), ///< EFR32 Mighty Gecko Series 2 Config 9 Value Device Family
+  SL_HAL_SYSTEM_PART_FAMILY_BLUE_29 = DEVINFO_PART_FAMILY_BG | (29 << _DEVINFO_PART_FAMILYNUM_SHIFT),   ///< EFR32 Blue Gecko Series 2 Config 9 Value Device Family
+#endif
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_11)
+  SL_HAL_SYSTEM_PART_FAMILY_MIGHTY_2B = DEVINFO_PART_FAMILY_MG | (31 << _DEVINFO_PART_FAMILYNUM_SHIFT),  ///< EFR32 Mighty Gecko Series 2 Config 11 Value Device Family
+  SL_HAL_SYSTEM_PART_FAMILY_BLUE_2B = DEVINFO_PART_FAMILY_BG | (31 << _DEVINFO_PART_FAMILYNUM_SHIFT),   ///< EFR32 Blue Gecko Series 2 Config 11 Value Device Family
+#endif
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_14)
+  SL_HAL_SYSTEM_PART_FAMILY_MIGHTY_2E = DEVINFO_PART_FAMILY_MG | (34 << _DEVINFO_PART_FAMILYNUM_SHIFT),     ///< EFR32 XG Series 2 Config 14 (LionU) Value Device Family
+#endif
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_13)
+  SL_HAL_SYSTEM_PART_FAMILY_FLEX_2D = DEVINFO_PART_FAMILY_FG | (33 << _DEVINFO_PART_FAMILYNUM_SHIFT),  ///< EFR32 Flex Gecko Series 2 Config 13 Value Device Family
+#endif
 #if defined(_SILICON_LABS_32B_SERIES_3_CONFIG_301)
   SL_HAL_SYSTEM_PART_FAMILY_BLUETOOTH_301 = DEVINFO_PART0_PROTOCOL_BLUETOOTH        \
                                             | (0x33 << _DEVINFO_PART0_SERIES_SHIFT) \
@@ -137,10 +277,105 @@ SL_ENUM_GENERIC(sl_hal_system_part_family_t, uint32_t) {
  ******************************************************************************/
 sl_hal_system_part_family_t sl_hal_system_get_family(void);
 
+/***************************************************************************//**
+ * @brief
+ *   Get the DMEM Base Address.
+ *
+ * @return
+ *   Base address of DMEM (32-bit unsigned integer).
+ *   Returns 0xFFFFFFFF if DMEM is not present.
+ ******************************************************************************/
+uint32_t sl_hal_system_get_dmem_base_address(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the DMEM Base Address for a given DMEM instance.
+ *
+ * @return
+ *   Base address of DMEM (32-bit unsigned integer).
+ *   Returns 0xFFFFFFFF if DMEM is not present.
+ ******************************************************************************/
+uint32_t sl_hal_system_get_dmem_instance_base_address(uint32_t num);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the DMEM size (in KB).
+ *
+ * @return
+ *   Size of DMEM (in KB).
+ ******************************************************************************/
+uint16_t sl_hal_system_get_dmem_size(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the DMEM size (in KB) for a given DMEM instance.
+ *
+ * @return
+ *   Size of DMEM (in KB).
+ ******************************************************************************/
+uint16_t sl_hal_system_get_dmem_instance_size(uint32_t num);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the ITCM Base Address.
+ *
+ * @return
+ *   Base address of ITCM (32-bit unsigned integer).
+ *   Returns 0xFFFFFFFF if ITCM is not present.
+ ******************************************************************************/
+uint32_t sl_hal_system_get_itcm_base_address(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the ITCM size (in KB).
+ *
+ * @return
+ *   Size of ITCM (in KB).
+ ******************************************************************************/
+uint16_t sl_hal_system_get_itcm_size(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the DTCM Base Address.
+ *
+ * @return
+ *   Base address of DTCM (32-bit unsigned integer).
+ *   Returns 0xFFFFFFFF if DTCM is not present.
+ ******************************************************************************/
+uint32_t sl_hal_system_get_dtcm_base_address(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the DTCM size (in KB).
+ *
+ * @return
+ *   Size of DTCM (in KB).
+ ******************************************************************************/
+uint16_t sl_hal_system_get_dtcm_size(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the PSRAM Base Address.
+ *
+ * @return
+ *   Base address of PSRAM (32-bit unsigned integer).
+ *   Returns 0xFFFFFFFF if PSRAM is not present.
+ ******************************************************************************/
+uint32_t sl_hal_system_get_psram_base_address(void);
+
+/***************************************************************************//**
+ * @brief
+ *   Get the PSRAM size (in KB).
+ *
+ * @return
+ *   Size of PSRAM (in KB).
+ ******************************************************************************/
+uint16_t sl_hal_system_get_psram_size(void);
+
 /** @} (end addtogroup system) */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* #ifndef _SL_HAL_SYSTEM_H */
+#endif /* #ifndef SL_HAL_SYSTEM_H */

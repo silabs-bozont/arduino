@@ -40,6 +40,10 @@ extern "C" {
   #include "em_eusart.h"
   #include "sl_iostream_handles.h"
   #include "sl_iostream_uart.h"
+  #include "sl_status.h"
+
+  sl_status_t sl_iostream_usart_init_nanomatter(void);
+  sl_status_t sl_iostream_eusart_init_nanomatter1(void);
 }
 
 #define SL_SERIAL_PERIPHERAL SL_IOSTREAM_USART_NANOMATTER_PERIPHERAL

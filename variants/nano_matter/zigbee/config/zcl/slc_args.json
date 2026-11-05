@@ -1,0 +1,8 @@
+{
+  "sdkRoot" : "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/",
+  "apackRoot" : "/Users/tajozsi/.silabs/slt/installs/archive/zap",
+  "partOpn" : "mgm240sd22vna",
+  "zcl.zigbeeZclJsonFile" : "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/zigbee/app/zcl/zcl-zap.json",
+  "boards" : "brd2707arevA00,brd4002arevA07",
+  "zcl.zigbeeTemplateJsonFile" : "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/zigbee/app/framework/gen-template/gen-templates.json"
+}

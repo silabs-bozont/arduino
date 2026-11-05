@@ -1,4 +1,4 @@
-/* Copyright 2023 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2025 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,7 +15,10 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_MICRO_KERNELS_MICRO_OPS_H_
 #define TENSORFLOW_LITE_MICRO_KERNELS_MICRO_OPS_H_
 
+//#include "signal/micro/kernels/irfft.h"
+////#include "signal/micro/kernels/rfft.h"
 #include "tensorflow/lite/c/common.h"
+#include "tensorflow/lite/micro/micro_common.h"
 
 // Forward declaration of all micro op kernel registration methods. These
 // registrations are included with the standard `BuiltinOpResolver`.
@@ -38,6 +41,7 @@ TFLMRegistration Register_ARG_MAX();
 TFLMRegistration Register_ARG_MIN();
 TFLMRegistration Register_ASSIGN_VARIABLE();
 TFLMRegistration Register_AVERAGE_POOL_2D();
+TFLMRegistration Register_BATCH_MATMUL();
 TFLMRegistration Register_BATCH_TO_SPACE_ND();
 TFLMRegistration Register_BROADCAST_ARGS();
 TFLMRegistration Register_BROADCAST_TO();
@@ -50,14 +54,16 @@ TFLMRegistration Register_CONCATENATION();
 TFLMRegistration Register_CONV_2D();
 TFLMRegistration Register_COS();
 TFLMRegistration Register_CUMSUM();
+TFLMRegistration Register_DECODE();
 TFLMRegistration Register_DEPTH_TO_SPACE();
 TFLMRegistration Register_DEPTHWISE_CONV_2D();
 TFLMRegistration Register_DEQUANTIZE();
 TFLMRegistration Register_DIV();
+TFLMRegistration Register_DYNAMIC_UPDATE_SLICE();
 TFLMRegistration Register_ELU();
 TFLMRegistration Register_EMBEDDING_LOOKUP();
 TFLMRegistration Register_EQUAL();
-TFLMRegistration* Register_ETHOSU();
+//TFLMRegistration* Register_ETHOSU();
 TFLMRegistration Register_EXP();
 TFLMRegistration Register_EXPAND_DIMS();
 TFLMRegistration Register_FILL();
@@ -97,10 +103,14 @@ TFLMRegistration Register_PRELU();
 TFLMRegistration Register_QUANTIZE();
 TFLMRegistration Register_READ_VARIABLE();
 TFLMRegistration Register_REDUCE_MAX();
+TFLMRegistration Register_REDUCE_MIN();
 TFLMRegistration Register_RELU();
 TFLMRegistration Register_RELU6();
+TFLMRegistration Register_RESHAPE();
 TFLMRegistration Register_RESIZE_BILINEAR();
 TFLMRegistration Register_RESIZE_NEAREST_NEIGHBOR();
+TFLMRegistration Register_REVERSE_V2();
+TFLMRegistration Register_ROUND();
 TFLMRegistration Register_RSQRT();
 TFLMRegistration Register_SELECT_V2();
 TFLMRegistration Register_SHAPE();
@@ -127,18 +137,28 @@ TFLMRegistration Register_UNIDIRECTIONAL_SEQUENCE_LSTM();
 TFLMRegistration Register_UNPACK();
 TFLMRegistration Register_VAR_HANDLE();
 TFLMRegistration Register_WHILE();
-// TODO(b/160234179): Change custom OPs to also return by value.
-namespace tflm_signal {
-TFLMRegistration* Register_WINDOW();
-}
 TFLMRegistration Register_ZEROS_LIKE();
 
-namespace ops {
-namespace micro {
-TFLMRegistration Register_RESHAPE();
-TFLMRegistration Register_ROUND();
-}  // namespace micro
-}  // namespace ops
+// TODO(b/295174388): Add the rest of inference only registration functions.
+TFLMInferenceRegistration RegisterInference_FULLY_CONNECTED();
+
+// TODO(b/160234179): Change custom OPs to also return by value.
+/*
+namespace tflm_signal {
+TFLMRegistration* Register_DELAY();
+TFLMRegistration* Register_FFT_AUTO_SCALE();
+TFLMRegistration* Register_FILTER_BANK();
+TFLMRegistration* Register_FILTER_BANK_LOG();
+TFLMRegistration* Register_FILTER_BANK_SPECTRAL_SUBTRACTION();
+TFLMRegistration* Register_FILTER_BANK_SQUARE_ROOT();
+TFLMRegistration* Register_ENERGY();
+TFLMRegistration* Register_FRAMER();
+TFLMRegistration* Register_OVERLAP_ADD();
+TFLMRegistration* Register_PCAN();
+TFLMRegistration* Register_STACKER();
+TFLMRegistration* Register_WINDOW();
+}  // namespace tflm_signal
+*/
 }  // namespace tflite
 
 #endif  // TENSORFLOW_LITE_MICRO_KERNELS_MICRO_OPS_H_

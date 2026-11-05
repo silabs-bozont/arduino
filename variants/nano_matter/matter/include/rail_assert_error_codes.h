@@ -71,8 +71,8 @@ RAIL_ENUM_GENERIC(RAIL_AssertErrorCodes_t, uint32_t)
   RAIL_ASSERT_FAILED_UNEXPECTED_STATE_TXACK_FIFO = 9,
   /** Invalid memory region accessed. */
   RAIL_ASSERT_INVALID_MEMORY_ACCESS = 10,
-  /** Invalid assert, no longer used. */
-  RAIL_ASSERT_UNUSED_11 = 11,
+  /** Unsupported RX Data Source. */
+  RAIL_ASSERT_FAILED_UNSUPPORTED_RX_DATA_SOURCE = 11,
   /** Invalid assert, no longer used. */
   RAIL_ASSERT_UNUSED_12 = 12,
   /** Error synchronizing the RAIL timebase after sleep. */
@@ -223,6 +223,8 @@ RAIL_ENUM_GENERIC(RAIL_AssertErrorCodes_t, uint32_t)
   RAIL_ASSERT_INVALID_OR_MISSING_SOFTWARE_MODEM_IMAGE = 85,
   /** The sequencer user generated error. */
   RAIL_ASSERT_SEQ_USER_SEQUENCER_GENERIC_ERROR = 86,
+  /** The sequence timed out. */
+  RAIL_ASSERT_SEQUENCE_TIMEOUT = 87,
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -238,7 +240,7 @@ RAIL_ENUM_GENERIC(RAIL_AssertErrorCodes_t, uint32_t)
 #define RAIL_ASSERT_FAILED_UNEXPECTED_STATE_TX_FIFO            ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_FAILED_UNEXPECTED_STATE_TX_FIFO)
 #define RAIL_ASSERT_FAILED_UNEXPECTED_STATE_TXACK_FIFO         ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_FAILED_UNEXPECTED_STATE_TXACK_FIFO)
 #define RAIL_ASSERT_INVALID_MEMORY_ACCESS                      ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_INVALID_MEMORY_ACCESS)
-#define RAIL_ASSERT_UNUSED_11                                  ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_UNUSED_11)
+#define RAIL_ASSERT_FAILED_UNSUPPORTED_RX_DATA_SOURCE          ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_FAILED_UNSUPPORTED_RX_DATA_SOURCE)
 #define RAIL_ASSERT_UNUSED_12                                  ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_UNUSED_12)
 #define RAIL_ASSERT_FAILED_RTCC_POST_WAKEUP                    ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_FAILED_RTCC_POST_WAKEUP)
 #define RAIL_ASSERT_FAILED_SYNTH_VCO_FREQUENCY                 ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_FAILED_SYNTH_VCO_FREQUENCY)
@@ -314,6 +316,7 @@ RAIL_ENUM_GENERIC(RAIL_AssertErrorCodes_t, uint32_t)
 #define RAIL_ASSERT_MISSING_SEQUENCER_IMAGE                    ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_MISSING_SEQUENCER_IMAGE)
 #define RAIL_ASSERT_INVALID_OR_MISSING_SOFTWARE_MODEM_IMAGE    ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_INVALID_OR_MISSING_SOFTWARE_MODEM_IMAGE)
 #define RAIL_ASSERT_SEQ_USER_SEQUENCER_GENERIC_ERROR           ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_SEQ_USER_SEQUENCER_GENERIC_ERROR)
+#define RAIL_ASSERT_SEQUENCE_TIMEOUT                           ((RAIL_AssertErrorCodes_t) RAIL_ASSERT_SEQUENCE_TIMEOUT)
 #endif//DOXYGEN_SHOULD_SKIP_THIS
 
 /// Use this define to create an array of error messages that map to the codes
@@ -351,7 +354,7 @@ RAIL_ENUM_GENERIC(RAIL_AssertErrorCodes_t, uint32_t)
     /* 8*/ "Reached unexpected state while handling TX FIFO events",                   \
     /* 9*/ "Reached unexpected state while handling TX ACK FIFO events",               \
     /*10*/ "Invalid memory region accessed",                                           \
-    /*11*/ "Invalid assert, no longer used",                                           \
+    /*11*/ "Unsupported RX Data Source.",                                              \
     /*12*/ "Invalid assert, no longer used",                                           \
     /*13*/ "Error synchronizing the RAIL timebase after sleep",                        \
     /*14*/ "VCO frequency outside supported range",                                    \
@@ -427,6 +430,7 @@ RAIL_ENUM_GENERIC(RAIL_AssertErrorCodes_t, uint32_t)
     /*84*/ "No common or protocol image selected to be loaded onto the sequencer",     \
     /*85*/ "Software modem image invalid or missing",                                  \
     /*86*/ "The sequencer user generated error",                                       \
+    /*87*/ "The sequence timed out",                                                   \
 }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS

@@ -31,8 +31,8 @@
  *   This file includes compile-time configurations for the DNS Client.
  */
 
-#ifndef CONFIG_DNS_CLIENT_H_
-#define CONFIG_DNS_CLIENT_H_
+#ifndef OT_CORE_CONFIG_DNS_CLIENT_H_
+#define OT_CORE_CONFIG_DNS_CLIENT_H_
 
 /**
  * @addtogroup config-dns-client
@@ -85,6 +85,15 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_DNS_CLIENT_ARBITRARY_RECORD_QUERY_ENABLE
+ *
+ * Define to 1 to enable support for a query of arbitrary DNS record type.
+ */
+#ifndef OPENTHREAD_CONFIG_DNS_CLIENT_ARBITRARY_RECORD_QUERY_ENABLE
+#define OPENTHREAD_CONFIG_DNS_CLIENT_ARBITRARY_RECORD_QUERY_ENABLE 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_DNS_CLIENT_DEFAULT_SERVER_ADDRESS_AUTO_SET_ENABLE
  *
  * Set to 1 for DNS client to automatically set and update the server IPv6 address in the default config (when it is
@@ -125,9 +134,12 @@
  * @def OPENTHREAD_CONFIG_DNS_CLIENT_DEFAULT_RESPONSE_TIMEOUT
  *
  * Specifies the default wait time that DNS client waits for a response from server (in milliseconds).
+ *
+ * The default value of 7000 is selected to be longer than the six-second wait time for queries resolved by the
+ * Discovery Proxy (per RFC 8766, Section 5.6, first bullet).
  */
 #ifndef OPENTHREAD_CONFIG_DNS_CLIENT_DEFAULT_RESPONSE_TIMEOUT
-#define OPENTHREAD_CONFIG_DNS_CLIENT_DEFAULT_RESPONSE_TIMEOUT 6000
+#define OPENTHREAD_CONFIG_DNS_CLIENT_DEFAULT_RESPONSE_TIMEOUT 7000
 #endif
 
 /**
@@ -159,6 +171,17 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_DNS_CLIENT_BIND_UDP_TO_THREAD_NETIF
+ *
+ * Define as 1 to bind DNS client UDP socket to the internal Thread network interface. When set to 0, the socket is
+ * bound to the unspecified network interface, allowing it to send and receive DNS messages over any network interface.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DNS_CLIENT_BIND_UDP_TO_THREAD_NETIF
+#define OPENTHREAD_CONFIG_DNS_CLIENT_BIND_UDP_TO_THREAD_NETIF 0
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE
  *
  * Enables support for sending DNS Queries over TCP.
@@ -180,4 +203,4 @@
  * @}
  */
 
-#endif // CONFIG_DNS_CLIENT_H_
+#endif // OT_CORE_CONFIG_DNS_CLIENT_H_

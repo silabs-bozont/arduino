@@ -90,3 +90,4 @@
 sl_status_t sl_bt_dynamic_gattdb_configure();
 
 #endif // SL_BT_DYNAMIC_GATTDB_CONFIG_H
+

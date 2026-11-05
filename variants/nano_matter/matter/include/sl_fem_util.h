@@ -38,6 +38,46 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Macro to determine the runtime PHY features for the 2.4 GHz band
+ *        considering runtime FEM selection.
+ *
+ * This macro evaluates whether the runtime PHY selection for FEM is enabled.
+ * If SL_FEM_UTIL_RUNTIME_PHY_SELECT is true, then it returns the PHY feature
+ * set for the 2.4 GHz band with FEM support (SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ_FEM);
+ * otherwise, it returns the default PHY feature set (SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ).
+ */
+#define SL_RAIL_UTIL_IEEE802154_RUNTIME_PHY_FEATURES_2P4_FEM \
+  (SL_FEM_UTIL_RUNTIME_PHY_SELECT                            \
+   ? SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ_FEM              \
+   : SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ)
+
+/**
+ * @brief Macro to compute the default PHY features for the 2.4 GHz band with FEM.
+ *
+ * This macro checks if optimized PHY features are enabled through
+ * SL_FEM_UTIL_OPTIMIZED_PHY_ENABLE. If enabled, it returns the PHY feature
+ * set for the 2.4 GHz band with FEM support (SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ_FEM);
+ * otherwise, it provides the standard PHY feature set (SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ).
+ */
+#define SL_RAIL_UTIL_IEEE802154_DEFAULT_PHY_FEATURES_2P4_FEM \
+  (SL_FEM_UTIL_OPTIMIZED_PHY_ENABLE                          \
+   ? SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ_FEM              \
+   : SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ)
+
+/**
+ * @brief Macro to retrieve the PHY features for the 2.4 GHz band based on PHY selection.
+ *
+ * This macro evaluates the current PHY selection (determined by sl_fem_util_get_phy_select).
+ * If the selection indicates FEM functionality, it returns the PHY feature set for the
+ * 2.4 GHz band with FEM (SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ_FEM); otherwise,
+ * it produces the standard PHY feature set (SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ).
+ */
+#define sl_fem_util_get_phy_features()          \
+  (sl_fem_util_get_phy_select()                 \
+   ? SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ_FEM \
+   : SL_RAIL_IEEE802154_PHY_FEATURE_2P4_GHZ)
+
 /***************************************************************************//**
  * Initialize FEM
  ******************************************************************************/

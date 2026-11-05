@@ -76,7 +76,10 @@
 #define SL_PSA_KEY_LOCATION_BUILTIN ((psa_key_location_t)0x000001UL)
 
 // #define SLE_PSA_KEY_LOCATION_SE_VOLATILE ((psa_key_location_t)0x800000UL)
-// #define SLE_PSA_KEY_LOCATION_KSU ((psa_key_location_t)0x800001UL)
+
+#if defined(SLI_PSA_DRIVER_FEATURE_KSU)
+#define SL_PSA_KEY_LOCATION_KSU_0 ((psa_key_location_t)(PSA_KEY_LOCATION_VENDOR_FLAG | 0x000001UL))
+#endif
 
 //------------------------------------------------------------------------------
 // Hardware Secure Engine
@@ -183,6 +186,25 @@
 /** @} (end addtogroup sl_psa_drivers_cryptoacc) */
 
 #endif // SLI_PSA_DRIVER_FEATURE_BUILTIN_KEYS || SL_TRUSTZONE_NONSECURE
+
+/***************************************************************************//**
+ * \addtogroup sl_psa_drivers_cryptoacc_algorithms Vendor algorithms for VSE
+ * @{
+ ******************************************************************************/
+
+/// Vendor-defined key derivation algorithm: NIST SP 800-108r1 KDF in Counter
+/// Mode using AES-CMAC as the PRF.  Designed for PUF-based key derivation where
+/// the hardware key (PUF) is the key-derivation key (K_IN) and a user-supplied
+/// secret is bound via the Context field.
+///
+/// Encoding: PSA_ALG_VENDOR_FLAG | PSA_ALG_CATEGORY_KEY_DERIVATION | 0x01
+#define PSA_ALG_SP800_108R1_CMAC  ((psa_algorithm_t) (PSA_ALG_VENDOR_FLAG | PSA_ALG_CATEGORY_KEY_DERIVATION | 0x01))
+
+/// Check whether an algorithm is PSA_ALG_SP800_108R1_CMAC.
+#define PSA_ALG_IS_SP800_108R1_CMAC(alg) \
+    ((alg) == PSA_ALG_SP800_108R1_CMAC)
+
+/** @} (end addtogroup sl_psa_drivers_cryptoacc_algorithms) */
 
 /** @} (end addtogroup sl_psa_key_management) */
 /** @} (end addtogroup sl_psa_drivers) */

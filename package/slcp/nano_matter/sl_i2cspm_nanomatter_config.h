@@ -58,11 +58,11 @@
 #define SL_I2CSPM_NANOMATTER_PERIPHERAL_NO           0
 
 // I2C0 SCL on PA7
-#define SL_I2CSPM_NANOMATTER_SCL_PORT                gpioPortA
+#define SL_I2CSPM_NANOMATTER_SCL_PORT                SL_GPIO_PORT_A
 #define SL_I2CSPM_NANOMATTER_SCL_PIN                 7
 
 // I2C0 SDA on PA6
-#define SL_I2CSPM_NANOMATTER_SDA_PORT                gpioPortA
+#define SL_I2CSPM_NANOMATTER_SDA_PORT                SL_GPIO_PORT_A
 #define SL_I2CSPM_NANOMATTER_SDA_PIN                 6
 
 // [I2C_SL_I2CSPM_NANOMATTER]$
