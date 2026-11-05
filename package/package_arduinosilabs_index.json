@@ -727,17 +727,17 @@
                         },
                         {
                             "host": "x86_64-pc-linux-gnu",
-                            "url": "!!local-install-url/openocd-zephyr-1.0.1-x86-linux.tar.zst",
-                            "archiveFileName": "openocd-zephyr-1.0.1-x86-linux.tar.zst",
-                            "checksum": "SHA-256:7c5b65303ad3ec0fbf50f86eba4502d905bf7dbe0321eb77801cdf20f3b10313",
-                            "size": "2222609"
+                            "url": "!!local-install-url/openocd-zephyr-1.0.1-x86-linux.zst",
+                            "archiveFileName": "openocd-zephyr-1.0.1-x86-linux.zst",
+                            "checksum": "SHA-256:229a01b8709e547b2a3c930e016a4f08a5cc918c8b8bc295d61de02119bc992a",
+                            "size": "2222513"
                         },
                         {
                             "host": "aarch64-linux-gnu",
-                            "url": "!!local-install-url/openocd-zephyr-1.0.1-aarch64-linux.tar.zst",
-                            "archiveFileName": "openocd-zephyr-1.0.1-aarch64-linux.tar.zst",
-                            "checksum": "SHA-256:06b89b30d1e2435567595e18e8b0bdc43b41d5997728cb7ea8bc6df06b0519c4",
-                            "size": "2226189"
+                            "url": "!!local-install-url/openocd-zephyr-1.0.1-aarch64-linux.zst",
+                            "archiveFileName": "openocd-zephyr-1.0.1-aarch64-linux.zst",
+                            "checksum": "SHA-256:fe11cdfc573f742778d502347f2b9b27a2ac1a09c4922472ebae63d861ecaaca",
+                            "size": "2226279"
                         }
                     ]
                 }
