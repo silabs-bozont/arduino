@@ -171,6 +171,8 @@ def run_tests(current_board, current_board_port, global_total_tests=0, global_co
     print(f"Board: '{current_board}'")
     print(f"Port: '{current_board_port}'")
     print(f"Variants: {board_variants}")
+    if matter_otbr_util.otbr_host:
+        print(f"Matter Hub (OTBR) address: {matter_otbr_util.otbr_host}")
     if matter_otbr_only:
         print(f"Matter OTBR specific test cases: {list(cases.keys())}")
 
@@ -303,10 +305,9 @@ def parse_optional_cli_arguments():
         exit(-1)
 
     if host:
-        print(f"Matter Hub (OTBR) address: {host}")
+        matter_otbr_util.ensure_ssh_password()
         if otbr_only:
             print("Matter OTBR only mode: running just the Matter Pi HIL tests")
-        matter_otbr_util.ensure_ssh_password()
     else:
         print("Matter Hub (OTBR) not specified; Matter OTBR specific tests will be skipped")
 
