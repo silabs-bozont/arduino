@@ -20,6 +20,7 @@ from testcases.testcase_hil_matter_smoke import testcase_hil_matter_smoke
 from testcases.testcase_hil_matter_lightbulb import testcase_hil_matter_lightbulb
 from testcases.testcase_hil_matter_lightbulb_dimmable import testcase_hil_matter_lightbulb_dimmable
 from testcases.testcase_hil_matter_on_off_outlet import testcase_hil_matter_on_off_outlet
+from testcases.testcase_hil_matter_fan import testcase_hil_matter_fan
 from testcases.testcase_hil_matter_temp_sensor import testcase_hil_matter_temp_sensor
 from testcases.testcase_hil_matter_humidity_sensor import testcase_hil_matter_humidity_sensor
 from testcases.testcase_hil_matter_co2_sensor import testcase_hil_matter_co2_sensor
@@ -77,6 +78,7 @@ testcase_list = {
     "matter_lightbulb": testcase_hil_matter_lightbulb,
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_on_off_outlet": testcase_hil_matter_on_off_outlet,
+    "matter_fan": testcase_hil_matter_fan,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
@@ -89,6 +91,7 @@ matter_otbr_testcase_list = {
     "matter_lightbulb": testcase_hil_matter_lightbulb,
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_on_off_outlet": testcase_hil_matter_on_off_outlet,
+    "matter_fan": testcase_hil_matter_fan,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
@@ -273,7 +276,7 @@ def parse_optional_cli_arguments():
     """
     Optional flags (stripped from sys.argv before positional board/port parsing):
       --matter-otbr <pi-ip>  Enable Matter Hub (Pi) HIL and prompt for SSH password
-      --matter-only          Run only Matter Pi tests (implies needing --matter-otbr)
+      --matter-otbr-only          Run only Matter Pi tests (implies needing --matter-otbr)
     """
     global matter_otbr_only
 
