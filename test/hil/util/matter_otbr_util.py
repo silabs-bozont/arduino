@@ -386,6 +386,54 @@ def matter_read_co2_ppm(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     return True, ppm
 
 
+# Matter FanControl FanMode values (DeviceFan::fan_mode_t)
+FAN_MODE_OFF = 0
+FAN_MODE_LOW = 1
+FAN_MODE_MED = 2
+FAN_MODE_HIGH = 3
+FAN_MODE_ON = 4
+FAN_MODE_AUTO = 5
+FAN_MODE_SMART = 6
+
+
+def matter_read_fan_mode(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Read FanControl FanMode (also marks the appliance online on first attribute read)."""
+    print("-" * 40)
+    print(f"Reading Matter fan-mode from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = f"{CHIPTOOL_PATH} fancontrol read fan-mode {int(node_id)} {int(endpoint)}"
+    ok, _ = ssh_bash(script, timeout=60)
+    return ok
+
+
+def matter_write_fan_mode(mode, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Write FanControl FanMode (0=Off … 6=Smart)."""
+    mode = int(mode)
+    print("-" * 40)
+    print(f"Writing Matter fan-mode={mode} to node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} fancontrol write fan-mode "
+        f"{mode} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = ssh_bash(script, timeout=60)
+    return ok
+
+
+def matter_write_fan_percent(percent, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Write FanControl PercentSetting (0-100)."""
+    percent = max(0, min(100, int(percent)))
+    print("-" * 40)
+    print(f"Writing Matter fan percent-setting={percent} to node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} fancontrol write percent-setting "
+        f"{percent} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = ssh_bash(script, timeout=60)
+    return ok
+
+
 def app_lift_percent_to_matter_100ths(app_percent):
     """
     Arduino MatterWindowCovering app percent: 100%=fully open, 0%=fully closed.
