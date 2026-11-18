@@ -77,11 +77,11 @@ void loop()
         break;
       case FanMode::Low:
         Serial.println("Fan mode: Low");
-        matter_fan.set_percent(20);
+        matter_fan.set_percent(33);
         break;
       case FanMode::Med:
         Serial.println("Fan mode: Medium");
-        matter_fan.set_percent(50);
+        matter_fan.set_percent(66);
         break;
       case FanMode::High:
         Serial.println("Fan mode: High");
@@ -89,7 +89,9 @@ void loop()
         break;
       case FanMode::On:
         Serial.println("Fan mode: On");
-        matter_fan.set_percent(fan_last_speed);
+        if (matter_fan.get_percent() == 0) {
+          matter_fan.set_percent(fan_last_speed ? fan_last_speed : 100);
+        }
         break;
       case FanMode::Auto:
         Serial.println("Fan mode: Auto");

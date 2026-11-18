@@ -26,10 +26,14 @@
 
 #include "MatterFan.h"
 
+#include <app/util/af-types.h>
+
 using namespace ::chip;
 using namespace ::chip::Platform;
 using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
+
+void MatterFanControlClusterShutdownCallback(chip::EndpointId endpointId, MatterClusterShutdownType shutdownType);
 
 const EmberAfDeviceType gFanDeviceTypes[] = { { DEVICE_TYPE_FAN, DEVICE_VERSION_DEFAULT } };
 
@@ -124,6 +128,15 @@ bool MatterFan::begin()
     free(new_endpoint);
     free(new_device_data_version);
     return false;
+  }
+
+  // Matter SDK auto-registers a code-driven FanControlCluster on this endpoint.
+  // That cluster remaps PercentSetting writes through FanMode side effects
+  // (snapping the speed slider to 33/66/100). Tear it down so FanControl stays
+  // on the Ember external-attribute path owned by DeviceFan.
+  {
+    DeviceLayer::StackLock lock;
+    MatterFanControlClusterShutdownCallback(fan_device->GetEndpointId(), MatterClusterShutdownType::kClusterShutdown);
   }
 
   this->fan_device = fan_device;

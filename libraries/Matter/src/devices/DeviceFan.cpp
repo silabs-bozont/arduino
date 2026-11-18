@@ -45,13 +45,32 @@ void DeviceFan::SetPercentSetting(uint8_t percent)
     percent = 100;
   }
 
-  bool changed = this->current_percent != percent;
+  bool percent_changed = this->current_percent != percent;
   ChipLogProgress(DeviceLayer, "FanDevice[%s]: new percent='%d'", this->device_name, percent);
   this->current_percent = percent;
 
-  if (changed) {
+  bool mode_changed = false;
+  if (percent == 0) {
+    if (this->current_fan_mode != fan_mode_t::Off) {
+      this->current_fan_mode = fan_mode_t::Off;
+      mode_changed = true;
+    }
+  } else if (this->current_fan_mode == fan_mode_t::Off) {
+    this->current_fan_mode = fan_mode_t::On;
+    mode_changed = true;
+  }
+
+  if (mode_changed) {
+    ChipLogProgress(DeviceLayer, "FanDevice[%s]: mode from percent -> '%d'", this->device_name, this->current_fan_mode);
+    this->HandleFanDeviceStatusChanged(kChanged_ModeSetting);
+  }
+
+  if (percent_changed) {
     this->HandleFanDeviceStatusChanged(kChanged_PercentSetting);
     this->HandleFanDeviceStatusChanged(kChanged_PercentCurrent);
+  }
+
+  if (percent_changed || mode_changed) {
     CallDeviceChangeCallback();
   }
 }
