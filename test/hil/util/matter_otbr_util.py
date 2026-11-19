@@ -545,6 +545,34 @@ def matter_read_pressure_hpa(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT)
     return True, hpa
 
 
+def matter_read_flow_m3h(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read FlowMeasurement MeasuredValue via chip-tool.
+    Matter/Arduino encode raw = 10 x flow (m3/h).
+    Returns (success, m3h_float_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter flow from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} flowmeasurement read measured-value "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"MeasuredValue:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse MeasuredValue from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    m3h = raw / 10.0
+    print(f"MeasuredValue raw={raw} -> {m3h:.2f} m3/h")
+    return True, m3h
+
+
 def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """
     Read RelativeHumidityMeasurement MeasuredValue via chip-tool.

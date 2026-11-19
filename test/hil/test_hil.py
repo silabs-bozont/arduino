@@ -25,6 +25,7 @@ from testcases.testcase_hil_matter_thermostat import testcase_hil_matter_thermos
 from testcases.testcase_hil_matter_temp_sensor import testcase_hil_matter_temp_sensor
 from testcases.testcase_hil_matter_humidity_sensor import testcase_hil_matter_humidity_sensor
 from testcases.testcase_hil_matter_pressure_sensor import testcase_hil_matter_pressure_sensor
+from testcases.testcase_hil_matter_flow_sensor import testcase_hil_matter_flow_sensor
 from testcases.testcase_hil_matter_illuminance_sensor import testcase_hil_matter_illuminance_sensor
 from testcases.testcase_hil_matter_co2_sensor import testcase_hil_matter_co2_sensor
 from testcases.testcase_hil_matter_co_sensor import testcase_hil_matter_co_sensor
@@ -88,6 +89,7 @@ testcase_list = {
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "matter_pressure_sensor": testcase_hil_matter_pressure_sensor,
+    "matter_flow_sensor": testcase_hil_matter_flow_sensor,
     "matter_illuminance_sensor": testcase_hil_matter_illuminance_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
     "matter_co_sensor": testcase_hil_matter_co_sensor,
@@ -106,6 +108,7 @@ matter_otbr_testcase_list = {
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "matter_pressure_sensor": testcase_hil_matter_pressure_sensor,
+    "matter_flow_sensor": testcase_hil_matter_flow_sensor,
     "matter_illuminance_sensor": testcase_hil_matter_illuminance_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
     "matter_co_sensor": testcase_hil_matter_co_sensor,
