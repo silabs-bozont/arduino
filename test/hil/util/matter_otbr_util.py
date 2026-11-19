@@ -601,6 +601,66 @@ def matter_read_occupancy(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     return True, occupied
 
 
+def matter_read_bat_percent_remaining(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read PowerSource BatPercentRemaining via chip-tool.
+    Matter encodes percent as raw = 2 x percent (0-200 → 0-100%).
+    Matches MatterSimplePowerSource::set_battery_percent().
+    Returns (success, percent_int_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter bat-percent-remaining from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} powersource read bat-percent-remaining "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    # Flat "BatPercentRemaining: 200" or nullable "Value: 200" forms
+    m = re.search(r"BatPercentRemaining:\s*(\d+)", output)
+    if not m:
+        m = re.search(r"BatPercentRemaining:[\s\S]*?Value:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse BatPercentRemaining from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    percent = raw // 2
+    print(f"BatPercentRemaining raw={raw} -> {percent}%")
+    return True, percent
+
+
+def matter_read_bat_voltage_mv(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read PowerSource BatVoltage via chip-tool (millivolts).
+    Returns (success, mv_int_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter bat-voltage from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} powersource read bat-voltage "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"BatVoltage:\s*(\d+)", output)
+    if not m:
+        m = re.search(r"BatVoltage:[\s\S]*?Value:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse BatVoltage from chip-tool output")
+        return False, None
+
+    mv = int(m.group(1))
+    print(f"BatVoltage raw={mv} mV")
+    return True, mv
+
+
 def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """
     Read RelativeHumidityMeasurement MeasuredValue via chip-tool.
