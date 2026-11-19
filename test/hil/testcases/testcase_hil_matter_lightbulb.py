@@ -61,7 +61,16 @@ def testcase_hil_matter_lightbulb(current_board, variant, current_board_port):
         # Give the Matter stack a moment to start BLE advertising after reset
         time.sleep(5)
 
-        if not matter_otbr_util.commission_with_defaults(node_id=NODE_ID):
+        def _before_commission_retry():
+            nonlocal monitor
+            ok, monitor = hil_util.prepare_matter_dut_recommission(
+                current_board, variant, LIGHTBULB_SKETCH, current_board_port, monitor
+            )
+            return ok
+
+        if not matter_otbr_util.commission_with_defaults(
+            node_id=NODE_ID, before_retry=_before_commission_retry
+        ):
             print("Commissioning via Matter Hub failed")
             return did_run, False
 
