@@ -28,6 +28,7 @@ from testcases.testcase_hil_matter_pressure_sensor import testcase_hil_matter_pr
 from testcases.testcase_hil_matter_flow_sensor import testcase_hil_matter_flow_sensor
 from testcases.testcase_hil_matter_occupancy_sensor import testcase_hil_matter_occupancy_sensor
 from testcases.testcase_hil_matter_power_source import testcase_hil_matter_power_source
+from testcases.testcase_hil_matter_time_sync import testcase_hil_matter_time_sync
 from testcases.testcase_hil_matter_illuminance_sensor import testcase_hil_matter_illuminance_sensor
 from testcases.testcase_hil_matter_co2_sensor import testcase_hil_matter_co2_sensor
 from testcases.testcase_hil_matter_co_sensor import testcase_hil_matter_co_sensor
@@ -94,6 +95,7 @@ testcase_list = {
     "matter_flow_sensor": testcase_hil_matter_flow_sensor,
     "matter_occupancy_sensor": testcase_hil_matter_occupancy_sensor,
     "matter_power_source": testcase_hil_matter_power_source,
+    "matter_time_sync": testcase_hil_matter_time_sync,
     "matter_illuminance_sensor": testcase_hil_matter_illuminance_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
     "matter_co_sensor": testcase_hil_matter_co_sensor,
@@ -115,6 +117,7 @@ matter_otbr_testcase_list = {
     "matter_flow_sensor": testcase_hil_matter_flow_sensor,
     "matter_occupancy_sensor": testcase_hil_matter_occupancy_sensor,
     "matter_power_source": testcase_hil_matter_power_source,
+    "matter_time_sync": testcase_hil_matter_time_sync,
     "matter_illuminance_sensor": testcase_hil_matter_illuminance_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
     "matter_co_sensor": testcase_hil_matter_co_sensor,
