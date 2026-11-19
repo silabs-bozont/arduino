@@ -573,6 +573,34 @@ def matter_read_flow_m3h(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     return True, m3h
 
 
+def matter_read_occupancy(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read OccupancySensing Occupancy via chip-tool.
+    Arduino DeviceOccupancySensor stores a bool; Matter bit 0 set => occupied.
+    Returns (success, occupied_bool_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter occupancy from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} occupancysensing read occupancy "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"Occupancy:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse Occupancy from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    occupied = bool(raw & 0x1)
+    print(f"Occupancy raw={raw} -> {'occupied' if occupied else 'unoccupied'}")
+    return True, occupied
+
+
 def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """
     Read RelativeHumidityMeasurement MeasuredValue via chip-tool.
