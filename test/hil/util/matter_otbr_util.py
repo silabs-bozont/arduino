@@ -231,33 +231,90 @@ COMMISSION_ATTEMPTS = 2
 COMMISSION_RETRY_DELAY_S = 15
 
 # Operational chip-tool reads/writes: same OTBR/IPv6 "Network is unreachable" flake.
+# After a mid-CASE failure the DUT often returns busy with ~65535 ms wait — a 5s
+# retry then fails immediately. Wait out that window before the second attempt.
 CHIPTOOL_ATTEMPTS = 2
 CHIPTOOL_RETRY_DELAY_S = 5
+CHIPTOOL_CASE_RETRY_DELAY_S = 70
 CHIPTOOL_CMD_TIMEOUT_S = 60
+# Leave headroom under the SSH timeout so chip-tool can exit cleanly.
+CHIPTOOL_INTERACTIVE_TIMEOUT_S = 45
+
+
+def _chiptool_case_flake(output):
+    text = (output or "").lower()
+    return any(
+        needle in text
+        for needle in (
+            "network is unreachable",
+            "resource is busy",
+            "case session",
+            "timed out",
+            "timeout",
+        )
+    )
+
+
+def _chiptool_retry_delay_s(output):
+    """Prefer DUT-reported busy wait; otherwise a CASE-flake default or short delay."""
+    m = re.search(r"minimum wait time:\s*(\d+)\s*ms", output or "", re.IGNORECASE)
+    if m:
+        # +1s slack past the advertised busy window
+        return max(CHIPTOOL_RETRY_DELAY_S, int(math.ceil(int(m.group(1)) / 1000.0) + 1))
+    if _chiptool_case_flake(output):
+        return CHIPTOOL_CASE_RETRY_DELAY_S
+    return CHIPTOOL_RETRY_DELAY_S
+
+
+def _kill_stale_chiptool():
+    """
+    Stop a chip-tool left running after an SSH timeout mid-CASE.
+
+    Use killall (not pkill -f): a -f pattern matching the chip-tool path also
+    matches this SSH remote command line and can kill the cleanup shell itself
+    (SSH exit 255), which looked like a hung retry.
+    """
+    print("Clearing any leftover chip-tool process on the Matter Hub")
+    # killall -q: quiet if none; || true: never fail the HIL helper
+    ssh_bash("killall -q chip-tool 2>/dev/null || true", timeout=15)
 
 
 def chiptool_run(script, timeout=CHIPTOOL_CMD_TIMEOUT_S):
     """
-    Run a chip-tool command on the Pi; retry once after a short delay on failure.
+    Run a chip-tool command on the Pi; retry once on failure.
+
+    CASE/IPv6 flakes kill connectivity mid-handshake and leave the DUT busy; the
+    retry waits out that busy window and clears any leftover chip-tool process.
     """
+    if "--timeout" not in script:
+        script = f"{script} --timeout {int(CHIPTOOL_INTERACTIVE_TIMEOUT_S)}"
+
     output = ""
     for attempt in range(1, CHIPTOOL_ATTEMPTS + 1):
         ok, output = ssh_bash(script, timeout=timeout)
         if ok:
             return True, output
         if attempt < CHIPTOOL_ATTEMPTS:
+            delay = _chiptool_retry_delay_s(output)
             print(
                 f"chip-tool command failed (attempt {attempt}/{CHIPTOOL_ATTEMPTS}); "
-                f"retrying once in {CHIPTOOL_RETRY_DELAY_S}s"
+                f"will retry once after DUT CASE/busy settle"
             )
-            time.sleep(CHIPTOOL_RETRY_DELAY_S)
+            _kill_stale_chiptool()
+            print(
+                f"Waiting {delay}s before chip-tool retry "
+                f"(DUT busy window after Network is unreachable / CASE abort)..."
+            )
+            time.sleep(delay)
+            print(f"Retrying chip-tool (attempt {attempt + 1}/{CHIPTOOL_ATTEMPTS})")
     return False, output
 
 
 def _start_thread_and_commission_once(pincode, discriminator, node_id=DEFAULT_NODE_ID):
     """
-    On the Pi: start a fresh Thread network (ot-ctl), then BLE-Thread commission the DUT.
-    Mirrors mattertool startThread + bleThread without sourcing activate.sh.
+    On the Pi: reset hub state, start a fresh Thread network, then BLE-Thread
+    commission the DUT. Mirrors mattertool startThread + bleThread without
+    sourcing activate.sh.
     """
     script = f"""
 set -e
@@ -267,8 +324,31 @@ DISCRIMINATOR={shlex.quote(str(discriminator))}
 NODE_ID={int(node_id)}
 PAIRING_TIMEOUT={int(PAIRING_TIMEOUT_S)}
 
-# Clear prior chip-tool session state so re-commissioning is reliable
+echo "Resetting Matter Hub state before commissioning"
+# Leftover chip-tool from a timed-out SSH session can confuse the next pair
+killall -q chip-tool 2>/dev/null || true
+# Clear prior chip-tool session / fabric state so re-commissioning is reliable
 rm -rf /tmp/chip_* 2>/dev/null || true
+
+# Bounce OTBR: clears sticky Thread/IPv6 border routes that cause mid-CASE
+# "Network is unreachable" after the DUT joins Thread
+if command -v systemctl >/dev/null 2>&1; then
+  sudo systemctl restart otbr-agent
+  # otbr-agent needs a moment before ot-ctl talks to the RCP again
+  sleep 8
+fi
+
+# BLE HCI often needs a kick after a failed pairing (hciuart / stale connections)
+if command -v hciconfig >/dev/null 2>&1; then
+  sudo hciconfig hci0 down 2>/dev/null || true
+  sleep 1
+  sudo hciconfig hci0 up 2>/dev/null || true
+elif command -v bluetoothctl >/dev/null 2>&1; then
+  sudo bluetoothctl power off >/dev/null 2>&1 || true
+  sleep 1
+  sudo bluetoothctl power on >/dev/null 2>&1 || true
+fi
+sleep 2
 
 echo "Starting a new Thread network"
 sudo ot-ctl factoryreset
@@ -281,7 +361,27 @@ sudo ot-ctl dataset commit active
 sudo ot-ctl srp server enable
 sudo ot-ctl ifconfig up
 sudo ot-ctl thread start
-sleep 10
+
+# Wait until we are leader/router so border routing is up before CASE over Thread
+THREAD_READY=0
+for _i in $(seq 1 30); do
+  STATE=$(sudo ot-ctl state 2>/dev/null | sed -n 1p | tr -d '\\r')
+  echo "Thread state: $STATE"
+  case "$STATE" in
+    leader|router)
+      THREAD_READY=1
+      break
+      ;;
+  esac
+  sleep 1
+done
+if [ "$THREAD_READY" != 1 ]; then
+  echo "Thread network did not become leader/router in time"
+  exit 1
+fi
+# Extra settle for on-mesh / off-mesh IPv6 routes via OTBR
+sleep 5
+
 THREAD_DATA_SET=$(sudo ot-ctl dataset active -x | sed -n 1p | tr -d '\\r')
 echo "Thread dataset: $THREAD_DATA_SET"
 if [ -z "$THREAD_DATA_SET" ] || [ "$THREAD_DATA_SET" = "Error" ]; then
@@ -298,8 +398,8 @@ echo "COMMISSION_OK node=$NODE_ID"
     print(f"Setting up Thread network and commissioning node with ID '{node_id}'")
     print("-" * 40)
 
-    # SSH must outlive chip-tool's pairing timeout
-    ok, output = ssh_bash(script, timeout=PAIRING_TIMEOUT_S + 60)
+    # SSH must outlive chip-tool's pairing timeout + OTBR/Thread bring-up
+    ok, output = ssh_bash(script, timeout=PAIRING_TIMEOUT_S + 120)
     if not ok or "COMMISSION_OK" not in output:
         print("Thread start / BLE commissioning failed")
         return False
