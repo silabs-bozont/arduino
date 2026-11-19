@@ -674,6 +674,156 @@ def matter_read_tvoc_ppb(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     )
 
 
+# Matter Thermostat SystemMode (MatterThermostat::thermostat_mode_t)
+THERMOSTAT_MODE_OFF = 0
+THERMOSTAT_MODE_HEAT = 4
+
+
+def celsius_to_matter_temp_raw(celsius):
+    """Matter thermostat temps are hundredths of a degree Celsius (int16)."""
+    return int(round(float(celsius) * 100.0))
+
+
+def matter_temp_raw_to_celsius(raw):
+    return int(raw) / 100.0
+
+
+def matter_read_thermostat_system_mode(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read Thermostat SystemMode (also marks the appliance online on first read).
+    Returns (success, mode_int_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter thermostat system-mode from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} thermostat read system-mode "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"SystemMode:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse SystemMode from chip-tool output")
+        return False, None
+
+    mode = int(m.group(1))
+    print(f"SystemMode={mode}")
+    return True, mode
+
+
+def matter_write_thermostat_system_mode(mode, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Write Thermostat SystemMode (0=Off, 4=Heat)."""
+    mode = int(mode)
+    print("-" * 40)
+    print(f"Writing Matter thermostat system-mode={mode} to node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} thermostat write system-mode "
+        f"{mode} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_read_occupied_heating_setpoint_c(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read OccupiedHeatingSetpoint (hundredths of °C) and return Celsius.
+    Returns (success, celsius_float_or_None).
+    """
+    print("-" * 40)
+    print(
+        f"Reading Matter occupied-heating-setpoint from node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} thermostat read occupied-heating-setpoint "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"OccupiedHeatingSetpoint:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse OccupiedHeatingSetpoint from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    celsius = matter_temp_raw_to_celsius(raw)
+    print(f"OccupiedHeatingSetpoint raw={raw} -> {celsius:.1f} C")
+    return True, celsius
+
+
+def matter_write_occupied_heating_setpoint_c(
+    celsius, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """Write OccupiedHeatingSetpoint from a Celsius value (stored as °C x 100)."""
+    raw = celsius_to_matter_temp_raw(celsius)
+    print("-" * 40)
+    print(
+        f"Writing Matter occupied-heating-setpoint={celsius:.1f} C (raw {raw}) "
+        f"to node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} thermostat write occupied-heating-setpoint "
+        f"{raw} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_read_min_heat_setpoint_limit_c(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Read MinHeatSetpointLimit; returns (success, celsius_float_or_None)."""
+    print("-" * 40)
+    print(f"Reading Matter min-heat-setpoint-limit from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} thermostat read min-heat-setpoint-limit "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"MinHeatSetpointLimit:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse MinHeatSetpointLimit from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    celsius = matter_temp_raw_to_celsius(raw)
+    print(f"MinHeatSetpointLimit raw={raw} -> {celsius:.1f} C")
+    return True, celsius
+
+
+def matter_read_max_heat_setpoint_limit_c(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Read MaxHeatSetpointLimit; returns (success, celsius_float_or_None)."""
+    print("-" * 40)
+    print(f"Reading Matter max-heat-setpoint-limit from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} thermostat read max-heat-setpoint-limit "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"MaxHeatSetpointLimit:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse MaxHeatSetpointLimit from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    celsius = matter_temp_raw_to_celsius(raw)
+    print(f"MaxHeatSetpointLimit raw={raw} -> {celsius:.1f} C")
+    return True, celsius
+
+
 # Matter FanControl FanMode values (DeviceFan::fan_mode_t)
 FAN_MODE_OFF = 0
 FAN_MODE_LOW = 1
