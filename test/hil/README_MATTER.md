@@ -22,12 +22,16 @@ Prefer Ethernet for the Pi on the same LAN as the HIL host. Onboard Bluetooth
 must be working (`hci0` present) for BLE commissioning; a reboot often clears
 a failed `hciuart` bring-up on first boot.
 
-Commissioning retries once on failure: fresh OTBR Thread network, longer
-chip-tool `--timeout` (300s) so mid-CASE IPv6 flakes can recover, and a DUT
-NVM clear + reflash via `before_retry` so BLE advertising is restored.
+Before each commission the Pi resets hub state: `killall chip-tool`, clear
+`/tmp/chip_*`, restart `otbr-agent`, bounce `hci0`, then a new Thread network
+and wait until `ot-ctl state` is leader/router (avoids mid-CASE
+`Network is unreachable` from stale IPv6 border routes). Commissioning still
+retries once on failure with a DUT NVM clear + reflash via `before_retry`.
 
-Operational chip-tool reads/writes also retry once after 5s on failure (same
-OTBR `Network is unreachable` flake).
+Operational chip-tool reads/writes retry once on failure. After CASE/IPv6
+flakes (`Network is unreachable` / DUT `busy`), the retry waits ~70s (or the
+DUT-reported busy window) and `killall chip-tool` clears a leftover process
+from an SSH timeout. That wait is expected and can look idle in the log.
 
 ## Host SSH
 
