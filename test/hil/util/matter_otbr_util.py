@@ -428,6 +428,44 @@ def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPO
     return True, percent
 
 
+def matter_illuminance_raw_to_lux(raw):
+    """
+    IlluminanceMeasurement MeasuredValue: 0 means too low to measure;
+    otherwise lux = 10 ^ ((raw - 1) / 10000). Matches MatterIlluminance.
+    """
+    raw = int(raw)
+    if raw <= 0:
+        return 0.0
+    return 10 ** ((raw - 1) / 10000.0)
+
+
+def matter_read_illuminance_lux(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read IlluminanceMeasurement MeasuredValue via chip-tool and convert to lux.
+    Returns (success, lux_float_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter illuminance from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} illuminancemeasurement read measured-value "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"MeasuredValue:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse MeasuredValue from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    lux = matter_illuminance_raw_to_lux(raw)
+    print(f"MeasuredValue raw={raw} -> {lux:.2f} lx")
+    return True, lux
+
+
 def matter_read_co2_ppm(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """
     Read CarbonDioxideConcentrationMeasurement MeasuredValue via chip-tool.

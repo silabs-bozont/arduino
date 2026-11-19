@@ -23,6 +23,7 @@ from testcases.testcase_hil_matter_on_off_outlet import testcase_hil_matter_on_o
 from testcases.testcase_hil_matter_fan import testcase_hil_matter_fan
 from testcases.testcase_hil_matter_temp_sensor import testcase_hil_matter_temp_sensor
 from testcases.testcase_hil_matter_humidity_sensor import testcase_hil_matter_humidity_sensor
+from testcases.testcase_hil_matter_illuminance_sensor import testcase_hil_matter_illuminance_sensor
 from testcases.testcase_hil_matter_co2_sensor import testcase_hil_matter_co2_sensor
 from testcases.testcase_hil_matter_window_covering import testcase_hil_matter_window_covering
 from testcases.testcase_hil_zigbee_smoke import testcase_hil_zigbee_smoke
@@ -81,6 +82,7 @@ testcase_list = {
     "matter_fan": testcase_hil_matter_fan,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
+    "matter_illuminance_sensor": testcase_hil_matter_illuminance_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
     "matter_window_covering": testcase_hil_matter_window_covering,
     "zigbee_smoke": testcase_hil_zigbee_smoke,
@@ -94,6 +96,7 @@ matter_otbr_testcase_list = {
     "matter_fan": testcase_hil_matter_fan,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
+    "matter_illuminance_sensor": testcase_hil_matter_illuminance_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
     "matter_window_covering": testcase_hil_matter_window_covering,
 }
