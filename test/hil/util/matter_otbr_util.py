@@ -466,17 +466,16 @@ def matter_read_illuminance_lux(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOI
     return True, lux
 
 
-def matter_read_co2_ppm(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+def _matter_read_concentration(cluster, label, unit, node_id, endpoint):
     """
-    Read CarbonDioxideConcentrationMeasurement MeasuredValue via chip-tool.
-    Value is a float in ppm (Matter single/float attribute).
-    Returns (success, ppm_float_or_None).
+    Read a concentration-measurement MeasuredValue (Matter single/float).
+    Returns (success, value_float_or_None).
     """
     print("-" * 40)
-    print(f"Reading Matter CO2 from node {node_id}, endpoint {endpoint}")
+    print(f"Reading Matter {label} from node {node_id}, endpoint {endpoint}")
     print("-" * 40)
     script = (
-        f"{CHIPTOOL_PATH} carbondioxideconcentrationmeasurement read measured-value "
+        f"{CHIPTOOL_PATH} {cluster} read measured-value "
         f"{int(node_id)} {int(endpoint)}"
     )
     ok, output = chiptool_run(script)
@@ -488,9 +487,46 @@ def matter_read_co2_ppm(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
         print("Failed to parse MeasuredValue from chip-tool output")
         return False, None
 
-    ppm = float(m.group(1))
-    print(f"MeasuredValue -> {ppm:.0f} ppm")
-    return True, ppm
+    value = float(m.group(1))
+    print(f"MeasuredValue -> {value:.0f} {unit}")
+    return True, value
+
+
+def matter_read_co2_ppm(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read CarbonDioxideConcentrationMeasurement MeasuredValue via chip-tool.
+    Value is a float in ppm (Matter single/float attribute).
+    Returns (success, ppm_float_or_None).
+    """
+    return _matter_read_concentration(
+        "carbondioxideconcentrationmeasurement", "CO2", "ppm", node_id, endpoint
+    )
+
+
+def matter_read_co_ppb(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read CarbonMonoxideConcentrationMeasurement MeasuredValue via chip-tool.
+    Value is a float in ppb (Matter single/float attribute).
+    Returns (success, ppb_float_or_None).
+    """
+    return _matter_read_concentration(
+        "carbonmonoxideconcentrationmeasurement", "CO", "ppb", node_id, endpoint
+    )
+
+
+def matter_read_tvoc_ppb(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read TotalVolatileOrganicCompoundsConcentrationMeasurement MeasuredValue.
+    Value is a float in ppb (Matter single/float attribute).
+    Returns (success, ppb_float_or_None).
+    """
+    return _matter_read_concentration(
+        "totalvolatileorganiccompoundsconcentrationmeasurement",
+        "TVOC",
+        "ppb",
+        node_id,
+        endpoint,
+    )
 
 
 # Matter FanControl FanMode values (DeviceFan::fan_mode_t)

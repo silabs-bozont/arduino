@@ -60,4 +60,6 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 - humidity sensor +0.5% increment (`matter_humidity_sensor`)
 - illuminance sensor +15 lx increment (`matter_illuminance_sensor`)
 - CO2 sensor +15 ppm increment (`matter_co2_sensor`)
+- CO sensor +15 ppb increment (`matter_co_sensor`)
+- TVOC sensor +15 ppb increment (`matter_tvoc_sensor`)
 - window covering open/close, go-to %, stop (`matter_window_covering`)
