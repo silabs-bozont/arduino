@@ -111,14 +111,30 @@ def ssh_run(remote_command, timeout=180):
         ssh_cmd[1:1] = ["-o", "BatchMode=yes"]
 
     try:
-        proc = subprocess.run(
-            ssh_cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env=env,
-            stdin=subprocess.DEVNULL,
-        )
+        try:
+            proc = subprocess.run(
+                ssh_cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                env=env,
+                stdin=subprocess.DEVNULL,
+            )
+        except subprocess.TimeoutExpired as e:
+            # Treat hangs (OTBR/IPv6 unreachable mid chip-tool) as failure so
+            # chiptool_run / commissioning can retry instead of crashing HIL.
+            stdout = e.stdout or ""
+            stderr = e.stderr or ""
+            if isinstance(stdout, bytes):
+                stdout = stdout.decode("utf-8", errors="ignore")
+            if isinstance(stderr, bytes):
+                stderr = stderr.decode("utf-8", errors="ignore")
+            print(f"SSH command timed out after {timeout}s")
+            if stdout:
+                print(stdout)
+            if stderr:
+                print(stderr)
+            return False, stdout + stderr
     finally:
         if askpass_path:
             try:
