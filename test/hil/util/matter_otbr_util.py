@@ -516,6 +516,35 @@ def matter_read_temperature_celsius(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_EN
     return True, celsius
 
 
+def matter_read_pressure_hpa(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read PressureMeasurement MeasuredValue via chip-tool.
+    Matter stores 0.1 kPa units; Arduino MatterPressure sets hPa as int16, and
+    1 hPa == 0.1 kPa, so the raw value is numerically hPa.
+    Returns (success, hpa_float_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter pressure from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} pressuremeasurement read measured-value "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"MeasuredValue:\s*(-?\d+)", output)
+    if not m:
+        print("Failed to parse MeasuredValue from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    hpa = float(raw)
+    print(f"MeasuredValue raw={raw} -> {hpa:.1f} hPa")
+    return True, hpa
+
+
 def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """
     Read RelativeHumidityMeasurement MeasuredValue via chip-tool.

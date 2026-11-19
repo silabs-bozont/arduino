@@ -62,6 +62,7 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 - fan modes + random speed % (`matter_fan`)
 - temperature sensor CPU reading (`matter_temp_sensor`)
 - humidity sensor +0.5% increment (`matter_humidity_sensor`)
+- pressure sensor +5 hPa increment (`matter_pressure_sensor`)
 - illuminance sensor +15 lx increment (`matter_illuminance_sensor`)
 - CO2 sensor +15 ppm increment (`matter_co2_sensor`)
 - CO sensor +15 ppb increment (`matter_co_sensor`)
