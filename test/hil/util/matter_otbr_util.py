@@ -25,6 +25,10 @@ DEFAULT_SSH_USER = "ubuntu"
 DEFAULT_NODE_ID = 100
 # Arduino Matter dynamic endpoints start after the ZAP placeholder (endpoint 2) → first appliance is 3
 DEFAULT_ENDPOINT = 3
+# Time Synchronization cluster lives on the root endpoint
+ROOT_ENDPOINT = 0
+# Unix seconds for 2000-01-01T00:00:00Z (Matter epoch base)
+MATTER_EPOCH_UNIX_S = 946684800
 # Arduino Matter examples use the CHIP development defaults (same as mattertool).
 DEFAULT_PINCODE = "20202021"
 DEFAULT_DISCRIMINATOR = "3840"
@@ -32,6 +36,9 @@ DEFAULT_DISCRIMINATOR = "3840"
 CHIPTOOL_PATH = "$HOME/connectedhomeip/out/standalone/chip-tool"
 # Matter LevelControl CurrentLevel range used by Arduino MatterDimmableLightbulb
 LEVEL_CONTROL_MAX = 254
+# TimeSynchronization::GranularityEnum / TimeSourceEnum used by SetUTCTime HIL
+TIME_GRANULARITY_MILLISECONDS = 3
+TIME_SOURCE_ADMIN = 2
 
 
 def percent_to_matter_level(percent):
@@ -514,6 +521,124 @@ def matter_read_temperature_celsius(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_EN
     celsius = raw / 100.0
     print(f"MeasuredValue raw={raw} -> {celsius:.2f} C")
     return True, celsius
+
+
+def get_pi_unix_time():
+    """Return current Unix seconds from the Matter Hub (Pi), or None on failure."""
+    ok, output = ssh_bash("date -u +%s", timeout=30)
+    if not ok:
+        return None
+    m = re.search(r"(\d+)", output)
+    if not m:
+        print("Failed to parse Unix time from Matter Hub date output")
+        return None
+    return int(m.group(1))
+
+
+def unix_to_matter_epoch_us(unix_s):
+    """Convert Unix seconds to Matter epoch microseconds (since 2000-01-01 UTC)."""
+    return int((int(unix_s) - MATTER_EPOCH_UNIX_S) * 1_000_000)
+
+
+def matter_set_utc_time(
+    unix_s=None,
+    node_id=DEFAULT_NODE_ID,
+    endpoint=ROOT_ENDPOINT,
+    granularity=TIME_GRANULARITY_MILLISECONDS,
+    time_source=TIME_SOURCE_ADMIN,
+):
+    """
+    Invoke TimeSynchronization SetUTCTime on the DUT (root endpoint by default).
+    If unix_s is None, uses the Matter Hub's current UTC time.
+    Returns (success, unix_s_used_or_None).
+    """
+    if unix_s is None:
+        unix_s = get_pi_unix_time()
+        if unix_s is None:
+            return False, None
+    unix_s = int(unix_s)
+    matter_us = unix_to_matter_epoch_us(unix_s)
+    print("-" * 40)
+    print(
+        f"Setting Matter UTC time on node {node_id} ep {endpoint}: "
+        f"unix={unix_s} matter_us={matter_us} granularity={granularity} "
+        f"time_source={time_source}"
+    )
+    print("-" * 40)
+    # chip-tool: set-utctime UTCTime Granularity node-id endpoint-id [--TimeSource N]
+    # TimeSource is optional-flag, not a positional (passing it positionally
+    # shifts node/endpoint and breaks --timeout parsing).
+    script = (
+        f"{CHIPTOOL_PATH} timesynchronization set-utctime "
+        f"{matter_us} {int(granularity)} "
+        f"{int(node_id)} {int(endpoint)} "
+        f"--TimeSource {int(time_source)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok, unix_s if ok else None
+
+
+def matter_set_timezone(
+    offset_seconds,
+    node_id=DEFAULT_NODE_ID,
+    endpoint=ROOT_ENDPOINT,
+    valid_at=0,
+    name=None,
+):
+    """
+    Invoke TimeSynchronization SetTimeZone with a single timezone entry.
+    offset_seconds: east of UTC (e.g. 3600 for UTC+1).
+    """
+    if name:
+        payload = (
+            f'[{{"offset": {int(offset_seconds)}, "validAt": {int(valid_at)}, '
+            f'"name": "{name}"}}]'
+        )
+    else:
+        payload = f'[{{"offset": {int(offset_seconds)}, "validAt": {int(valid_at)}}}]'
+    print("-" * 40)
+    print(
+        f"Setting Matter timezone on node {node_id} ep {endpoint}: "
+        f"offset={offset_seconds}s"
+    )
+    print("-" * 40)
+    # chip-tool command name is set-time-zone (not set-timezone)
+    script = (
+        f"{CHIPTOOL_PATH} timesynchronization set-time-zone "
+        f"{shlex.quote(payload)} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_set_dst_offset(
+    offset_seconds=0,
+    node_id=DEFAULT_NODE_ID,
+    endpoint=ROOT_ENDPOINT,
+    valid_starting=0,
+):
+    """
+    Invoke TimeSynchronization SetDSTOffset with a single always-valid entry.
+    Arduino TimeZoneDatabase is None, so hubs typically must supply DST after TZ.
+    """
+    # validUntil omitted / null → open-ended
+    payload = (
+        f'[{{"offset": {int(offset_seconds)}, '
+        f'"validStarting": {int(valid_starting)}, "validUntil": null}}]'
+    )
+    print("-" * 40)
+    print(
+        f"Setting Matter DST offset on node {node_id} ep {endpoint}: "
+        f"offset={offset_seconds}s"
+    )
+    print("-" * 40)
+    # chip-tool: set-dstoffset (matches cluster command SetDSTOffset)
+    script = (
+        f"{CHIPTOOL_PATH} timesynchronization set-dstoffset "
+        f"{shlex.quote(payload)} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
 
 
 def matter_read_pressure_hpa(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
