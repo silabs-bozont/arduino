@@ -63,6 +63,6 @@ void loop()
     bool new_state = !matter_occupancy_sensor.get_occupancy();
     // Publish the occupancy value - you can also use 'matter_occupancy_sensor.set_occupancy(new_state)'
     matter_occupancy_sensor = new_state;
-    Serial.printf("Current ouccupancy state: %s\n", new_state ? "occupied" : "unoccupied");
+    Serial.printf("Current occupancy state: %s\n", new_state ? "occupied" : "unoccupied");
   }
 }

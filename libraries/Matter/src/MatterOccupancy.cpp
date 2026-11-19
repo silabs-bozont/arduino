@@ -26,10 +26,14 @@
 
 #include "MatterOccupancy.h"
 
+#include <app/util/af-types.h>
+
 using namespace ::chip;
 using namespace ::chip::Platform;
 using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
+
+void MatterOccupancySensingClusterShutdownCallback(chip::EndpointId endpointId, MatterClusterShutdownType shutdownType);
 
 const EmberAfDeviceType gOccupancySensorDeviceTypes[] = { { DEVICE_TYPE_OCCUPANCY_SENSOR, DEVICE_VERSION_DEFAULT } };
 
@@ -118,6 +122,16 @@ bool MatterOccupancy::begin()
     free(new_endpoint);
     free(new_sensor_data_version);
     return false;
+  }
+
+  // Matter SDK auto-registers a code-driven OccupancySensingCluster on this
+  // endpoint. Reads then bypass emberAfExternalAttributeReadCallback, so
+  // DeviceOccupancySensor never runs and SetOnline(true) never fires (setup()
+  // stalls on is_online()). Tear it down so Occupancy stays on the Ember
+  // external-attribute path owned by DeviceOccupancySensor.
+  {
+    DeviceLayer::StackLock lock;
+    MatterOccupancySensingClusterShutdownCallback(sensor->GetEndpointId(), MatterClusterShutdownType::kClusterShutdown);
   }
 
   this->sensor_device = sensor;
