@@ -200,6 +200,41 @@ def arduino_cli_burn_bootloader(board, port):
     return True
 
 
+def prepare_matter_dut_recommission(board, variant, sketch_path, port, monitor):
+    """
+    Recover a DUT after a failed BLE-Thread commission so it can be paired again.
+
+    Mid-CASE failures often leave fabric/failsafe state and stop BLE advertising;
+    clear Matter NVM via bootloader burn, reflash the sketch, and reopen Serial.
+    Returns (success, monitor_or_None).
+    """
+    print("-" * 40)
+    print("Preparing DUT for Matter recommission (NVM clear + reflash)")
+    print("-" * 40)
+    if monitor is not None:
+        try:
+            monitor.close()
+        except Exception:
+            pass
+        monitor = None
+
+    if not arduino_cli_burn_bootloader(board, port):
+        return False, None
+    if not arduino_cli_build_and_flash(board, variant, sketch_path, port):
+        return False, None
+
+    time.sleep(2)
+    try:
+        monitor = SerialMonitor(port)
+    except Exception as e:
+        print(f"Failed to reopen serial monitor after recommission reset: {e}")
+        return False, None
+
+    # Matter stack needs a moment to start BLE advertising after reset
+    time.sleep(5)
+    return True, monitor
+
+
 class SerialMonitor:
     """
     Background serial reader so DUT output is not missed while SSH/commissioning runs.

@@ -22,6 +22,13 @@ Prefer Ethernet for the Pi on the same LAN as the HIL host. Onboard Bluetooth
 must be working (`hci0` present) for BLE commissioning; a reboot often clears
 a failed `hciuart` bring-up on first boot.
 
+Commissioning retries once on failure: fresh OTBR Thread network, longer
+chip-tool `--timeout` (300s) so mid-CASE IPv6 flakes can recover, and a DUT
+NVM clear + reflash via `before_retry` so BLE advertising is restored.
+
+Operational chip-tool reads/writes also retry once after 5s on failure (same
+OTBR `Network is unreachable` flake).
+
 ## Host SSH
 
 When you pass `--matter-otbr <pi-ip>`, the runner prompts once for the Pi SSH

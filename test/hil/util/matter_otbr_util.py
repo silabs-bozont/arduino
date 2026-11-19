@@ -14,6 +14,7 @@ import re
 import shlex
 import subprocess
 import tempfile
+import time
 
 # Set by test_hil.py when --matter-otbr <ip> is provided; None means Matter HIL is skipped.
 otbr_host = None
@@ -207,7 +208,37 @@ def parse_setup_payload_on_pi(payload):
     return pincode, discriminator
 
 
-def start_thread_and_commission(pincode, discriminator, node_id=DEFAULT_NODE_ID):
+# chip-tool default commissioning window is ~120s; CASE retries after a Thread
+# join flake can need longer (seen: Network is unreachable → busy → retry ~103s).
+PAIRING_TIMEOUT_S = 300
+COMMISSION_ATTEMPTS = 2
+COMMISSION_RETRY_DELAY_S = 15
+
+# Operational chip-tool reads/writes: same OTBR/IPv6 "Network is unreachable" flake.
+CHIPTOOL_ATTEMPTS = 2
+CHIPTOOL_RETRY_DELAY_S = 5
+CHIPTOOL_CMD_TIMEOUT_S = 60
+
+
+def chiptool_run(script, timeout=CHIPTOOL_CMD_TIMEOUT_S):
+    """
+    Run a chip-tool command on the Pi; retry once after a short delay on failure.
+    """
+    output = ""
+    for attempt in range(1, CHIPTOOL_ATTEMPTS + 1):
+        ok, output = ssh_bash(script, timeout=timeout)
+        if ok:
+            return True, output
+        if attempt < CHIPTOOL_ATTEMPTS:
+            print(
+                f"chip-tool command failed (attempt {attempt}/{CHIPTOOL_ATTEMPTS}); "
+                f"retrying once in {CHIPTOOL_RETRY_DELAY_S}s"
+            )
+            time.sleep(CHIPTOOL_RETRY_DELAY_S)
+    return False, output
+
+
+def _start_thread_and_commission_once(pincode, discriminator, node_id=DEFAULT_NODE_ID):
     """
     On the Pi: start a fresh Thread network (ot-ctl), then BLE-Thread commission the DUT.
     Mirrors mattertool startThread + bleThread without sourcing activate.sh.
@@ -218,6 +249,7 @@ CHIPTOOL={CHIPTOOL_PATH}
 PINCODE={shlex.quote(str(pincode))}
 DISCRIMINATOR={shlex.quote(str(discriminator))}
 NODE_ID={int(node_id)}
+PAIRING_TIMEOUT={int(PAIRING_TIMEOUT_S)}
 
 # Clear prior chip-tool session state so re-commissioning is reliable
 rm -rf /tmp/chip_* 2>/dev/null || true
@@ -233,7 +265,7 @@ sudo ot-ctl dataset commit active
 sudo ot-ctl srp server enable
 sudo ot-ctl ifconfig up
 sudo ot-ctl thread start
-sleep 7
+sleep 10
 THREAD_DATA_SET=$(sudo ot-ctl dataset active -x | sed -n 1p | tr -d '\\r')
 echo "Thread dataset: $THREAD_DATA_SET"
 if [ -z "$THREAD_DATA_SET" ] || [ "$THREAD_DATA_SET" = "Error" ]; then
@@ -242,18 +274,55 @@ if [ -z "$THREAD_DATA_SET" ] || [ "$THREAD_DATA_SET" = "Error" ]; then
 fi
 
 echo "Commissioning node $NODE_ID over BLE-Thread"
-"$CHIPTOOL" pairing ble-thread "$NODE_ID" hex:"$THREAD_DATA_SET" "$PINCODE" "$DISCRIMINATOR" --bypass-attestation-verifier true
+"$CHIPTOOL" pairing ble-thread "$NODE_ID" hex:"$THREAD_DATA_SET" "$PINCODE" "$DISCRIMINATOR" \\
+  --bypass-attestation-verifier true --timeout "$PAIRING_TIMEOUT"
 echo "COMMISSION_OK node=$NODE_ID"
 """
     print("-" * 40)
     print(f"Setting up Thread network and commissioning node with ID '{node_id}'")
     print("-" * 40)
 
-    ok, output = ssh_bash(script, timeout=300)
+    # SSH must outlive chip-tool's pairing timeout
+    ok, output = ssh_bash(script, timeout=PAIRING_TIMEOUT_S + 60)
     if not ok or "COMMISSION_OK" not in output:
         print("Thread start / BLE commissioning failed")
         return False
     return True
+
+
+def start_thread_and_commission(
+    pincode, discriminator, node_id=DEFAULT_NODE_ID, before_retry=None
+):
+    """
+    Fresh Thread network + BLE-Thread commission, with one retry.
+
+    OTBR/IPv6 can flake mid-CASE after Thread join ("Network is unreachable").
+    Retry uses a new Thread dataset (ot-ctl factoryreset). Pass before_retry to
+    also reset the DUT (clear failsafe/fabric, restore BLE advertising) — see
+    hil_util.prepare_matter_dut_recommission.
+    """
+    for attempt in range(1, COMMISSION_ATTEMPTS + 1):
+        if attempt > 1:
+            print(
+                f"Commissioning attempt {attempt}/{COMMISSION_ATTEMPTS}: "
+                f"fresh Thread network after {COMMISSION_RETRY_DELAY_S}s"
+            )
+            if before_retry is not None:
+                print("Running before_retry hook (DUT recommission prepare)")
+                if not before_retry():
+                    print("before_retry hook failed")
+                    return False
+            time.sleep(COMMISSION_RETRY_DELAY_S)
+
+        if _start_thread_and_commission_once(pincode, discriminator, node_id=node_id):
+            return True
+
+        if attempt < COMMISSION_ATTEMPTS:
+            print(
+                "Commissioning failed; will retry once with a new Thread network"
+            )
+
+    return False
 
 
 def matter_onoff(on, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
@@ -262,7 +331,7 @@ def matter_onoff(on, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     print("-" * 40)
     cmd = "on" if on else "off"
     script = f"{CHIPTOOL_PATH} onoff {cmd} {int(node_id)} {int(endpoint)}"
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -275,7 +344,7 @@ def matter_read_onoff(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     print(f"Reading Matter on/off attribute from node {node_id}, endpoint {endpoint}")
     print("-" * 40)
     script = f"{CHIPTOOL_PATH} onoff read on-off {int(node_id)} {int(endpoint)}"
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -292,7 +361,7 @@ def matter_move_to_level(level, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOI
         f"{CHIPTOOL_PATH} levelcontrol move-to-level "
         f"{level} 0 0 0 {int(node_id)} {int(endpoint)}"
     )
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -316,7 +385,7 @@ def matter_read_temperature_celsius(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_EN
         f"{CHIPTOOL_PATH} temperaturemeasurement read measured-value "
         f"{int(node_id)} {int(endpoint)}"
     )
-    ok, output = ssh_bash(script, timeout=60)
+    ok, output = chiptool_run(script)
     if not ok:
         return False, None
 
@@ -344,7 +413,7 @@ def matter_read_humidity_percent(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPO
         f"{CHIPTOOL_PATH} relativehumiditymeasurement read measured-value "
         f"{int(node_id)} {int(endpoint)}"
     )
-    ok, output = ssh_bash(script, timeout=60)
+    ok, output = chiptool_run(script)
     if not ok:
         return False, None
 
@@ -372,7 +441,7 @@ def matter_read_co2_ppm(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
         f"{CHIPTOOL_PATH} carbondioxideconcentrationmeasurement read measured-value "
         f"{int(node_id)} {int(endpoint)}"
     )
-    ok, output = ssh_bash(script, timeout=60)
+    ok, output = chiptool_run(script)
     if not ok:
         return False, None
 
@@ -402,7 +471,7 @@ def matter_read_fan_mode(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     print(f"Reading Matter fan-mode from node {node_id}, endpoint {endpoint}")
     print("-" * 40)
     script = f"{CHIPTOOL_PATH} fancontrol read fan-mode {int(node_id)} {int(endpoint)}"
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -416,7 +485,7 @@ def matter_write_fan_mode(mode, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOI
         f"{CHIPTOOL_PATH} fancontrol write fan-mode "
         f"{mode} {int(node_id)} {int(endpoint)}"
     )
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -430,7 +499,7 @@ def matter_write_fan_percent(percent, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_
         f"{CHIPTOOL_PATH} fancontrol write percent-setting "
         f"{percent} {int(node_id)} {int(endpoint)}"
     )
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -455,7 +524,7 @@ def matter_read_window_covering_position(node_id=DEFAULT_NODE_ID, endpoint=DEFAU
         f"{CHIPTOOL_PATH} windowcovering read current-position-lift-percent100ths "
         f"{int(node_id)} {int(endpoint)}"
     )
-    ok, output = ssh_bash(script, timeout=60)
+    ok, output = chiptool_run(script)
     if not ok:
         return False, None
 
@@ -477,7 +546,7 @@ def matter_window_covering_up_or_open(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_
     print(f"Window covering up-or-open node {node_id}, endpoint {endpoint}")
     print("-" * 40)
     script = f"{CHIPTOOL_PATH} windowcovering up-or-open {int(node_id)} {int(endpoint)}"
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -486,7 +555,7 @@ def matter_window_covering_down_or_close(node_id=DEFAULT_NODE_ID, endpoint=DEFAU
     print(f"Window covering down-or-close node {node_id}, endpoint {endpoint}")
     print("-" * 40)
     script = f"{CHIPTOOL_PATH} windowcovering down-or-close {int(node_id)} {int(endpoint)}"
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -495,7 +564,7 @@ def matter_window_covering_stop_motion(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT
     print(f"Window covering stop-motion node {node_id}, endpoint {endpoint}")
     print("-" * 40)
     script = f"{CHIPTOOL_PATH} windowcovering stop-motion {int(node_id)} {int(endpoint)}"
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
@@ -514,25 +583,31 @@ def matter_window_covering_go_to_app_percent(app_percent, node_id=DEFAULT_NODE_I
         f"{CHIPTOOL_PATH} windowcovering go-to-lift-percentage "
         f"{matter_100ths} {int(node_id)} {int(endpoint)}"
     )
-    ok, _ = ssh_bash(script, timeout=60)
+    ok, _ = chiptool_run(script)
     return ok
 
 
-def commission_with_defaults(node_id=DEFAULT_NODE_ID):
+def commission_with_defaults(node_id=DEFAULT_NODE_ID, before_retry=None):
     """
     Start Thread on the Pi and BLE-commission the DUT using the default
     development passcode/discriminator (skips reading pairing codes from Serial).
+
+    before_retry: optional callable() -> bool run before the second attempt
+    (typically hil_util.prepare_matter_dut_recommission wrapped by the testcase).
     """
     print(
         f"Commissioning with defaults: "
         f"PINCODE={DEFAULT_PINCODE} DISCRIMINATOR={DEFAULT_DISCRIMINATOR} NODE_ID={node_id}"
     )
     return start_thread_and_commission(
-        DEFAULT_PINCODE, DEFAULT_DISCRIMINATOR, node_id=node_id
+        DEFAULT_PINCODE,
+        DEFAULT_DISCRIMINATOR,
+        node_id=node_id,
+        before_retry=before_retry,
     )
 
 
-def commission_from_serial_text(serial_text, node_id=DEFAULT_NODE_ID):
+def commission_from_serial_text(serial_text, node_id=DEFAULT_NODE_ID, before_retry=None):
     """
     Parse pairing info from DUT serial, resolve passcode/discriminator on the Pi,
     start Thread, and commission over BLE.
@@ -548,4 +623,6 @@ def commission_from_serial_text(serial_text, node_id=DEFAULT_NODE_ID):
     if pincode is None:
         return False
 
-    return start_thread_and_commission(pincode, discriminator, node_id=node_id)
+    return start_thread_and_commission(
+        pincode, discriminator, node_id=node_id, before_retry=before_retry
+    )
