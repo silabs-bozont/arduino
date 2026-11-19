@@ -21,6 +21,7 @@ from testcases.testcase_hil_matter_lightbulb import testcase_hil_matter_lightbul
 from testcases.testcase_hil_matter_lightbulb_dimmable import testcase_hil_matter_lightbulb_dimmable
 from testcases.testcase_hil_matter_on_off_outlet import testcase_hil_matter_on_off_outlet
 from testcases.testcase_hil_matter_fan import testcase_hil_matter_fan
+from testcases.testcase_hil_matter_thermostat import testcase_hil_matter_thermostat
 from testcases.testcase_hil_matter_temp_sensor import testcase_hil_matter_temp_sensor
 from testcases.testcase_hil_matter_humidity_sensor import testcase_hil_matter_humidity_sensor
 from testcases.testcase_hil_matter_pressure_sensor import testcase_hil_matter_pressure_sensor
@@ -83,6 +84,7 @@ testcase_list = {
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_on_off_outlet": testcase_hil_matter_on_off_outlet,
     "matter_fan": testcase_hil_matter_fan,
+    "matter_thermostat": testcase_hil_matter_thermostat,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "matter_pressure_sensor": testcase_hil_matter_pressure_sensor,
@@ -100,6 +102,7 @@ matter_otbr_testcase_list = {
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_on_off_outlet": testcase_hil_matter_on_off_outlet,
     "matter_fan": testcase_hil_matter_fan,
+    "matter_thermostat": testcase_hil_matter_thermostat,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "matter_pressure_sensor": testcase_hil_matter_pressure_sensor,
