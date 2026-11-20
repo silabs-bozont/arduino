@@ -123,8 +123,14 @@ def testcase_hil_matter_co_sensor(current_board, variant, current_board_port):
         if not ok or matter_1 is None:
             print("Failed to read initial CO MeasuredValue")
             return did_run, False
-        if abs(matter_1 - co_1) > 0.5:
-            print(f"Matter CO {matter_1:.0f} ppb does not match Serial {co_1:.0f} ppb")
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, CO_SERIAL_RE, matter_1, CO_STEP_PPB,
+            fallback_serial=co_1, wrap_above=10000.0, wrap_to=0.0, tol=0.5,
+        ):
+            print(
+                f"Matter CO {matter_1:.0f} ppb is not Serial {co_1:.0f} ppb "
+                f"or up to 2 steps ahead"
+            )
             return did_run, False
 
         # Example publishes every 10s; wait for the next stepped value
@@ -144,10 +150,13 @@ def testcase_hil_matter_co_sensor(current_board, variant, current_board_port):
         if not ok or matter_2 is None:
             print("Failed to read CO MeasuredValue after increment")
             return did_run, False
-        if abs(matter_2 - co_2) > 0.5:
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, CO_SERIAL_RE, matter_2, CO_STEP_PPB,
+            fallback_serial=co_2, wrap_above=10000.0, wrap_to=0.0, tol=0.5,
+        ):
             print(
-                f"Matter CO {matter_2:.0f} ppb does not match Serial {co_2:.0f} ppb "
-                f"after increment"
+                f"Matter CO {matter_2:.0f} ppb is not Serial {co_2:.0f} ppb "
+                f"or up to 2 steps ahead after increment"
             )
             return did_run, False
 

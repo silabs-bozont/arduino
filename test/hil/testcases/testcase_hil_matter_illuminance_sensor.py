@@ -125,8 +125,14 @@ def testcase_hil_matter_illuminance_sensor(current_board, variant, current_board
             print("Failed to read initial illuminance MeasuredValue")
             return did_run, False
         # log10 encoding + uint16 truncation; allow a small lux delta
-        if abs(matter_1 - lux_1) > 0.5:
-            print(f"Matter illuminance {matter_1:.2f} lx does not match Serial {lux_1:.2f} lx")
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, ILLUMINANCE_SERIAL_RE, matter_1, ILLUMINANCE_STEP_LUX,
+            fallback_serial=lux_1, wrap_above=2000.0, wrap_to=0.0, tol=0.5,
+        ):
+            print(
+                f"Matter illuminance {matter_1:.2f} lx is not Serial {lux_1:.2f} lx "
+                f"or up to 2 steps ahead"
+            )
             return did_run, False
 
         # Example publishes every 10s; wait for the next stepped value
@@ -146,10 +152,13 @@ def testcase_hil_matter_illuminance_sensor(current_board, variant, current_board
         if not ok or matter_2 is None:
             print("Failed to read illuminance MeasuredValue after increment")
             return did_run, False
-        if abs(matter_2 - lux_2) > 0.5:
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, ILLUMINANCE_SERIAL_RE, matter_2, ILLUMINANCE_STEP_LUX,
+            fallback_serial=lux_2, wrap_above=2000.0, wrap_to=0.0, tol=0.5,
+        ):
             print(
-                f"Matter illuminance {matter_2:.2f} lx does not match Serial {lux_2:.2f} lx "
-                f"after increment"
+                f"Matter illuminance {matter_2:.2f} lx is not Serial {lux_2:.2f} lx "
+                f"or up to 2 steps ahead after increment"
             )
             return did_run, False
 

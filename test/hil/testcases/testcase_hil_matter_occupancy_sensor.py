@@ -46,6 +46,37 @@ def _wait_for_next_occupancy_serial(monitor, after_index=0, timeout=30):
     return None, after_index
 
 
+def _latest_occupancy_serial(monitor):
+    """Return the last Serial occupancy bool, or None."""
+    last = None
+    for match in OCCUPANCY_SERIAL_RE.finditer(monitor.text()):
+        last = match.group(1) == "occupied"
+    return last
+
+
+def _matter_occupancy_matches_serial(monitor, captured_occupied, matter_occupied):
+    """
+    Compare Matter Occupancy to Serial, rebasing to the latest Serial line.
+    chip-tool retries can span several 10s toggles.
+    """
+    serial_occupied = _latest_occupancy_serial(monitor)
+    if serial_occupied is None:
+        serial_occupied = captured_occupied
+    elif serial_occupied != captured_occupied:
+        print(
+            "Serial baseline refreshed for Matter compare: "
+            f"{'occupied' if captured_occupied else 'unoccupied'} -> "
+            f"{'occupied' if serial_occupied else 'unoccupied'}"
+        )
+    if matter_occupied != serial_occupied:
+        print(
+            f"Matter occupancy {matter_occupied} does not match Serial "
+            f"{'occupied' if serial_occupied else 'unoccupied'}"
+        )
+        return False
+    return True
+
+
 def testcase_hil_matter_occupancy_sensor(current_board, variant, current_board_port):
     """
     Testcase: HIL Matter occupancy sensor
@@ -123,11 +154,7 @@ def testcase_hil_matter_occupancy_sensor(current_board, variant, current_board_p
         if not ok or matter_1 is None:
             print("Failed to read initial Occupancy attribute")
             return did_run, False
-        if matter_1 != occ_1:
-            print(
-                f"Matter occupancy {matter_1} does not match Serial "
-                f"{'occupied' if occ_1 else 'unoccupied'}"
-            )
+        if not _matter_occupancy_matches_serial(monitor, occ_1, matter_1):
             return did_run, False
 
         occ_2, _ = _wait_for_next_occupancy_serial(monitor, after_index=idx, timeout=20)
@@ -145,11 +172,7 @@ def testcase_hil_matter_occupancy_sensor(current_board, variant, current_board_p
         if not ok or matter_2 is None:
             print("Failed to read Occupancy attribute after toggle")
             return did_run, False
-        if matter_2 != occ_2:
-            print(
-                f"Matter occupancy {matter_2} does not match Serial "
-                f"{'occupied' if occ_2 else 'unoccupied'} after toggle"
-            )
+        if not _matter_occupancy_matches_serial(monitor, occ_2, matter_2):
             return did_run, False
 
         print(

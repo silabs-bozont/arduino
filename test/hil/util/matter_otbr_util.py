@@ -50,6 +50,93 @@ def percent_to_matter_level(percent):
     return int(math.ceil(percent * LEVEL_CONTROL_MAX / 100.0))
 
 
+def latest_serial_float(monitor, pattern, group=1):
+    """Return the last float captured by pattern in the SerialMonitor buffer, or None."""
+    last = None
+    for match in pattern.finditer(monitor.text()):
+        last = float(match.group(group))
+    return last
+
+
+def matter_matches_serial_or_steps_ahead(
+    serial_value,
+    matter_value,
+    step,
+    max_steps_ahead=2,
+    wrap_above=None,
+    wrap_below=None,
+    wrap_to=0.0,
+    tol=0.5,
+):
+    """
+    Compare a Matter attribute read to a Serial snapshot for stepped sensors.
+
+    chip-tool is often slow enough that the DUT publishes 1-2 more increments
+    before the read returns, so Matter can be ahead of Serial. Accept equality
+    or Matter == Serial advanced by 1..max_steps_ahead steps (step may be
+    negative for discharging sensors). Optional wrap:
+      step > 0 and next > wrap_above -> wrap_to
+      step < 0 and next < wrap_below -> wrap_to
+    Reject Matter lagging behind Serial.
+    """
+    v = float(serial_value)
+    matter_value = float(matter_value)
+    step = float(step)
+    for _ in range(int(max_steps_ahead) + 1):
+        if abs(matter_value - v) <= float(tol):
+            return True
+        nxt = v + step
+        if step > 0 and wrap_above is not None and nxt > float(wrap_above):
+            v = float(wrap_to)
+        elif step < 0 and wrap_below is not None and nxt < float(wrap_below):
+            v = float(wrap_to)
+        else:
+            v = nxt
+    return False
+
+
+def matter_matches_monitor_serial_or_steps_ahead(
+    monitor,
+    serial_re,
+    matter_value,
+    step,
+    fallback_serial=None,
+    group=1,
+    max_steps_ahead=2,
+    wrap_above=None,
+    wrap_below=None,
+    wrap_to=0.0,
+    tol=0.5,
+):
+    """
+    Like matter_matches_serial_or_steps_ahead, but rebases against the latest
+    Serial line in the monitor. chip-tool retries (e.g. 70s busy wait) let the
+    DUT keep stepping; comparing to a stale Serial snapshot then fails even
+    when Matter is correct. Prefer the newest Serial value; fall back to
+    fallback_serial if the buffer has no match.
+    """
+    serial_value = latest_serial_float(monitor, serial_re, group=group)
+    if serial_value is None:
+        serial_value = fallback_serial
+    if serial_value is None:
+        return False
+    if fallback_serial is not None and abs(float(serial_value) - float(fallback_serial)) > float(tol):
+        print(
+            f"Serial baseline refreshed for Matter compare: "
+            f"{fallback_serial} -> {serial_value}"
+        )
+    return matter_matches_serial_or_steps_ahead(
+        serial_value,
+        matter_value,
+        step,
+        max_steps_ahead=max_steps_ahead,
+        wrap_above=wrap_above,
+        wrap_below=wrap_below,
+        wrap_to=wrap_to,
+        tol=tol,
+    )
+
+
 def is_enabled():
     return bool(otbr_host)
 
@@ -240,7 +327,7 @@ COMMISSION_RETRY_DELAY_S = 15
 # Operational chip-tool reads/writes: same OTBR/IPv6 "Network is unreachable" flake.
 # After a mid-CASE failure the DUT often returns busy with ~65535 ms wait — a 5s
 # retry then fails immediately. Wait out that window before the second attempt.
-CHIPTOOL_ATTEMPTS = 2
+CHIPTOOL_ATTEMPTS = 5
 CHIPTOOL_RETRY_DELAY_S = 5
 CHIPTOOL_CASE_RETRY_DELAY_S = 70
 CHIPTOOL_CMD_TIMEOUT_S = 60

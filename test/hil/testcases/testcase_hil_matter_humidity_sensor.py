@@ -124,8 +124,14 @@ def testcase_hil_matter_humidity_sensor(current_board, variant, current_board_po
         if not ok or matter_1 is None:
             print("Failed to read initial humidity MeasuredValue")
             return did_run, False
-        if abs(matter_1 - humidity_1) > 0.15:
-            print(f"Matter humidity {matter_1:.2f}% does not match Serial {humidity_1:.1f}%")
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, HUMIDITY_SERIAL_RE, matter_1, HUMIDITY_STEP,
+            fallback_serial=humidity_1, wrap_above=100.0, wrap_to=0.0, tol=0.15,
+        ):
+            print(
+                f"Matter humidity {matter_1:.2f}% is not Serial {humidity_1:.1f}% "
+                f"or up to 2 steps ahead"
+            )
             return did_run, False
 
         # Example publishes every 10s; wait for the next stepped value
@@ -145,10 +151,13 @@ def testcase_hil_matter_humidity_sensor(current_board, variant, current_board_po
         if not ok or matter_2 is None:
             print("Failed to read humidity MeasuredValue after increment")
             return did_run, False
-        if abs(matter_2 - humidity_2) > 0.15:
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, HUMIDITY_SERIAL_RE, matter_2, HUMIDITY_STEP,
+            fallback_serial=humidity_2, wrap_above=100.0, wrap_to=0.0, tol=0.15,
+        ):
             print(
-                f"Matter humidity {matter_2:.2f}% does not match Serial {humidity_2:.1f}% "
-                f"after increment"
+                f"Matter humidity {matter_2:.2f}% is not Serial {humidity_2:.1f}% "
+                f"or up to 2 steps ahead after increment"
             )
             return did_run, False
 
