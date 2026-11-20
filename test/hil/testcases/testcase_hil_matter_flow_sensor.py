@@ -124,8 +124,14 @@ def testcase_hil_matter_flow_sensor(current_board, variant, current_board_port):
         if not ok or matter_1 is None:
             print("Failed to read initial flow MeasuredValue")
             return did_run, False
-        if abs(matter_1 - flow_1) > 0.05:
-            print(f"Matter flow {matter_1:.2f} m3/h does not match Serial {flow_1:.2f} m3/h")
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, FLOW_SERIAL_RE, matter_1, FLOW_STEP_M3H,
+            fallback_serial=flow_1, wrap_above=20.0, wrap_to=0.0, tol=0.05,
+        ):
+            print(
+                f"Matter flow {matter_1:.2f} m3/h is not Serial {flow_1:.2f} m3/h "
+                f"or up to 2 steps ahead"
+            )
             return did_run, False
 
         # Example publishes every 10s; wait for the next stepped value
@@ -145,10 +151,13 @@ def testcase_hil_matter_flow_sensor(current_board, variant, current_board_port):
         if not ok or matter_2 is None:
             print("Failed to read flow MeasuredValue after increment")
             return did_run, False
-        if abs(matter_2 - flow_2) > 0.05:
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, FLOW_SERIAL_RE, matter_2, FLOW_STEP_M3H,
+            fallback_serial=flow_2, wrap_above=20.0, wrap_to=0.0, tol=0.05,
+        ):
             print(
-                f"Matter flow {matter_2:.2f} m3/h does not match Serial {flow_2:.2f} m3/h "
-                f"after increment"
+                f"Matter flow {matter_2:.2f} m3/h is not Serial {flow_2:.2f} m3/h "
+                f"or up to 2 steps ahead after increment"
             )
             return did_run, False
 

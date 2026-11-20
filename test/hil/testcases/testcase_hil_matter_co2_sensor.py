@@ -123,8 +123,14 @@ def testcase_hil_matter_co2_sensor(current_board, variant, current_board_port):
         if not ok or matter_1 is None:
             print("Failed to read initial CO2 MeasuredValue")
             return did_run, False
-        if abs(matter_1 - co2_1) > 0.5:
-            print(f"Matter CO2 {matter_1:.0f} ppm does not match Serial {co2_1:.0f} ppm")
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, CO2_SERIAL_RE, matter_1, CO2_STEP_PPM,
+            fallback_serial=co2_1, wrap_above=10000.0, wrap_to=0.0, tol=0.5,
+        ):
+            print(
+                f"Matter CO2 {matter_1:.0f} ppm is not Serial {co2_1:.0f} ppm "
+                f"or up to 2 steps ahead"
+            )
             return did_run, False
 
         # Example publishes every 10s; wait for the next stepped value
@@ -144,10 +150,13 @@ def testcase_hil_matter_co2_sensor(current_board, variant, current_board_port):
         if not ok or matter_2 is None:
             print("Failed to read CO2 MeasuredValue after increment")
             return did_run, False
-        if abs(matter_2 - co2_2) > 0.5:
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, CO2_SERIAL_RE, matter_2, CO2_STEP_PPM,
+            fallback_serial=co2_2, wrap_above=10000.0, wrap_to=0.0, tol=0.5,
+        ):
             print(
-                f"Matter CO2 {matter_2:.0f} ppm does not match Serial {co2_2:.0f} ppm "
-                f"after increment"
+                f"Matter CO2 {matter_2:.0f} ppm is not Serial {co2_2:.0f} ppm "
+                f"or up to 2 steps ahead after increment"
             )
             return did_run, False
 

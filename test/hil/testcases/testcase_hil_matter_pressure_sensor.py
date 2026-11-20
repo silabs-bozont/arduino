@@ -124,9 +124,13 @@ def testcase_hil_matter_pressure_sensor(current_board, variant, current_board_po
         if not ok or matter_1 is None:
             print("Failed to read initial pressure MeasuredValue")
             return did_run, False
-        if abs(matter_1 - pressure_1) > 0.5:
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, PRESSURE_SERIAL_RE, matter_1, PRESSURE_STEP_HPA,
+            fallback_serial=pressure_1, wrap_above=1050.0, wrap_to=970.0, tol=0.5,
+        ):
             print(
-                f"Matter pressure {matter_1:.1f} hPa does not match Serial {pressure_1:.1f} hPa"
+                f"Matter pressure {matter_1:.1f} hPa is not Serial {pressure_1:.1f} hPa "
+                f"or up to 2 steps ahead"
             )
             return did_run, False
 
@@ -147,10 +151,13 @@ def testcase_hil_matter_pressure_sensor(current_board, variant, current_board_po
         if not ok or matter_2 is None:
             print("Failed to read pressure MeasuredValue after increment")
             return did_run, False
-        if abs(matter_2 - pressure_2) > 0.5:
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, PRESSURE_SERIAL_RE, matter_2, PRESSURE_STEP_HPA,
+            fallback_serial=pressure_2, wrap_above=1050.0, wrap_to=970.0, tol=0.5,
+        ):
             print(
-                f"Matter pressure {matter_2:.1f} hPa does not match Serial {pressure_2:.1f} hPa "
-                f"after increment"
+                f"Matter pressure {matter_2:.1f} hPa is not Serial {pressure_2:.1f} hPa "
+                f"or up to 2 steps ahead after increment"
             )
             return did_run, False
 

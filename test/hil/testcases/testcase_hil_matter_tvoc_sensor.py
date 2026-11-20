@@ -123,8 +123,14 @@ def testcase_hil_matter_tvoc_sensor(current_board, variant, current_board_port):
         if not ok or matter_1 is None:
             print("Failed to read initial TVOC MeasuredValue")
             return did_run, False
-        if abs(matter_1 - tvoc_1) > 0.5:
-            print(f"Matter TVOC {matter_1:.0f} ppb does not match Serial {tvoc_1:.0f} ppb")
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, TVOC_SERIAL_RE, matter_1, TVOC_STEP_PPB,
+            fallback_serial=tvoc_1, wrap_above=10000.0, wrap_to=0.0, tol=0.5,
+        ):
+            print(
+                f"Matter TVOC {matter_1:.0f} ppb is not latest Serial "
+                f"or up to 2 steps ahead"
+            )
             return did_run, False
 
         # Example publishes every 10s; wait for the next stepped value
@@ -144,10 +150,14 @@ def testcase_hil_matter_tvoc_sensor(current_board, variant, current_board_port):
         if not ok or matter_2 is None:
             print("Failed to read TVOC MeasuredValue after increment")
             return did_run, False
-        if abs(matter_2 - tvoc_2) > 0.5:
+        # Rebase to latest Serial — chip-tool retries can span many DUT steps
+        if not matter_otbr_util.matter_matches_monitor_serial_or_steps_ahead(
+            monitor, TVOC_SERIAL_RE, matter_2, TVOC_STEP_PPB,
+            fallback_serial=tvoc_2, wrap_above=10000.0, wrap_to=0.0, tol=0.5,
+        ):
             print(
-                f"Matter TVOC {matter_2:.0f} ppb does not match Serial {tvoc_2:.0f} ppb "
-                f"after increment"
+                f"Matter TVOC {matter_2:.0f} ppb is not latest Serial "
+                f"or up to 2 steps ahead after increment"
             )
             return did_run, False
 

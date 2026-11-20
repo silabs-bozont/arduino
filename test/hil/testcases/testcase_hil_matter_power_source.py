@@ -63,6 +63,54 @@ def _is_one_percent_decrement(previous, current):
     return current == previous - PERCENT_STEP
 
 
+def _latest_battery_serial(monitor):
+    """Return (percent, voltage_mv) from the last battery Serial pair, or None."""
+    last = None
+    for match in BATTERY_SERIAL_RE.finditer(monitor.text()):
+        last = (int(match.group(1)), int(match.group(2)))
+    return last
+
+
+def _matter_battery_matches_serial(monitor, serial_percent, serial_mv, matter_percent, matter_mv):
+    """
+    Accept Matter percent/voltage equal to Serial, or up to 2 discharge steps
+    ahead (-5% / matching mV, wrap 0->100). Rebase to the latest Serial pair
+    after chip-tool retries. Percent and voltage are checked independently.
+    """
+    latest = _latest_battery_serial(monitor)
+    if latest is not None:
+        latest_pct, latest_mv = latest
+        if latest_pct != serial_percent or latest_mv != serial_mv:
+            print(
+                f"Serial baseline refreshed for Matter compare: "
+                f"{serial_percent}%/{serial_mv} mV -> {latest_pct}%/{latest_mv} mV"
+            )
+            serial_percent, serial_mv = latest_pct, latest_mv
+
+    pct_ok = matter_otbr_util.matter_matches_serial_or_steps_ahead(
+        serial_percent, matter_percent, -PERCENT_STEP,
+        wrap_below=0, wrap_to=100, tol=0,
+    )
+    mv_ok = False
+    p = int(serial_percent)
+    for _ in range(3):
+        if int(matter_mv) == _expected_voltage_mv(p):
+            mv_ok = True
+            break
+        p = 100 if p == 0 else p - PERCENT_STEP
+    if not pct_ok:
+        print(
+            f"Matter percent {matter_percent}% is not Serial {serial_percent}% "
+            f"or up to 2 steps ahead"
+        )
+    if not mv_ok:
+        print(
+            f"Matter voltage {matter_mv} mV is not Serial {serial_mv} mV "
+            f"or up to 2 discharge steps ahead"
+        )
+    return pct_ok and mv_ok
+
+
 def testcase_hil_matter_power_source(current_board, variant, current_board_port):
     """
     Testcase: HIL Matter power source
@@ -150,20 +198,14 @@ def testcase_hil_matter_power_source(current_board, variant, current_board_port)
         if not ok or matter_pct_1 is None:
             print("Failed to read initial BatPercentRemaining")
             return did_run, False
-        if matter_pct_1 != percent_1:
-            print(
-                f"Matter percent {matter_pct_1}% does not match Serial {percent_1}%"
-            )
-            return did_run, False
 
         ok, matter_mv_1 = matter_otbr_util.matter_read_bat_voltage_mv(node_id=NODE_ID)
         if not ok or matter_mv_1 is None:
             print("Failed to read initial BatVoltage")
             return did_run, False
-        if matter_mv_1 != voltage_1:
-            print(
-                f"Matter voltage {matter_mv_1} mV does not match Serial {voltage_1} mV"
-            )
+        if not _matter_battery_matches_serial(
+            monitor, percent_1, voltage_1, matter_pct_1, matter_mv_1
+        ):
             return did_run, False
 
         # Example publishes every 10s; wait for the next stepped value
@@ -192,22 +234,14 @@ def testcase_hil_matter_power_source(current_board, variant, current_board_port)
         if not ok or matter_pct_2 is None:
             print("Failed to read BatPercentRemaining after decrement")
             return did_run, False
-        if matter_pct_2 != percent_2:
-            print(
-                f"Matter percent {matter_pct_2}% does not match Serial {percent_2}% "
-                f"after decrement"
-            )
-            return did_run, False
 
         ok, matter_mv_2 = matter_otbr_util.matter_read_bat_voltage_mv(node_id=NODE_ID)
         if not ok or matter_mv_2 is None:
             print("Failed to read BatVoltage after decrement")
             return did_run, False
-        if matter_mv_2 != voltage_2:
-            print(
-                f"Matter voltage {matter_mv_2} mV does not match Serial {voltage_2} mV "
-                f"after decrement"
-            )
+        if not _matter_battery_matches_serial(
+            monitor, percent_2, voltage_2, matter_pct_2, matter_mv_2
+        ):
             return did_run, False
 
         print(
