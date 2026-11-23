@@ -1080,27 +1080,15 @@ def verify_matter_gatt_capabilities_for_arduino_ble():
 
 def patch_matter_openthread_iostream_uart():
     """
-    Drop OpenThread iostream_uart.c from the prebuild when the project has no
-    iostream vcom instance. That file hardcodes sl_iostream_*_vcom_config.h and
-    sl_iostream_*_vcom_handle; Arduino boards that use custom instance names
-    (e.g. nanomatter) cannot satisfy it without adding a vcom iostream.
+    Drop OpenThread iostream_uart.c from every Matter prebuild for consistency.
+    That file hardcodes sl_iostream_*_vcom_config.h / sl_iostream_*_vcom_handle,
+    which not all Arduino boards provide (and OT CLI UART is unused anyway:
+    CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI defaults to 0).
 
-    Only removes the object from OBJS/CDEPS (recipe can stay unused). OT CLI
-    UART is unused for Arduino Matter (CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=0);
+    Only removes the object from OBJS/CDEPS (recipe can stay unused).
+    Variants supply efr32UartIsDataReady() (OT sleep.c still references it);
     efr32UartProcess already has a weak empty stub in the OT platform.
     """
-    config_dir = os.path.join(slc_output_dir, "config")
-    has_vcom = any(
-        os.path.isfile(os.path.join(config_dir, name))
-        for name in (
-            "sl_iostream_eusart_vcom_config.h",
-            "sl_iostream_usart_vcom_config.h",
-        )
-    )
-    if has_vcom:
-        print("OpenThread iostream_uart kept (vcom iostream config present)")
-        return
-
     project_mak = find_type_of_file_in_dir(".project.mak", slc_output_dir)
     if not project_mak:
         print("No .project.mak found; cannot drop OpenThread iostream_uart")

@@ -94,25 +94,9 @@
 // [PRS.SYNCH3]$
 
 // $[GPIO]
-// GPIO SWV on PA03
-#ifndef GPIO_SWV_PORT                           
-#define GPIO_SWV_PORT                            SL_GPIO_PORT_A
-#endif
-#ifndef GPIO_SWV_PIN                            
-#define GPIO_SWV_PIN                             3
-#endif
-
 // [GPIO]$
 
 // $[TIMER0]
-// TIMER0 CC0 on PB02
-#ifndef TIMER0_CC0_PORT                         
-#define TIMER0_CC0_PORT                          SL_GPIO_PORT_B
-#endif
-#ifndef TIMER0_CC0_PIN                          
-#define TIMER0_CC0_PIN                           2
-#endif
-
 // [TIMER0]$
 
 // $[TIMER1]
@@ -128,52 +112,12 @@
 // [TIMER4]$
 
 // $[USART0]
-// USART0 RX on PC05
-#ifndef USART0_RX_PORT                          
-#define USART0_RX_PORT                           SL_GPIO_PORT_C
-#endif
-#ifndef USART0_RX_PIN                           
-#define USART0_RX_PIN                            5
-#endif
-
-// USART0 TX on PC04
-#ifndef USART0_TX_PORT                          
-#define USART0_TX_PORT                           SL_GPIO_PORT_C
-#endif
-#ifndef USART0_TX_PIN                           
-#define USART0_TX_PIN                            4
-#endif
-
 // [USART0]$
 
 // $[I2C1]
 // [I2C1]$
 
 // $[EUSART1]
-// EUSART1 RX on PA08
-#ifndef EUSART1_RX_PORT                         
-#define EUSART1_RX_PORT                          SL_GPIO_PORT_A
-#endif
-#ifndef EUSART1_RX_PIN                          
-#define EUSART1_RX_PIN                           8
-#endif
-
-// EUSART1 SCLK on PB04
-#ifndef EUSART1_SCLK_PORT                       
-#define EUSART1_SCLK_PORT                        SL_GPIO_PORT_B
-#endif
-#ifndef EUSART1_SCLK_PIN                        
-#define EUSART1_SCLK_PIN                         4
-#endif
-
-// EUSART1 TX on PA09
-#ifndef EUSART1_TX_PORT                         
-#define EUSART1_TX_PORT                          SL_GPIO_PORT_A
-#endif
-#ifndef EUSART1_TX_PIN                          
-#define EUSART1_TX_PIN                           9
-#endif
-
 // [EUSART1]$
 
 // $[KEYSCAN]
@@ -204,49 +148,9 @@
 // [HFXO0]$
 
 // $[I2C0]
-// I2C0 SCL on PA07
-#ifndef I2C0_SCL_PORT                           
-#define I2C0_SCL_PORT                            SL_GPIO_PORT_A
-#endif
-#ifndef I2C0_SCL_PIN                            
-#define I2C0_SCL_PIN                             7
-#endif
-
-// I2C0 SDA on PA06
-#ifndef I2C0_SDA_PORT                           
-#define I2C0_SDA_PORT                            SL_GPIO_PORT_A
-#endif
-#ifndef I2C0_SDA_PIN                            
-#define I2C0_SDA_PIN                             6
-#endif
-
 // [I2C0]$
 
 // $[EUSART0]
-// EUSART0 RX on PA05
-#ifndef EUSART0_RX_PORT                         
-#define EUSART0_RX_PORT                          SL_GPIO_PORT_A
-#endif
-#ifndef EUSART0_RX_PIN                          
-#define EUSART0_RX_PIN                           5
-#endif
-
-// EUSART0 SCLK on PA03
-#ifndef EUSART0_SCLK_PORT                       
-#define EUSART0_SCLK_PORT                        SL_GPIO_PORT_A
-#endif
-#ifndef EUSART0_SCLK_PIN                        
-#define EUSART0_SCLK_PIN                         3
-#endif
-
-// EUSART0 TX on PA04
-#ifndef EUSART0_TX_PORT                         
-#define EUSART0_TX_PORT                          SL_GPIO_PORT_A
-#endif
-#ifndef EUSART0_TX_PIN                          
-#define EUSART0_TX_PIN                           4
-#endif
-
 // [EUSART0]$
 
 // $[PTI]

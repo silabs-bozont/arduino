@@ -39,6 +39,12 @@ CHIP_ERROR AppTask::StartAppTask()
   return CHIP_NO_ERROR;
 }
 
+// OpenThread sleep.c calls this; OT iostream_uart (vcom CLI) is dropped for all Matter variants
+extern "C" bool efr32UartIsDataReady(void)
+{
+  return false;
+}
+
 #endif // ARDUINO_MATTER
 
 void init_arduino_variant()
