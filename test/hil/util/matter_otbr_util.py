@@ -813,6 +813,33 @@ def matter_read_occupancy(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     return True, occupied
 
 
+def matter_read_contact_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read BooleanState StateValue via chip-tool (Matter contact sensor).
+    Returns (success, contact_detected_bool_or_None).
+    """
+    print("-" * 40)
+    print(f"Reading Matter contact StateValue from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} booleanstate read state-value "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"StateValue:\s*(TRUE|FALSE|true|false|1|0)", output)
+    if not m:
+        print("Failed to parse StateValue from chip-tool output")
+        return False, None
+
+    raw = m.group(1).upper()
+    detected = raw in ("TRUE", "1")
+    print(f"StateValue={m.group(1)} -> {'detected' if detected else 'lost'}")
+    return True, detected
+
+
 # MatterAirQuality::AirQuality_t / AirQualityEnum (skip UNKNOWN / UNDEFINED for HIL cycle)
 AIR_QUALITY_LABELS = {
     1: "good",
