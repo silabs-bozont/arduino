@@ -87,3 +87,4 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 - air purifier AQ cycle + Off/High fan + speeds (`matter_air_purifier`, HIL sketch)
 - window covering open/close, go-to %, stop (`matter_window_covering`)
 - water heater Off/Heat + setpoints + boost (`matter_water_heater`)
+- water valve open/close + timed open (`matter_water_valve`)

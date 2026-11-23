@@ -36,6 +36,7 @@ from testcases.testcase_hil_matter_rain_sensor import testcase_hil_matter_rain_s
 from testcases.testcase_hil_matter_sensor_and_bulb import testcase_hil_matter_sensor_and_bulb
 from testcases.testcase_hil_matter_switch import testcase_hil_matter_switch
 from testcases.testcase_hil_matter_water_heater import testcase_hil_matter_water_heater
+from testcases.testcase_hil_matter_water_valve import testcase_hil_matter_water_valve
 from testcases.testcase_hil_matter_power_source import testcase_hil_matter_power_source
 from testcases.testcase_hil_matter_time_sync import testcase_hil_matter_time_sync
 from testcases.testcase_hil_matter_illuminance_sensor import testcase_hil_matter_illuminance_sensor
@@ -123,6 +124,7 @@ testcase_list = {
     "matter_time_sync": testcase_hil_matter_time_sync,
     "matter_tvoc_sensor": testcase_hil_matter_tvoc_sensor,
     "matter_water_heater": testcase_hil_matter_water_heater,
+    "matter_water_valve": testcase_hil_matter_water_valve,
     "matter_window_covering": testcase_hil_matter_window_covering,
 }
 
@@ -155,7 +157,7 @@ matter_otbr_testcase_list = {
     "matter_time_sync": testcase_hil_matter_time_sync,
     "matter_tvoc_sensor": testcase_hil_matter_tvoc_sensor,
     "matter_water_heater": testcase_hil_matter_water_heater,
-    # water_valve
+    "matter_water_valve": testcase_hil_matter_water_valve,
     "matter_window_covering": testcase_hil_matter_window_covering,
 }
 

@@ -1432,6 +1432,121 @@ def matter_read_water_heater_boost_state(
     return True, state
 
 
+# ValveConfigurationAndControl CurrentState (MatterWaterValve::valve_state_t)
+WATER_VALVE_STATE_CLOSED = 0
+WATER_VALVE_STATE_OPEN = 1
+WATER_VALVE_STATE_TRANSITIONING = 2
+
+
+def matter_water_valve_open(
+    duration_s=None, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """
+    Invoke ValveConfigurationAndControl Open.
+    duration_s=None → open indefinitely (no OpenDuration field).
+    duration_s=N → timed open for N seconds.
+    """
+    if duration_s is None:
+        payload = "{}"
+        desc = "indefinite"
+    else:
+        duration_s = max(1, int(duration_s))
+        # Field 0 = OpenDuration (nullable uint32); omit TargetLevel (no LVL feature)
+        payload = f'{{"0":{duration_s}}}'
+        desc = f"duration={duration_s}s"
+    print("-" * 40)
+    print(
+        f"Sending Matter water-valve Open ({desc}) "
+        f"to node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    # command-by-id avoids brittle positional Optional/Nullable parsing across chip-tool builds
+    payload_q = shlex.quote(payload)
+    script = (
+        f"{CHIPTOOL_PATH} valveconfigurationandcontrol command-by-id 0 "
+        f"{payload_q} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_water_valve_close(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Invoke ValveConfigurationAndControl Close."""
+    print("-" * 40)
+    print(
+        f"Sending Matter water-valve Close "
+        f"to node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} valveconfigurationandcontrol close "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_read_water_valve_current_state(
+    node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """
+    Read ValveConfigurationAndControl CurrentState (also marks the appliance online).
+    Returns (success, state_int_or_None) where 0=Closed, 1=Open, 2=Transitioning.
+    """
+    print("-" * 40)
+    print(
+        f"Reading Matter water-valve CurrentState "
+        f"from node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} valveconfigurationandcontrol read current-state "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+    m = re.search(r"CurrentState:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse CurrentState from chip-tool output")
+        return False, None
+    state = int(m.group(1))
+    print(f"CurrentState={state}")
+    return True, state
+
+
+def matter_read_water_valve_remaining_duration(
+    node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """
+    Read ValveConfigurationAndControl RemainingDuration (seconds).
+    Returns (success, seconds_or_None). None means null / indefinite on the wire.
+    """
+    print("-" * 40)
+    print(
+        f"Reading Matter water-valve RemainingDuration "
+        f"from node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} valveconfigurationandcontrol read remaining-duration "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+    if re.search(r"RemainingDuration:\s*null", output, re.IGNORECASE):
+        print("RemainingDuration=null")
+        return True, None
+    m = re.search(r"RemainingDuration:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse RemainingDuration from chip-tool output")
+        return False, None
+    remaining = int(m.group(1))
+    print(f"RemainingDuration={remaining}")
+    return True, remaining
+
+
 def matter_read_min_heat_setpoint_limit_c(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """Read MinHeatSetpointLimit; returns (success, celsius_float_or_None)."""
     print("-" * 40)
