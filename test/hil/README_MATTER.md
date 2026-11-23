@@ -72,4 +72,5 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 - CO2 sensor +15 ppm increment (`matter_co2_sensor`)
 - CO sensor +15 ppb increment (`matter_co_sensor`)
 - TVOC sensor +15 ppb increment (`matter_tvoc_sensor`)
+- air quality enum cycle every ~10s (`matter_air_quality_sensor`, HIL sketch)
 - window covering open/close, go-to %, stop (`matter_window_covering`)

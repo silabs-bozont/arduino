@@ -813,6 +813,44 @@ def matter_read_occupancy(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     return True, occupied
 
 
+# MatterAirQuality::AirQuality_t / AirQualityEnum (skip UNKNOWN / UNDEFINED for HIL cycle)
+AIR_QUALITY_LABELS = {
+    1: "good",
+    2: "fair",
+    3: "moderate",
+    4: "poor",
+    5: "very poor",
+    6: "extremely poor",
+}
+
+
+def matter_read_air_quality(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read AirQuality AirQuality via chip-tool.
+    Returns (success, enum_int_or_None) where enum matches MatterAirQuality::AirQuality_t.
+    """
+    print("-" * 40)
+    print(f"Reading Matter air-quality from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} airquality read air-quality "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+
+    m = re.search(r"AirQuality:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse AirQuality from chip-tool output")
+        return False, None
+
+    raw = int(m.group(1))
+    label = AIR_QUALITY_LABELS.get(raw, f"raw={raw}")
+    print(f"AirQuality raw={raw} -> {label}")
+    return True, raw
+
+
 def matter_read_bat_percent_remaining(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """
     Read PowerSource BatPercentRemaining via chip-tool.
