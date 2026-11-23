@@ -595,7 +595,7 @@ uint8_t MatterColorLightbulb::get_saturation()
   if (sat + this->saturation_boost > UINT8_MAX) {
     return UINT8_MAX;
   }
-  return (uint8_t)sat;
+  return (uint8_t)(sat + this->saturation_boost);
 }
 
 /***************************************************************************//**
