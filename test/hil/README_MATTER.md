@@ -68,6 +68,7 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 - flow sensor +0.5 m3/h increment (`matter_flow_sensor`)
 - occupancy sensor toggle every ~10s (`matter_occupancy_sensor`)
 - contact sensor toggle every ~10s (`matter_contact_sensor`, HIL sketch)
+- decommission via Serial then reboot uncommissioned (`matter_decommission`, HIL sketch)
 - power source −5% / voltage update every ~10s (`matter_power_source`)
 - time sync SetUTCTime + timezone/DST via chip-tool (`matter_time_sync`)
 - illuminance sensor +15 lx increment (`matter_illuminance_sensor`)

@@ -29,6 +29,7 @@ from testcases.testcase_hil_matter_pressure_sensor import testcase_hil_matter_pr
 from testcases.testcase_hil_matter_flow_sensor import testcase_hil_matter_flow_sensor
 from testcases.testcase_hil_matter_occupancy_sensor import testcase_hil_matter_occupancy_sensor
 from testcases.testcase_hil_matter_contact_sensor import testcase_hil_matter_contact_sensor
+from testcases.testcase_hil_matter_decommission import testcase_hil_matter_decommission
 from testcases.testcase_hil_matter_power_source import testcase_hil_matter_power_source
 from testcases.testcase_hil_matter_time_sync import testcase_hil_matter_time_sync
 from testcases.testcase_hil_matter_illuminance_sensor import testcase_hil_matter_illuminance_sensor
@@ -95,6 +96,7 @@ testcase_list = {
     "matter_co_sensor": testcase_hil_matter_co_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
     "matter_contact_sensor": testcase_hil_matter_contact_sensor,
+    "matter_decommission": testcase_hil_matter_decommission,
     "matter_fan": testcase_hil_matter_fan,
     "matter_flow_sensor": testcase_hil_matter_flow_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
@@ -120,6 +122,7 @@ matter_otbr_testcase_list = {
     "matter_co_sensor": testcase_hil_matter_co_sensor,
     "matter_co2_sensor": testcase_hil_matter_co2_sensor,
     "matter_contact_sensor": testcase_hil_matter_contact_sensor,
+    "matter_decommission": testcase_hil_matter_decommission,
     "matter_fan": testcase_hil_matter_fan,
     "matter_flow_sensor": testcase_hil_matter_flow_sensor,
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,

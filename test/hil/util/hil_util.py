@@ -267,14 +267,35 @@ class SerialMonitor:
         with self._lock:
             return self.buf
 
-    def wait_for(self, expected_response, timeout=60):
+    def write(self, payload):
+        """Write UTF-8 text to the DUT Serial port."""
+        data = payload if isinstance(payload, (bytes, bytearray)) else payload.encode("utf-8")
+        print("-" * 40)
+        print(f"Serial Monitor writing to '{self.port}': {payload!r}")
+        print("-" * 40)
+        with self._lock:
+            self._ser.write(data)
+            self._ser.flush()
+
+    def wait_for(self, expected_response, timeout=60, after_index=0):
+        """
+        Wait until expected_response appears in the buffer at/after after_index.
+        Use after_index to ignore earlier matches (e.g. pre-commission boot lines).
+        """
         print("-"*40)
-        print(f"Serial Monitor waiting up to {timeout}s for: {expected_response!r}")
+        if after_index:
+            print(
+                f"Serial Monitor waiting up to {timeout}s for: {expected_response!r} "
+                f"(after idx {after_index})"
+            )
+        else:
+            print(f"Serial Monitor waiting up to {timeout}s for: {expected_response!r}")
         print("-"*40)
         deadline = time.time() + timeout
         while time.time() < deadline:
             with self._lock:
-                if expected_response in self.buf:
+                pos = self.buf.find(expected_response, after_index)
+                if pos >= 0:
                     print("Serial response matched!")
                     return True
             time.sleep(0.1)
@@ -289,3 +310,4 @@ class SerialMonitor:
         except Exception:
             pass
         print(f"Serial Monitor closed on '{self.port}'")
+
