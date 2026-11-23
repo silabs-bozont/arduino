@@ -68,6 +68,7 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 - thermostat Off/Heat + random setpoints + limit clamp (`matter_thermostat`)
 - temperature sensor CPU reading (`matter_temp_sensor`)
 - multi-endpoint dimmable bulb + temp sensor (`matter_sensor_and_bulb`)
+- switch press/release via Serial + CurrentPosition (`matter_switch`, HIL sketch)
 - humidity sensor +0.5% increment (`matter_humidity_sensor`)
 - pressure sensor +5 hPa increment (`matter_pressure_sensor`)
 - flow sensor +0.5 m3/h increment (`matter_flow_sensor`)

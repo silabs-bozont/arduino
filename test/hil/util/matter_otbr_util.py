@@ -1001,6 +1001,35 @@ def matter_door_unlock(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     return ok
 
 
+def matter_read_switch_current_position(
+    node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """
+    Read Switch CurrentPosition via chip-tool.
+    Returns (success, position_int_or_None).
+    """
+    print("-" * 40)
+    print(
+        f"Reading Matter switch CurrentPosition from node {node_id}, "
+        f"endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} switch read current-position "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+    m = re.search(r"CurrentPosition:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse CurrentPosition from chip-tool output")
+        return False, None
+    pos = int(m.group(1))
+    print(f"CurrentPosition={pos}")
+    return True, pos
+
+
 # MatterAirQuality::AirQuality_t / AirQualityEnum (skip UNKNOWN / UNDEFINED for HIL cycle)
 AIR_QUALITY_LABELS = {
     1: "good",
