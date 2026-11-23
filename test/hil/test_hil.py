@@ -33,6 +33,7 @@ from testcases.testcase_hil_matter_contact_sensor import testcase_hil_matter_con
 from testcases.testcase_hil_matter_decommission import testcase_hil_matter_decommission
 from testcases.testcase_hil_matter_door_lock import testcase_hil_matter_door_lock
 from testcases.testcase_hil_matter_rain_sensor import testcase_hil_matter_rain_sensor
+from testcases.testcase_hil_matter_sensor_and_bulb import testcase_hil_matter_sensor_and_bulb
 from testcases.testcase_hil_matter_power_source import testcase_hil_matter_power_source
 from testcases.testcase_hil_matter_time_sync import testcase_hil_matter_time_sync
 from testcases.testcase_hil_matter_illuminance_sensor import testcase_hil_matter_illuminance_sensor
@@ -113,6 +114,7 @@ testcase_list = {
     "matter_power_source": testcase_hil_matter_power_source,
     "matter_pressure_sensor": testcase_hil_matter_pressure_sensor,
     "matter_rain_sensor": testcase_hil_matter_rain_sensor,
+    "matter_sensor_and_bulb": testcase_hil_matter_sensor_and_bulb,
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_thermostat": testcase_hil_matter_thermostat,
     "matter_time_sync": testcase_hil_matter_time_sync,
@@ -142,7 +144,7 @@ matter_otbr_testcase_list = {
     "matter_power_source": testcase_hil_matter_power_source,
     "matter_pressure_sensor": testcase_hil_matter_pressure_sensor,
     "matter_rain_sensor": testcase_hil_matter_rain_sensor,
-    # sensor_and_bulb
+    "matter_sensor_and_bulb": testcase_hil_matter_sensor_and_bulb,
     # switch
     "matter_temp_sensor": testcase_hil_matter_temp_sensor,
     "matter_thermostat": testcase_hil_matter_thermostat,
