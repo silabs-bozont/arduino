@@ -922,13 +922,13 @@ def matter_read_occupancy(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     return True, occupied
 
 
-def matter_read_contact_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+def matter_read_boolean_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """
-    Read BooleanState StateValue via chip-tool (Matter contact sensor).
-    Returns (success, contact_detected_bool_or_None).
+    Read BooleanState StateValue via chip-tool (contact, rain, etc.).
+    Returns (success, state_bool_or_None).
     """
     print("-" * 40)
-    print(f"Reading Matter contact StateValue from node {node_id}, endpoint {endpoint}")
+    print(f"Reading Matter BooleanState StateValue from node {node_id}, endpoint {endpoint}")
     print("-" * 40)
     script = (
         f"{CHIPTOOL_PATH} booleanstate read state-value "
@@ -944,9 +944,19 @@ def matter_read_contact_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
         return False, None
 
     raw = m.group(1).upper()
-    detected = raw in ("TRUE", "1")
-    print(f"StateValue={m.group(1)} -> {'detected' if detected else 'lost'}")
-    return True, detected
+    state = raw in ("TRUE", "1")
+    print(f"StateValue={m.group(1)} -> {state}")
+    return True, state
+
+
+def matter_read_contact_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Read contact sensor BooleanState StateValue. Returns (success, detected_bool_or_None)."""
+    return matter_read_boolean_state(node_id=node_id, endpoint=endpoint)
+
+
+def matter_read_rain_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Read rain sensor BooleanState StateValue. Returns (success, raining_bool_or_None)."""
+    return matter_read_boolean_state(node_id=node_id, endpoint=endpoint)
 
 
 def matter_read_lock_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
