@@ -1359,6 +1359,79 @@ def matter_write_occupied_heating_setpoint_c(
     return ok
 
 
+# WaterHeaterManagement BoostState (MatterWaterHeater::boost_state_t)
+WATER_HEATER_BOOST_INACTIVE = 0
+WATER_HEATER_BOOST_ACTIVE = 1
+
+
+def matter_water_heater_boost(
+    duration_s=60, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """Invoke WaterHeaterManagement Boost (duration seconds)."""
+    duration_s = max(1, int(duration_s))
+    print("-" * 40)
+    print(
+        f"Sending Matter water-heater Boost duration={duration_s}s "
+        f"to node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    # BoostInfoStruct JSON; Arduino handler ignores fields but chip-tool validates them
+    boost_info = shlex.quote(f'{{"duration":{duration_s}}}')
+    script = (
+        f"{CHIPTOOL_PATH} waterheatermanagement boost "
+        f"{boost_info} {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_water_heater_cancel_boost(
+    node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """Invoke WaterHeaterManagement CancelBoost."""
+    print("-" * 40)
+    print(
+        f"Sending Matter water-heater CancelBoost "
+        f"to node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} waterheatermanagement cancel-boost "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_read_water_heater_boost_state(
+    node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """
+    Read WaterHeaterManagement BoostState.
+    Returns (success, boost_state_int_or_None) where 0=Inactive, 1=Active.
+    """
+    print("-" * 40)
+    print(
+        f"Reading Matter water-heater BoostState "
+        f"from node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} waterheatermanagement read boost-state "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+    m = re.search(r"BoostState:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse BoostState from chip-tool output")
+        return False, None
+    state = int(m.group(1))
+    print(f"BoostState={state}")
+    return True, state
+
+
 def matter_read_min_heat_setpoint_limit_c(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """Read MinHeatSetpointLimit; returns (success, celsius_float_or_None)."""
     print("-" * 40)

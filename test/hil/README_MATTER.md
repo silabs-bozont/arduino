@@ -86,3 +86,4 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 - air quality enum cycle every ~10s (`matter_air_quality_sensor`, HIL sketch)
 - air purifier AQ cycle + Off/High fan + speeds (`matter_air_purifier`, HIL sketch)
 - window covering open/close, go-to %, stop (`matter_window_covering`)
+- water heater Off/Heat + setpoints + boost (`matter_water_heater`)
