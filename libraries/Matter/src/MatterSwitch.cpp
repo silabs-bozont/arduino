@@ -26,11 +26,14 @@
 
 #include "MatterSwitch.h"
 #include <app/AttributeAccessInterfaceRegistry.h>
+#include <app/util/af-types.h>
 
 using namespace ::chip;
 using namespace ::chip::Platform;
 using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
+
+void MatterSwitchClusterShutdownCallback(chip::EndpointId endpointId, MatterClusterShutdownType shutdownType);
 
 const EmberAfDeviceType gSwitchDeviceTypes[] = { { DEVICE_TYPE_SWITCH, DEVICE_VERSION_DEFAULT } };
 
@@ -179,6 +182,16 @@ bool MatterSwitch::begin_internal(bool enable_binding)
     free(new_endpoint);
     free(new_switch_data_version);
     return false;
+  }
+
+  // Matter SDK auto-registers a code-driven SwitchCluster on this endpoint.
+  // Reads then bypass emberAfExternalAttributeReadCallback, so DeviceSwitch
+  // never runs (CurrentPosition stays at the code-driven default 0) and
+  // SetOnline(true) never fires. Tear it down so Switch stays on the Ember
+  // external-attribute path owned by DeviceSwitch.
+  {
+    DeviceLayer::StackLock lock;
+    MatterSwitchClusterShutdownCallback(new_switch_device->GetEndpointId(), MatterClusterShutdownType::kClusterShutdown);
   }
 
   new_switch_device->SetNumberOfPositions(2);
