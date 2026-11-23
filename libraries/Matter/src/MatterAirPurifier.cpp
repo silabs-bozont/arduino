@@ -26,10 +26,14 @@
 
 #include "MatterAirPurifier.h"
 
+#include <app/util/af-types.h>
+
 using namespace ::chip;
 using namespace ::chip::Platform;
 using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
+
+void MatterFanControlClusterShutdownCallback(chip::EndpointId endpointId, MatterClusterShutdownType shutdownType);
 
 const EmberAfDeviceType gAirPurifierDeviceTypes[] = { { DEVICE_TYPE_AIR_PURIFIER, DEVICE_VERSION_DEFAULT } };
 
@@ -131,6 +135,14 @@ bool MatterAirPurifier::begin()
     free(new_endpoint);
     free(new_device_data_version);
     return false;
+  }
+
+  // Matter SDK auto-registers a code-driven FanControlCluster on this endpoint.
+  // Tear it down so FanControl stays on the Ember external-attribute path owned
+  // by DeviceAirPurifier.
+  {
+    DeviceLayer::StackLock lock;
+    MatterFanControlClusterShutdownCallback(device->GetEndpointId(), MatterClusterShutdownType::kClusterShutdown);
   }
 
   this->air_purifier_device = device;

@@ -64,13 +64,33 @@ void DeviceAirPurifier::SetFanPercentSetting(uint8_t percent)
     percent = 100;
   }
 
-  bool changed = this->current_fan_percent != percent;
+  bool percent_changed = this->current_fan_percent != percent;
   ChipLogProgress(DeviceLayer, "AirPurifierDevice[%s]: new fan percent='%d'", this->device_name, percent);
   this->current_fan_percent = percent;
 
-  if (changed) {
+  // Keep FanMode in sync with percent (Off/High sequence): 0% -> Off, >0 from Off -> On.
+  bool mode_changed = false;
+  if (percent == 0) {
+    if (this->current_fan_mode != DeviceFan::fan_mode_t::Off) {
+      this->current_fan_mode = DeviceFan::fan_mode_t::Off;
+      mode_changed = true;
+    }
+  } else if (this->current_fan_mode == DeviceFan::fan_mode_t::Off) {
+    this->current_fan_mode = DeviceFan::fan_mode_t::On;
+    mode_changed = true;
+  }
+
+  if (mode_changed) {
+    ChipLogProgress(DeviceLayer, "AirPurifierDevice[%s]: mode from percent -> '%d'", this->device_name, this->current_fan_mode);
+    this->HandleAirPurifierDeviceStatusChanged(kChanged_FanModeSetting);
+  }
+
+  if (percent_changed) {
     this->HandleAirPurifierDeviceStatusChanged(kChanged_FanPercentSetting);
     this->HandleAirPurifierDeviceStatusChanged(kChanged_FanPercentCurrent);
+  }
+
+  if (percent_changed || mode_changed) {
     CallDeviceChangeCallback();
   }
 }
