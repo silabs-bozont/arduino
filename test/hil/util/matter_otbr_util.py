@@ -840,6 +840,48 @@ def matter_read_contact_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
     return True, detected
 
 
+def matter_read_lock_state(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """
+    Read DoorLock LockState via chip-tool (also marks the appliance online).
+    Returns success only; value is not needed for HIL online bring-up.
+    """
+    print("-" * 40)
+    print(f"Reading Matter door-lock LockState from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} doorlock read lock-state "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_door_lock(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Send DoorLock lock-door (timed invoke)."""
+    print("-" * 40)
+    print(f"Sending Matter lock-door to node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} doorlock lock-door "
+        f"{int(node_id)} {int(endpoint)} --timedInteractionTimeoutMs 1000"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_door_unlock(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Send DoorLock unlock-door (timed invoke)."""
+    print("-" * 40)
+    print(f"Sending Matter unlock-door to node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} doorlock unlock-door "
+        f"{int(node_id)} {int(endpoint)} --timedInteractionTimeoutMs 1000"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
 # MatterAirQuality::AirQuality_t / AirQualityEnum (skip UNKNOWN / UNDEFINED for HIL cycle)
 AIR_QUALITY_LABELS = {
     1: "good",
