@@ -50,8 +50,11 @@ cd test/hil
 # Full HIL suite (Matter lightbulb included when --matter-otbr is set)
 python3 test_hil.py <board> <port> --matter-otbr <pi-ip>
 
-# Matter Pi tests only (matter variant + matter_lightbulb)
-python3 test_hil.py <board> <port> --matter-otbr <pi-ip> --matter-only
+# Matter Pi tests only (matter variant + Matter OTBR cases)
+python3 test_hil.py <board> <port> --matter-otbr <pi-ip> --matter-otbr-only
+
+# Single testcase (overrides --matter-otbr-only case selection)
+python3 test_hil.py <board> <port> --matter-otbr <pi-ip> --testcase matter_door_lock
 ```
 
 Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:

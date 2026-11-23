@@ -145,9 +145,12 @@ matter_otbr_testcase_list = {
 
 # Set by CLI flags
 matter_otbr_only = False
+testcase_filter = None  # --testcase <name>; strongest case filter when set
 
 
 def active_testcase_list():
+    if testcase_filter is not None:
+        return {testcase_filter: testcase_list[testcase_filter]}
     if matter_otbr_only:
         return matter_otbr_testcase_list
     return testcase_list
@@ -198,11 +201,14 @@ def main():
 
 def board_variants_for(current_board):
     board_variants = []
+    # Single Matter Pi HIL case => matter stack only (same as --matter-otbr-only)
+    matter_stack_only = matter_otbr_only or (
+        testcase_filter is not None and testcase_filter in matter_otbr_testcase_list
+    )
     for variant in all_variants:
         if variant[0] != current_board:
             continue
-        # Matter Pi HIL only needs the matter protocol stack variant
-        if matter_otbr_only and variant[1] != "matter":
+        if matter_stack_only and variant[1] != "matter":
             continue
         board_variants.append(variant[1])
     return board_variants
@@ -221,7 +227,9 @@ def run_tests(current_board, current_board_port, global_total_tests=0, global_co
     print(f"Variants: {board_variants}")
     if matter_otbr_util.otbr_host:
         print(f"Matter Hub (OTBR) address: {matter_otbr_util.otbr_host}")
-    if matter_otbr_only:
+    if testcase_filter is not None:
+        print(f"Testcase filter: {testcase_filter}")
+    elif matter_otbr_only:
         print(f"Matter OTBR specific test cases: {list(cases.keys())}")
 
     testcase_count = len(cases) * len(board_variants)
@@ -317,19 +325,28 @@ def print_available_board_configs():
         print(f"  {board}")
 
 
+def print_available_testcases():
+    print("Available testcases:")
+    for name in sorted(testcase_list.keys()):
+        print(f"  {name}")
+
+
 def parse_optional_cli_arguments():
     """
     Optional flags (stripped from sys.argv before positional board/port parsing):
-      --matter-otbr <pi-ip>  Enable Matter Hub (Pi) HIL and prompt for SSH password
-      --matter-otbr-only          Run only Matter Pi tests (implies needing --matter-otbr)
+      --matter-otbr <pi-ip>     Enable Matter Hub (Pi) HIL and prompt for SSH password
+      --matter-otbr-only        Run only Matter Pi tests (requires --matter-otbr)
+      --testcase <name>         Run only this testcase (overrides --matter-otbr-only)
     """
     global matter_otbr_only
+    global testcase_filter
 
     args = sys.argv[1:]
     filtered = []
     i = 0
     host = None
     otbr_only = False
+    selected_testcase = None
     while i < len(args):
         if args[i] == "--matter-otbr":
             if i + 1 >= len(args):
@@ -340,6 +357,13 @@ def parse_optional_cli_arguments():
         elif args[i] == "--matter-otbr-only":
             otbr_only = True
             i += 1
+        elif args[i] == "--testcase":
+            if i + 1 >= len(args):
+                print("Please provide a testcase name after --testcase")
+                print_available_testcases()
+                exit(-1)
+            selected_testcase = args[i + 1]
+            i += 2
         else:
             filtered.append(args[i])
             i += 1
@@ -348,13 +372,27 @@ def parse_optional_cli_arguments():
     matter_otbr_only = otbr_only
     matter_otbr_util.otbr_host = host
 
+    if selected_testcase is not None:
+        if selected_testcase not in testcase_list:
+            print(f"Unknown testcase '{selected_testcase}'")
+            print_available_testcases()
+            exit(-1)
+        testcase_filter = selected_testcase
+        print(f"Testcase filter: running only '{testcase_filter}'")
+        if otbr_only:
+            print("Note: --testcase overrides --matter-otbr-only case selection")
+
     if otbr_only and not host:
         print("--matter-otbr-only requires --matter-otbr <pi-ip>")
         exit(-1)
 
+    if testcase_filter is not None and testcase_filter in matter_otbr_testcase_list and not host:
+        print(f"--testcase {testcase_filter} requires --matter-otbr <pi-ip>")
+        exit(-1)
+
     if host:
         matter_otbr_util.ensure_ssh_password()
-        if otbr_only:
+        if otbr_only and testcase_filter is None:
             print("Matter OTBR only mode: running just the Matter Pi HIL tests")
     else:
         print("Matter Hub (OTBR) not specified; Matter OTBR specific tests will be skipped")
@@ -365,7 +403,7 @@ def get_board_and_port_and_cfg_file_from_arguments():
         input_board_name = sys.argv[1]
     except Exception:
         print("Please provide a target board name or config file path in the first argument!")
-        print("Optional: --matter-otbr <pi-ip> [--matter-only]")
+        print("Optional: --matter-otbr <pi-ip> [--matter-otbr-only] [--testcase <name>]")
         print_available_board_configs()
         exit(-1)
 
