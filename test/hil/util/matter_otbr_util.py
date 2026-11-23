@@ -582,6 +582,115 @@ def matter_set_brightness_percent(percent, node_id=DEFAULT_NODE_ID, endpoint=DEF
     return matter_move_to_level(level, node_id=node_id, endpoint=endpoint)
 
 
+def matter_move_to_hue_and_saturation(
+    hue, saturation, node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT
+):
+    """
+    ColorControl move-to-hue-and-saturation.
+    hue/saturation are Matter CurrentHue / CurrentSaturation (0-254).
+    """
+    hue = max(0, min(254, int(hue)))
+    saturation = max(0, min(254, int(saturation)))
+    print("-" * 40)
+    print(
+        f"Sending Matter move-to-hue-and-saturation hue={hue} sat={saturation} "
+        f"to node {node_id}, endpoint {endpoint}"
+    )
+    print("-" * 40)
+    # Hue, Saturation, TransitionTime, OptionsMask, OptionsOverride, node, endpoint
+    script = (
+        f"{CHIPTOOL_PATH} colorcontrol move-to-hue-and-saturation "
+        f"{hue} {saturation} 0 0 0 {int(node_id)} {int(endpoint)}"
+    )
+    ok, _ = chiptool_run(script)
+    return ok
+
+
+def matter_read_current_hue(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Read ColorControl CurrentHue. Returns (success, hue_0_254_or_None)."""
+    print("-" * 40)
+    print(f"Reading Matter CurrentHue from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} colorcontrol read current-hue "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+    m = re.search(r"CurrentHue:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse CurrentHue from chip-tool output")
+        return False, None
+    hue = int(m.group(1))
+    print(f"CurrentHue={hue}")
+    return True, hue
+
+
+def matter_read_current_saturation(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
+    """Read ColorControl CurrentSaturation. Returns (success, sat_0_254_or_None)."""
+    print("-" * 40)
+    print(f"Reading Matter CurrentSaturation from node {node_id}, endpoint {endpoint}")
+    print("-" * 40)
+    script = (
+        f"{CHIPTOOL_PATH} colorcontrol read current-saturation "
+        f"{int(node_id)} {int(endpoint)}"
+    )
+    ok, output = chiptool_run(script)
+    if not ok:
+        return False, None
+    m = re.search(r"CurrentSaturation:\s*(\d+)", output)
+    if not m:
+        print("Failed to parse CurrentSaturation from chip-tool output")
+        return False, None
+    sat = int(m.group(1))
+    print(f"CurrentSaturation={sat}")
+    return True, sat
+
+
+def matter_color_hsv_to_rgb(hue, saturation, brightness, saturation_boost=0):
+    """
+    Match MatterColorLightbulb::get_rgb() + hsv_rgb.h HSVtoRGB.
+    hue/saturation/brightness are device raw values; saturation_boost matches
+    MatterColorLightbulb::boost_saturation() (nano color example uses 51).
+    """
+    hue = max(0, min(254, int(hue)))
+    saturation = max(0, min(254, int(saturation)))
+    brightness = max(0, min(LEVEL_CONTROL_MAX, int(brightness)))
+    boost = max(0, min(255, int(saturation_boost)))
+    sat = min(saturation + boost, 255)
+
+    hue_f = hue * 360.0 / 254.0
+    saturation_f = sat / 254.0
+    value_f = brightness / 255.0
+
+    h, s, v = hue_f, saturation_f, value_f
+    c = v * s
+    tmp = h / 60.0
+    tmp2 = tmp - 2 * math.floor(tmp / 2)
+    x = c * (1.0 - abs(tmp2 - 1.0))
+    m = v - c
+    i = int(math.floor(tmp))
+    if i == 0:
+        r, g, b = c, x, 0.0
+    elif i == 1:
+        r, g, b = x, c, 0.0
+    elif i == 2:
+        r, g, b = 0.0, c, x
+    elif i == 3:
+        r, g, b = 0.0, x, c
+    elif i == 4:
+        r, g, b = x, 0.0, c
+    else:
+        # i == 5 (and treat 6 / hue==360 like red)
+        r, g, b = c, 0.0, x
+
+    def _chan(component):
+        return max(0, min(255, int(255 * (component + m))))
+
+    return _chan(r), _chan(g), _chan(b)
+
+
 def matter_read_temperature_celsius(node_id=DEFAULT_NODE_ID, endpoint=DEFAULT_ENDPOINT):
     """
     Read TemperatureMeasurement MeasuredValue via chip-tool.

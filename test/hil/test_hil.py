@@ -19,6 +19,7 @@ from testcases.testcase_hil_ble_arduino_advertise import testcase_hil_ble_arduin
 from testcases.testcase_hil_matter_smoke import testcase_hil_matter_smoke
 from testcases.testcase_hil_matter_lightbulb import testcase_hil_matter_lightbulb
 from testcases.testcase_hil_matter_lightbulb_dimmable import testcase_hil_matter_lightbulb_dimmable
+from testcases.testcase_hil_matter_lightbulb_color import testcase_hil_matter_lightbulb_color
 from testcases.testcase_hil_matter_ble_minimal import testcase_hil_matter_ble_minimal
 from testcases.testcase_hil_matter_on_off_outlet import testcase_hil_matter_on_off_outlet
 from testcases.testcase_hil_matter_fan import testcase_hil_matter_fan
@@ -104,6 +105,7 @@ testcase_list = {
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "matter_illuminance_sensor": testcase_hil_matter_illuminance_sensor,
     "matter_lightbulb": testcase_hil_matter_lightbulb,
+    "matter_lightbulb_color": testcase_hil_matter_lightbulb_color,
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_occupancy_sensor": testcase_hil_matter_occupancy_sensor,
     "matter_on_off_outlet": testcase_hil_matter_on_off_outlet,
@@ -131,6 +133,7 @@ matter_otbr_testcase_list = {
     "matter_humidity_sensor": testcase_hil_matter_humidity_sensor,
     "matter_illuminance_sensor": testcase_hil_matter_illuminance_sensor,
     "matter_lightbulb": testcase_hil_matter_lightbulb,
+    "matter_lightbulb_color": testcase_hil_matter_lightbulb_color,
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
     "matter_occupancy_sensor": testcase_hil_matter_occupancy_sensor,
     "matter_on_off_outlet": testcase_hil_matter_on_off_outlet,

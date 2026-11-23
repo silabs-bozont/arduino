@@ -61,6 +61,7 @@ Without `--matter-otbr`, Matter Pi HIL cases are skipped. Current coverage:
 
 - on/off lightbulb (`matter_lightbulb`)
 - dimmable lightbulb on/off + random brightness % (`matter_lightbulb_dimmable`)
+- color lightbulb on/off + brightness + random hue/sat (`matter_lightbulb_color`; nano_matter / xg24devkit only)
 - Matter + BLE minimal on/off + post-pair BLE advertise (`matter_ble_minimal`)
 - on/off outlet (`matter_on_off_outlet`)
 - fan modes + random speed % (`matter_fan`)
