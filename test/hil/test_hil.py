@@ -19,6 +19,7 @@ from testcases.testcase_hil_ble_arduino_advertise import testcase_hil_ble_arduin
 from testcases.testcase_hil_matter_smoke import testcase_hil_matter_smoke
 from testcases.testcase_hil_matter_lightbulb import testcase_hil_matter_lightbulb
 from testcases.testcase_hil_matter_lightbulb_dimmable import testcase_hil_matter_lightbulb_dimmable
+from testcases.testcase_hil_matter_ble_minimal import testcase_hil_matter_ble_minimal
 from testcases.testcase_hil_matter_on_off_outlet import testcase_hil_matter_on_off_outlet
 from testcases.testcase_hil_matter_fan import testcase_hil_matter_fan
 from testcases.testcase_hil_matter_thermostat import testcase_hil_matter_thermostat
@@ -88,6 +89,7 @@ testcase_list = {
     "matter_smoke": testcase_hil_matter_smoke,
     "matter_lightbulb": testcase_hil_matter_lightbulb,
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
+    "matter_ble_minimal": testcase_hil_matter_ble_minimal,
     "matter_on_off_outlet": testcase_hil_matter_on_off_outlet,
     "matter_fan": testcase_hil_matter_fan,
     "matter_thermostat": testcase_hil_matter_thermostat,
@@ -112,6 +114,7 @@ testcase_list = {
 matter_otbr_testcase_list = {
     "matter_lightbulb": testcase_hil_matter_lightbulb,
     "matter_lightbulb_dimmable": testcase_hil_matter_lightbulb_dimmable,
+    "matter_ble_minimal": testcase_hil_matter_ble_minimal,
     "matter_on_off_outlet": testcase_hil_matter_on_off_outlet,
     "matter_fan": testcase_hil_matter_fan,
     "matter_thermostat": testcase_hil_matter_thermostat,
