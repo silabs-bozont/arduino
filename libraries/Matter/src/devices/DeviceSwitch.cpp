@@ -25,8 +25,9 @@
  */
 
 #include "DeviceSwitch.h"
+#include <app/EventLogging.h>
+#include <clusters/Switch/Events.h>
 #include <platform/CHIPDeviceLayer.h>
-#include <app/clusters/switch-server/switch-server.h>
 
 DeviceSwitch::DeviceSwitch(const char* device_name) :
   Device(device_name),
@@ -50,9 +51,10 @@ void DeviceSwitch::SetNumberOfPositions(uint8_t number_of_positions)
 void DeviceSwitch::SetCurrentPosition(uint8_t current_position)
 {
   bool changed = this->current_position != current_position;
+  uint8_t previous_position = this->current_position;
   this->current_position = current_position;
   if (changed) {
-    this->HandleSwitchDeviceStatusChanged(kChanged_CurrentPosition);
+    this->HandleSwitchDeviceStatusChanged(kChanged_CurrentPosition, previous_position);
     CallDeviceChangeCallback();
   }
 }
@@ -162,21 +164,25 @@ CHIP_ERROR DeviceSwitch::HandleWriteEmberAfAttribute(ClusterId clusterId,
   return CHIP_NO_ERROR;
 }
 
-void DeviceSwitch::HandleSwitchDeviceStatusChanged(Changed_t itemChangedMask)
+void DeviceSwitch::HandleSwitchDeviceStatusChanged(Changed_t itemChangedMask, uint8_t previous_position)
 {
+  using namespace ::chip::app;
   using namespace ::chip::app::Clusters;
   using namespace ::chip::DeviceLayer;
 
   if (itemChangedMask & kChanged_CurrentPosition) {
     ScheduleMatterReportingCallback(this->endpoint_id, Switch::Id, Switch::Attributes::CurrentPosition::Id);
 
+    // Emit Switch events directly - MatterSwitch tears down the code-driven
+    // SwitchCluster so Ember/DeviceSwitch owns the attributes
     PlatformMgr().LockChipStack();
-    if (auto* cluster = Switch::FindClusterOnEndpoint(this->endpoint_id)) {
-      if (this->current_position) {
-        cluster->OnInitialPress(this->current_position);
-      } else {
-        cluster->OnShortRelease(this->current_position);
-      }
+    chip::EventNumber event_number = 0;
+    if (this->current_position) {
+      Switch::Events::InitialPress::Type event{ this->current_position };
+      (void)LogEvent(event, this->endpoint_id, event_number);
+    } else {
+      Switch::Events::ShortRelease::Type event{ previous_position };
+      (void)LogEvent(event, this->endpoint_id, event_number);
     }
     PlatformMgr().UnlockChipStack();
   }

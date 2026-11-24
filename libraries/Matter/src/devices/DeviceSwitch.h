@@ -58,7 +58,7 @@ public:
                                          uint8_t* buffer) override;
 
 private:
-  void HandleSwitchDeviceStatusChanged(Changed_t itemChangedMask);
+  void HandleSwitchDeviceStatusChanged(Changed_t itemChangedMask, uint8_t previous_position = 0);
 
   uint8_t number_of_positions;
   uint8_t current_position;
