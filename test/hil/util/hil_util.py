@@ -64,18 +64,28 @@ def get_serial_response(port, outgoing_payload=None, timeout=2):
     print(f"Getting serial response on '{port}'")
     print("-"*40)
 
+    ser = None
     try:
         ser = serial.Serial(port, baudrate=115200, timeout=10)
         if outgoing_payload is not None:
             ser.write(outgoing_payload.encode("utf-8"))
         time.sleep(timeout)
-        response = ser.read_all().decode("utf-8")
-        ser.close()
+        # Replace invalid UTF-8 characters caused by bootloader / reset noise
+        response = ser.read_all().decode("utf-8", errors="replace")
         print(response)
         return response
     except serial.SerialException as e:
         print(f"Error opening serial port: {e}")
         return None
+    except Exception as e:
+        print(f"Error reading serial response on '{port}': {e}")
+        return None
+    finally:
+        if ser is not None:
+            try:
+                ser.close()
+            except Exception:
+                pass
 
 
 def check_for_ble_device_advertisement(device_advertised_name, timeout=2):
@@ -310,4 +320,3 @@ class SerialMonitor:
         except Exception:
             pass
         print(f"Serial Monitor closed on '{self.port}'")
-
