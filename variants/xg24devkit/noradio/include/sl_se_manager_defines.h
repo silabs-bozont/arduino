@@ -69,7 +69,11 @@ extern "C" {
 /// in the SE Manager API. The purpose of these initialization values is to set
 /// the context objects to a known safe state initially when the context object
 /// is declared.
+#if defined(_SILICON_LABS_32B_SERIES_3)
+#define SL_SE_COMMAND_CONTEXT_INIT           { SLI_SE_MAILBOX_COMMAND_DEFAULT(0), false, false }
+#else
 #define SL_SE_COMMAND_CONTEXT_INIT           { SLI_SE_MAILBOX_COMMAND_DEFAULT(0), false }
+#endif // #if defined(_SILICON_LABS_32B_SERIES_3)
 
 /// @} (end addtogroup sl_se_manager_core)
 
@@ -77,6 +81,7 @@ extern "C" {
 /// @{
 
 /// Default configuration for OTP initialisation structure.
+#if !defined(_SILICON_LABS_32B_SERIES_3)
 #if defined(SLI_MAILBOX_COMMAND_SUPPORTED) && (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
   #define SL_SE_OTP_INIT_DEFAULT                                \
   {                                                             \
@@ -101,6 +106,19 @@ extern "C" {
     .secure_boot_page_lock_full = false      \
   }
 #endif
+#else
+  #define SL_SE_OTP_INIT_DEFAULT                                \
+  {                                                             \
+    .enable_secure_boot = false,                                \
+    .verify_secure_boot_certificate = false,                    \
+    .enable_anti_rollback = false,                              \
+    .tamper_levels = { 0 },                                     \
+    .tamper_filter_period = SL_SE_TAMPER_FILTER_PERIOD_2MIN,    \
+    .tamper_filter_threshold = SL_SE_TAMPER_FILTER_THRESHOLD_4, \
+    .tamper_flags = 0,                                          \
+    .tamper_reset_threshold = 5                                 \
+  }
+#endif
 
 /// @} (end addtogroup sl_se_manager_util)
 
@@ -111,8 +129,11 @@ extern "C" {
 /// @addtogroup sl_se_manager_key_handling
 /// @{
 
+/// Flags that can be used with asymmetric keys
 /// Asymmetric key can only be used for signing (not key exchange)
 #define SL_SE_KEY_FLAG_ASYMMETRIC_SIGNING_ONLY (1UL << 10)
+/// RSA public exponent is short (4 bytes, e.g. 3 or 65537)
+#define SL_SE_KEY_FLAG_ASYMMETRIC_SHORT_EXPONENT (1UL << 11)
 /// Described key belongs to a custom ECC domain
 #define SL_SE_KEY_FLAG_ASYMMETRIC_USES_CUSTOM_DOMAIN (1UL << 12)
 /// Storage buffer contains public part of an asymmetric key
@@ -125,6 +146,20 @@ extern "C" {
 /// Old definition. Retained for backwards compatibility.
 #define SL_SE_KEY_FLAG_ASYMMMETRIC_SIGNING_ONLY \
   (SL_SE_KEY_FLAG_ASYMMETRIC_SIGNING_ONLY)
+
+#if defined(_SILICON_LABS_32B_SERIES_3)
+/// Flags that can be used with symmetric keys
+/// Usage of key requires DPA countermeasures
+#define SL_SE_KEY_FLAG_SYMMETRIC_KEY_USAGE_REQUIRE_DPA  (1 << 9)
+/// Usage of key requires DFA countermeasures
+#define SL_SE_KEY_FLAG_SYMMETRIC_KEY_USAGE_REQUIRE_DFA  (1 << 8)
+
+#if defined(SLI_PSA_DRIVER_FEATURE_KSU)
+/// Virtual flag for semantic clarity: indicates key cannot be copied to KSU
+/// Maps to SL_SE_KEY_FLAG_SYMMETRIC_KEY_USAGE_REQUIRE_DFA for implementation
+#define SL_VIRTUAL_SE_KEY_FLAG_NON_COPYABLE_TO_KSU  SL_SE_KEY_FLAG_SYMMETRIC_KEY_USAGE_REQUIRE_DFA
+#endif // SLI_PSA_DRIVER_FEATURE_KSU
+#endif
 
 /// Do not allow exporting the key to plaintext
 #define SL_SE_KEY_FLAG_NON_EXPORTABLE (1UL << 24)
@@ -154,6 +189,10 @@ extern "C" {
 /// Symmetric key type for AES-256 (32 byte key)
 #define SL_SE_KEY_TYPE_AES_256      0x00000020
 
+#if defined(SLI_SE_SUPPORTS_RSA)
+/// RSA key type
+#define SL_SE_KEY_TYPE_RSA                              (0x1U << SL_SE_KEY_TYPE_ALGORITHM_OFFSET)
+#endif
 /// ECC Weierstrass Prime key type
 #define SL_SE_KEY_TYPE_ECC_WEIERSTRASS_PRIME_CUSTOM     (0x8U << SL_SE_KEY_TYPE_ALGORITHM_OFFSET)
 /// ECC Montgomery key type
@@ -173,6 +212,15 @@ extern "C" {
 
 /// ECC X25519 key for ECDH
 #define SL_SE_KEY_TYPE_ECC_X25519   (SL_SE_KEY_TYPE_ECC_MONTGOMERY | (0x20))
+
+#if defined(SLI_SE_SUPPORTS_RSA)
+/// RSA-2048 key type. The size attribute encodes byte size / 4.
+  #define SL_SE_KEY_TYPE_RSA_2048     (SL_SE_KEY_TYPE_RSA | (0x40)) // 2048 bits = 256 bytes
+/// RSA-3072 key type
+  #define SL_SE_KEY_TYPE_RSA_3072     (SL_SE_KEY_TYPE_RSA | (0x60))
+/// RSA-4096 key type
+  #define SL_SE_KEY_TYPE_RSA_4096     (SL_SE_KEY_TYPE_RSA | (0x80))
+#endif
 
 #if (_SILICON_LABS_SECURITY_FEATURE == _SILICON_LABS_SECURITY_FEATURE_VAULT)
 /// Symmetric key type for ChaCha20
@@ -254,6 +302,9 @@ extern "C" {
 /// Internal immutable SE attestation key
 #define SL_SE_KEY_SLOT_SE_ATTESTATION_KEY             0xFF
 
+/// KSU IDs
+#define SL_SE_KSU_ID_HOST 0x00
+
 /// Size overhead for wrapped keys
 #define SLI_SE_WRAPPED_KEY_OVERHEAD  (12 + 16)
 /// @} (end addtogroup sl_se_manager_key_handling)
@@ -303,7 +354,7 @@ extern "C" {
 #define SL_SE_TAMPER_LEVEL_PERMANENTLY_ERASE_OTP  7  ///< Erase OTP - THIS WILL MAKE THE DEVICE INOPERATIONAL!
 
 // SE tamper signals
-#if defined(SLI_SE_MAJOR_VERSION_ONE)
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_1)
 
 #define SL_SE_TAMPER_SIGNAL_RESERVED_1                  0x0   ///< Reserved tamper signal
 #define SL_SE_TAMPER_SIGNAL_FILTER_COUNTER              0x1   ///< Filter counter exceeds threshold
@@ -337,11 +388,11 @@ extern "C" {
 #define SL_SE_TAMPER_SIGNAL_SE_DEBUG_GRANTED            0x1D  ///< SE debug granted
 #define SL_SE_TAMPER_SIGNAL_DIGITAL_GLITCH              0x1E  ///< Digital glitch detector detected an event
 #define SL_SE_TAMPER_SIGNAL_SE_ICACHE_ERROR             0x1F  ///< SE ICACHE checksum error
+
 #define SL_SE_TAMPER_SIGNAL_NUM_SIGNALS                 0x20  ///< Number of tamper signals
+// End S2C1
+#elif defined(_SILICON_LABS_32B_SERIES_2)
 
-#elif defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
-
-// SE tamper signals for xG25 and xG29, with ETAMPDET signal included.
 #define SL_SE_TAMPER_SIGNAL_RESERVED_1                  0x0   ///< Reserved tamper signal
 #define SL_SE_TAMPER_SIGNAL_FILTER_COUNTER              0x1   ///< Filter counter exceeds threshold
 #define SL_SE_TAMPER_SIGNAL_WATCHDOG                    0x2   ///< SE watchdog timeout
@@ -367,52 +418,66 @@ extern "C" {
 #define SL_SE_TAMPER_SIGNAL_TEMPERATURE_SENSOR          0x16  ///< On-device temperature sensor
 #define SL_SE_TAMPER_SIGNAL_DPLL_LOCK_FAIL_LOW          0x17  ///< DPLL lock fail low
 #define SL_SE_TAMPER_SIGNAL_DPLL_LOCK_FAIL_HIGH         0x18  ///< DPLL lock fail high
+// Only C5 and C9 have ETAMPDET
+#if defined(_SILICON_LABS_32B_SERIES_2_CONFIG_5) || defined(_SILICON_LABS_32B_SERIES_2_CONFIG_9)
 #define SL_SE_TAMPER_SIGNAL_ETAMPDET                    0x19  ///< External tamper detect
-#define SL_SE_TAMPER_SIGNAL_PRS0                        0x1a  ///< PRS channel 0 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS1                        0x1b  ///< PRS channel 1 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS2                        0x1c  ///< PRS channel 2 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS3                        0x1d  ///< PRS channel 3 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS4                        0x1e  ///< PRS channel 4 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS5                        0x1f  ///< PRS channel 5 asserted
-#define SL_SE_TAMPER_SIGNAL_NUM_SIGNALS                 0x20  ///< Number of tamper signals
-
+#define SL_SE_TAMPER_SIGNAL_PRS0                        0x1A  ///< PRS channel 0 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS1                        0x1B  ///< PRS channel 1 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS2                        0x1C  ///< PRS channel 2 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS3                        0x1D  ///< PRS channel 3 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS4                        0x1E  ///< PRS channel 4 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS5                        0x1F  ///< PRS channel 5 asserted
+// End ETAMPDET (S2 C5 || C9)
 #else
+#define SL_SE_TAMPER_SIGNAL_PRS0                        0x19  ///< PRS channel 0 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS1                        0x1A  ///< PRS channel 1 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS2                        0x1B  ///< PRS channel 2 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS3                        0x1C  ///< PRS channel 3 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS4                        0x1D  ///< PRS channel 4 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS5                        0x1E  ///< PRS channel 5 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS6                        0x1F  ///< PRS channel 6 asserted
+// End ETAMPDET (S2 !C5 && !C9)
+#endif
 
-// SE tamper signals
+#define SL_SE_TAMPER_SIGNAL_NUM_SIGNALS                 0x20  ///< Number of tamper signals
+// End S2 !C1
+#elif defined(_SILICON_LABS_32B_SERIES_3)
+
 #define SL_SE_TAMPER_SIGNAL_RESERVED_1                  0x0   ///< Reserved tamper signal
 #define SL_SE_TAMPER_SIGNAL_FILTER_COUNTER              0x1   ///< Filter counter exceeds threshold
 #define SL_SE_TAMPER_SIGNAL_WATCHDOG                    0x2   ///< SE watchdog timeout
-#define SL_SE_TAMPER_SIGNAL_RESERVED_2                  0x3   ///< Reserved tamper signal
+#define SL_SE_TAMPER_SIGNAL_CRYPTO_ERROR                0x3   ///< Crypto error detected
 #define SL_SE_TAMPER_SIGNAL_SE_RAM_ECC_2                0x4   ///< SE RAM 2-bit ECC error
-#define SL_SE_TAMPER_SIGNAL_SE_HARDFAULT                0x5   ///< SE CPU hardfault
-#define SL_SE_TAMPER_SIGNAL_RESERVED_3                  0x6   ///< Reserved tamper signal
-#define SL_SE_TAMPER_SIGNAL_SE_SOFTWARE_ASSERTION       0x7   ///< SE software triggers an assert
-#define SL_SE_TAMPER_SIGNAL_SE_SECURE_BOOT_FAILED       0x8   ///< Secure boot of SE firmware failed
+#define SL_SE_TAMPER_SIGNAL_RESERVED_2                  0x5   ///< Reserved tamper signal
+#define SL_SE_TAMPER_SIGNAL_SE_MAJOR_FAULT              0x6   ///< SE major fault detected
+#define SL_SE_TAMPER_SIGNAL_L2ICACHE                    0x7   ///< L2 instruction cache error
+#define SL_SE_TAMPER_SIGNAL_RESERVED_3                  0x8   ///< Reserved tamper signal
 #define SL_SE_TAMPER_SIGNAL_USER_SECURE_BOOT_FAILED     0x9   ///< Secure boot of user code failed
 #define SL_SE_TAMPER_SIGNAL_MAILBOX_AUTHORIZATION_ERROR 0xA   ///< Unauthorised command received over the Mailbox interface
 #define SL_SE_TAMPER_SIGNAL_DCI_AUTHORIZATION_ERROR     0xB   ///< Unauthorised command received over the DCI interface
-#define SL_SE_TAMPER_SIGNAL_FLASH_INTEGRITY_ERROR       0xC   ///< Flash content couldn't be properly authenticated
+#define SL_SE_TAMPER_SIGNAL_SE_SOFTWARE_ASSERTION       0xC   ///< SE software triggers an assert
 #define SL_SE_TAMPER_SIGNAL_RESERVED_4                  0xD   ///< Reserved tamper signal
 #define SL_SE_TAMPER_SIGNAL_SELFTEST_FAILED             0xE   ///< Integrity error of internal storage is detected
 #define SL_SE_TAMPER_SIGNAL_TRNG_MONITOR                0xF   ///< TRNG monitor detected lack of entropy
 #define SL_SE_TAMPER_SIGNAL_SECURE_LOCK_ERROR           0x10  ///< Debug lock internal logic check failed
-#define SL_SE_TAMPER_ATAMPDET_EMPGD                     0x11  ///< Electromagnetic pulse glitch detector
-#define SL_SE_TAMPER_ATAMPDET_SUPGD                     0x12  ///< Supply glitch detector
+#define SL_SE_TAMPER_ATAMPDET                           0x11  ///< Any tamper detection
+#define SL_SE_TAMPER_SIGNAL_OTP_ALARM                   0x12  ///< OTP alarm triggered
 #define SL_SE_TAMPER_SE_ICACHE_ERROR                    0x13  ///< SE ICache RAM error
 #define SL_SE_TAMPER_SIGNAL_SE_RAM_ECC_1                0x14  ///< SE RAM 1-bit ECC error
 #define SL_SE_TAMPER_SIGNAL_BOD                         0x15  ///< Brown-out-detector threshold alert
 #define SL_SE_TAMPER_SIGNAL_TEMPERATURE_SENSOR          0x16  ///< On-device temperature sensor
-#define SL_SE_TAMPER_SIGNAL_DPLL_LOCK_FAIL_LOW          0x17  ///< DPLL lock fail low
-#define SL_SE_TAMPER_SIGNAL_DPLL_LOCK_FAIL_HIGH         0x18  ///< DPLL lock fail high
-#define SL_SE_TAMPER_SIGNAL_PRS0                        0x19  ///< PRS channel 0 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS1                        0x1a  ///< PRS channel 1 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS2                        0x1b  ///< PRS channel 2 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS3                        0x1c  ///< PRS channel 3 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS4                        0x1d  ///< PRS channel 4 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS5                        0x1e  ///< PRS channel 5 asserted
-#define SL_SE_TAMPER_SIGNAL_PRS6                        0x1f  ///< PRS channel 6 asserted
-#define SL_SE_TAMPER_SIGNAL_NUM_SIGNALS                 0x20  ///< Number of tamper signals
+#define SL_SE_TAMPER_SIGNAL_DPLL_LOCK_FAIL              0x17  ///< DPLL lock failure
+#define SL_SE_TAMPER_SIGNAL_SOC_PLL_FAIL                0x18  ///< SoC PLL failure
+#define SL_SE_TAMPER_SIGNAL_ETAMPDET                    0x19  ///< External tamper detect
+#define SL_SE_TAMPER_SIGNAL_KSU_ECC_1                   0x1A  ///< KSU ECC 1-bit error
+#define SL_SE_TAMPER_SIGNAL_KSU_ECC_2                   0x1B  ///< KSU ECC 2-bit error
+#define SL_SE_TAMPER_SIGNAL_QSPI_RESEED_ERR             0x1C  ///< QSPI reseed error
+#define SL_SE_TAMPER_SIGNAL_PRS0                        0x1D  ///< PRS channel 0 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS1                        0x1E  ///< PRS channel 1 asserted
+#define SL_SE_TAMPER_SIGNAL_PRS2                        0x1F  ///< PRS channel 2 asserted
 
+#define SL_SE_TAMPER_SIGNAL_NUM_SIGNALS                 0x20  ///< Number of tamper signals
+// End S3
 #endif
 
 // SE tamper filter timeout period.
@@ -460,8 +525,8 @@ extern "C" {
 #define SL_SE_TAMPER_FILTER_THRESHOLD_256   0x0   ///< Counter threshold 256
 
 /// Tamper flags.
-#define SL_SE_TAMPER_FLAG_DGLITCH_ALWAYS_ON (1UL << 1) /// Digital glitch detector always on
-#define SL_SE_TAMPER_FLAG_KEEP_TAMPER_ALIVE_DURING_SLEEP (1UL << 2) /// Tamper is kept alive during sleep (down to EM3)
+#define SL_SE_TAMPER_FLAG_DGLITCH_ALWAYS_ON (1UL << 1) ///< Digital glitch detector always on
+#define SL_SE_TAMPER_FLAG_KEEP_TAMPER_ALIVE_DURING_SLEEP (1UL << 2) ///< Tamper is kept alive during sleep (down to EM3)
 
 /// @} (end addtogroup sl_se_manager_util_tamper)
 /// @} (end addtogroup sl_se_manager_util)
@@ -513,11 +578,11 @@ extern "C" {
 #if defined(_SILICON_LABS_32B_SERIES_3)
 /// @addtogroup sl_se_manager_extmem
 /// @{
-
-// The maximum number of code regions available on the device.
-// The number of available code regions may be different on future devices.
-#define SL_SE_MAX_CODE_REGIONS           8
-
+/// @addtogroup sl_se_memory_region_utils
+/// @{
+#define SL_SE_MAX_CODE_REGIONS           8 ///< The maximum number of code regions available on the device.
+///< The number of available code regions may be different on future devices.
+/// @} (end addtogroup sl_se_memory_region_utils)
 /// @} (end addtogroup sl_se_manager_extmem)
 
 #endif // defined(_SILICON_LABS_32B_SERIES_3)

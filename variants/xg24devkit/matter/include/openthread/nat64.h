@@ -35,8 +35,14 @@
 #ifndef OPENTHREAD_NAT64_H_
 #define OPENTHREAD_NAT64_H_
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <openthread/error.h>
+#include <openthread/instance.h>
 #include <openthread/ip6.h>
 #include <openthread/message.h>
+#include <openthread/platform/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -158,13 +164,29 @@ void otNat64GetErrorCounters(otInstance *aInstance, otNat64ErrorCounters *aCount
  */
 typedef struct otNat64AddressMapping
 {
-    uint64_t mId; ///< The unique id for a mapping session.
+    uint64_t     mId;  ///< The unique id for a mapping session.
+    otIp4Address mIp4; ///< The IPv4 address of the mapping.
+    otIp6Address mIp6; ///< The IPv6 address of the mapping.
 
-    otIp4Address mIp4;             ///< The IPv4 address of the mapping.
-    otIp6Address mIp6;             ///< The IPv6 address of the mapping.
-    uint32_t     mRemainingTimeMs; ///< Remaining time before expiry in milliseconds.
+    /** The source port or ICMP ID of the mapping. Used when
+     *  OPENTHREAD_CONFIG_NAT64_PORT_TRANSLATION_ENABLE is true.
+     */
+    uint16_t mSrcPortOrId;
 
-    otNat64ProtocolCounters mCounters;
+    /** The translated port or ICMP ID of the mapping. Used when
+     *  OPENTHREAD_CONFIG_NAT64_PORT_TRANSLATION_ENABLE is true.
+     */
+    uint16_t mTranslatedPortOrId;
+
+    /**
+     * Remaining time in milliseconds before the entry expires.
+     *
+     * The remaining time is relative to the initialization of the `otNat64AddressMappingIterator`, i.e., when
+     * `otNat64InitAddressMappingIterator()` was called.
+     */
+    uint32_t mRemainingTimeMs;
+
+    otNat64ProtocolCounters mCounters; ///< Counters.
 } otNat64AddressMapping;
 
 /**
@@ -173,21 +195,30 @@ typedef struct otNat64AddressMapping
  * The fields in this type are opaque (intended for use by OpenThread core only) and therefore should not be
  * accessed or used by caller.
  *
- * Before using an iterator, it MUST be initialized using `otNat64AddressMappingIteratorInit()`.
+ * Before using an iterator, it MUST be initialized using `otNat64InitAddressMappingIterator()`.
+ *
+ * The member fields in this struct are for internal OpenThread stack use and should not be accessed directly.
  */
 typedef struct otNat64AddressMappingIterator
 {
-    void *mPtr;
+    const void *mPtr;
+    uint32_t    mData32;
 } otNat64AddressMappingIterator;
 
 /**
  * Initializes an `otNat64AddressMappingIterator`.
  *
- * An iterator MUST be initialized before it is used.
+ * Available when `OPENTHREAD_CONFIG_NAT64_TRANSLATOR_ENABLE` is enabled.
  *
- * An iterator can be initialized again to restart from the beginning of the mapping info.
+ * An iterator MUST be initialized before it is used. An iterator can be initialized again to restart from the
+ * beginning of the mapping info list.
  *
- * @param[in]  aInstance  The OpenThread instance.
+ * The iterator initialization time is used to report the `mRemainingTimeMs` in the `otNat64AddressMapping` retrieved
+ * when calling `otNat64GetNextAddressMapping()` to iterate over the list. This ensures that all entry
+ * `mRemainingTimeMs` values are consistent and are from the same time origin, regardless of how or when
+ * `otNat64GetNextAddressMapping()` is called.
+ *
+ * @param[in]  aInstance  A pointer to the OpenThread instance.
  * @param[out] aIterator  A pointer to the iterator to initialize.
  */
 void otNat64InitAddressMappingIterator(otInstance *aInstance, otNat64AddressMappingIterator *aIterator);
@@ -199,8 +230,7 @@ void otNat64InitAddressMappingIterator(otInstance *aInstance, otNat64AddressMapp
  *
  * @param[in]      aInstance      A pointer to an OpenThread instance.
  * @param[in,out]  aIterator      A pointer to the iterator. On success the iterator will be updated to point to next
- *                                NAT64 address mapping record. To get the first entry the iterator should be set to
- *                                OT_NAT64_ADDRESS_MAPPING_ITERATOR_INIT.
+ *                                NAT64 address mapping record.
  * @param[out]     aMapping       A pointer to an `otNat64AddressMapping` where information of next NAT64 address
  *                                mapping record is placed (on success).
  *
@@ -437,7 +467,7 @@ void otIp4ToIp4MappedIp6Address(const otIp4Address *aIp4Address, otIp6Address *a
  * truncated but the outputted string is always null-terminated.
  *
  * @param[in]  aAddress  A pointer to an IPv4 address (MUST NOT be NULL).
- * @param[out] aBuffer   A pointer to a char array to output the string (MUST NOT be `nullptr`).
+ * @param[out] aBuffer   A pointer to a char array to output the string (MUST NOT be NULL).
  * @param[in]  aSize     The size of @p aBuffer (in bytes).
  */
 void otIp4AddressToString(const otIp4Address *aAddress, char *aBuffer, uint16_t aSize);
@@ -465,7 +495,7 @@ otError otIp4CidrFromString(const char *aString, otIp4Cidr *aCidr);
  * truncated but the outputted string is always null-terminated.
  *
  * @param[in]  aCidr     A pointer to an IPv4 CIDR (MUST NOT be NULL).
- * @param[out] aBuffer   A pointer to a char array to output the string (MUST NOT be `nullptr`).
+ * @param[out] aBuffer   A pointer to a char array to output the string (MUST NOT be NULL).
  * @param[in]  aSize     The size of @p aBuffer (in bytes).
  */
 void otIp4CidrToString(const otIp4Cidr *aCidr, char *aBuffer, uint16_t aSize);
@@ -493,6 +523,15 @@ otError otIp4AddressFromString(const char *aString, otIp4Address *aAddress);
  * @returns  OT_ERROR_INVALID_STATE  No valid NAT64 prefix in the network data.
  */
 otError otNat64SynthesizeIp6Address(otInstance *aInstance, const otIp4Address *aIp4Address, otIp6Address *aIp6Address);
+
+/**
+ * Converts a given `otNat64State` to a human-readable string.
+ *
+ * @param[in] aState  The NAT64 state.
+ *
+ * @returns The string representation of @p aState.
+ */
+const char *otNat64StateToString(otNat64State aState);
 
 /**
  * @}

@@ -19,6 +19,7 @@ limitations under the License.
 #include <cstdint>
 #include <cstring>
 #include <initializer_list>
+#include <type_traits>
 
 #include "tensorflow/lite/kernels/internal/compatibility.h"
 #include "tensorflow/lite/kernels/internal/runtime_shape.h"
@@ -157,7 +158,8 @@ struct PerChannelQuantizationParams {
 };
 
 // Gets next index to iterate through a multidimensional array.
-inline bool NextIndex(const int num_dims, const int* dims, int* current) {
+template <typename IndexType = int>
+inline bool NextIndex(const int num_dims, const int* dims, IndexType* current) {
   if (num_dims == 0) {
     return false;
   }
@@ -165,7 +167,7 @@ inline bool NextIndex(const int num_dims, const int* dims, int* current) {
   TFLITE_DCHECK(current != nullptr);
   int carry = 1;
   for (int idx = num_dims - 1; idx >= 0; --idx) {
-    int current_val = current[idx] + carry;
+    IndexType current_val = current[idx] + carry;
     TFLITE_DCHECK_GE(dims[idx], current_val);
     if (dims[idx] == current_val) {
       current[idx] = 0;
@@ -697,6 +699,7 @@ struct ComparisonParams {
   bool is_broadcast;
 };
 
+#pragma pack(push, 1)
 struct ConvParams {
   PaddingType padding_type;
   PaddingValues padding_values;
@@ -719,6 +722,7 @@ struct ConvParams {
   float float_activation_min;
   float float_activation_max;
 };
+#pragma pack(pop)
 
 struct Conv3DParams {
   Padding3DValues padding_values;
@@ -739,6 +743,7 @@ struct DepthToSpaceParams {
   int32_t block_size;
 };
 
+#pragma pack(push, 1)
 struct DepthwiseParams {
   PaddingType padding_type;
   PaddingValues padding_values;
@@ -763,6 +768,7 @@ struct DepthwiseParams {
   const int32_t* output_multiplier_per_channel;
   const int32_t* output_shift_per_channel;
 };
+#pragma pack(pop)
 
 struct DequantizationParams {
   double scale;

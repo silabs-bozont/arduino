@@ -21,7 +21,10 @@
 
 #include "btl_errorcode.h"
 #include "btl_reset_info.h"
-#include "application_properties.h"
+#include "api/application_properties.h"
+
+#include "em_emu.h"
+#include "em_cmu.h"
 
 // Include component-specific interfaces
 #include "btl_interface_parser.h"
@@ -32,6 +35,10 @@
 
 #if defined(SL_TRUSTZONE_NONSECURE)
 #include "sli_tz_ns_interface.h"
+#endif
+
+#if defined(BURTC_PRESENT)
+#include "em_burtc.h"
 #endif
 
 #if defined(__GNUC__)
@@ -160,7 +167,11 @@ typedef struct {
   int32_t (*deinit)(void);
   // ------------------------------
   /// Verify application
+#if defined(BTL_ENFORCE_GLITCH_MITIGATION) && (BTL_ENFORCE_GLITCH_MITIGATION == 1)
+  int32_t (*verifyApplication)(uint32_t startAddress);
+#else
   bool (*verifyApplication)(uint32_t startAddress);
+#endif
   // ------------------------------
   /// Initialize parser
   int32_t (*initParser)(BootloaderParserContext_t *context, size_t contextSize);
@@ -262,6 +273,12 @@ typedef struct Bootloader_inOutVec {
 /// @brief Bootloader has the capability of communicating with host processors
 /// using a communication interface
 #define BOOTLOADER_CAPABILITY_COMMUNICATION               (1 << 20)
+
+/// The bootloader supports EM4 GPIO retention
+#define BOOTLOADER_CAPABILITY_EM4_GPIO_RETENTION   (1 << 21)
+
+/// Bootloader was built with SMP two-page switch (\c BTL_SMP_SUPPORT). Exposed at runtime via \c bootloader_getInfo().
+#define BOOTLOADER_CAPABILITY_SMP_SWITCH           (1 << 22)
 
 // --------------------------------
 // Magic constants for bootloader tables
@@ -478,6 +495,37 @@ typedef struct Bootloader_inOutVec {
 #define BTL_MAIN_STAGE_MAX_SIZE           (BTL_APPLICATION_BASE    \
                                            - (BTL_FIRST_STAGE_BASE \
                                               + BTL_FIRST_STAGE_SIZE))
+#elif defined(_SILICON_LABS_GECKO_INTERNAL_SDID_260)
+// No bootloader area: Place the bootloader in main flash
+#define BTL_FIRST_STAGE_BASE              FLASH_BASE
+#if defined(BOOTLOADER_APPLOADER)
+#if defined(BOOTLOADER_SECURE)
+#define BTL_APPLICATION_BASE              (FLASH_BASE + 0x00014000UL)
+#else
+#define BTL_APPLICATION_BASE              (FLASH_BASE + 0x00012000UL)
+#endif // BOOTLOADER_SECURE
+#else
+#define BTL_APPLICATION_BASE              (FLASH_BASE + 0x00006000UL)
+#endif // BOOTLOADER_APPLOADER
+#define BTL_MAIN_STAGE_MAX_SIZE           (BTL_APPLICATION_BASE    \
+                                           - (BTL_FIRST_STAGE_BASE \
+                                              + BTL_FIRST_STAGE_SIZE))
+#elif defined(_SILICON_LABS_GECKO_INTERNAL_SDID_250)
+// No bootloader area: Place the bootloader in main flash
+#define BTL_FIRST_STAGE_BASE              FLASH_BASE
+#if defined(BOOTLOADER_APPLOADER)
+#if defined(BOOTLOADER_SECURE)
+#define BTL_APPLICATION_BASE              (FLASH_BASE + 0x00014000UL)
+#else
+#define BTL_APPLICATION_BASE              (FLASH_BASE + 0x00012000UL)
+#endif // BOOTLOADER_SECURE
+#else
+#define BTL_APPLICATION_BASE              (FLASH_BASE + 0x00006000UL)
+#endif // BOOTLOADER_APPLOADER
+#define BTL_MAIN_STAGE_MAX_SIZE           (BTL_APPLICATION_BASE    \
+                                           - (BTL_FIRST_STAGE_BASE \
+                                              + BTL_FIRST_STAGE_SIZE))
+#elif defined(MAIN_BOOTLOADER_TEST)
 #else
 #error "This part is not supported in this bootloader version."
 #endif
@@ -514,6 +562,58 @@ extern MainBootloaderTable_t *mainBootloaderTable;
                                            (BTL_MAIN_BOOTLOADER_TABLE_BASE))
 #endif // MAIN_BOOTLOADER_TEST
 // --------------------------------
+// -----------------------------------------------------------------------------
+
+// EM4 GPIO Retention constants
+#define MAX_EM4_RETAINED_PINS                   16
+#define BURTC_WAKEUP_CYCLES                     2
+#define BURAM_SIGNATURE_VALID                   0x5
+
+#define BURAM_RESET_COUNTER_SIGNATURE           0xA
+#define BURAM_RESET_COUNTER_MAX                 3    // Maximum consecutive failed wakeups
+
+// BURAM Reset Reason Definitions (4-bit values for reset_reason field)
+
+/// Normal application boot
+#define BURAM_RESET_REASON_GO                 0x1u
+/// Application requested that bootloader runs
+#define BURAM_RESET_REASON_BOOTLOAD           0x2u
+/// Bootloader detected bad  upgrade image
+#define BURAM_RESET_REASON_BADIMAGE           0x3u
+/// Bootloader detected bad application
+#define BURAM_RESET_REASON_BADAPP             0x4u
+/// Bootloader detected a fatal error
+#define BURAM_RESET_REASON_FATAL              0x5u
+
+#pragma pack(push, 1)
+// EM4 GPIO Retention data structures
+typedef union {
+  struct {
+    uint8_t signature : 4;      // 4-bit signature
+    uint8_t reset_reason : 4;   // Reset reason (0-15)
+    uint8_t reset_counter : 4;  // Reset counter (0-15, max 3 for detection)
+    uint8_t num_pins : 4;       // Number of pins to retain (0-15)
+  } fields;
+  uint16_t packed;              // 2 bytes
+} gpio_em4_header_t;
+
+// Pin configuration structure (8 bits)
+typedef union {
+  struct {
+    uint8_t port     : 3;     // Port (supports upto 8 ports)
+    uint8_t pin      : 4;     // Pin number (0-15)
+    uint8_t dout     : 1;     // Output value (0/1)
+  } fields;
+  uint8_t packed;             // 1 byte
+} gpio_em4_retention_t;
+
+// Complete configuration structure
+typedef struct {
+  gpio_em4_header_t header;                        // Header (2 bytes)
+  gpio_em4_retention_t pins[MAX_EM4_RETAINED_PINS];// Pin configurations (16 bytes)
+} gpio_em4_retention_config_t;
+#pragma pack(pop)
+// -----------------------------------------------------------------------------
 // Functions
 
 /***************************************************************************//**
@@ -763,6 +863,118 @@ __STATIC_INLINE bool bootloader_pointerValid(const void *ptr)
   }
 #endif
 }
+
+/***************************************************************************//**
+ * @brief Checks if a memory region is within the valid flash address range.
+ *
+ * This function verifies that the specified address and length are within the
+ * bounds of the device's flash memory region, defined by FLASH_BASE and FLASH_SIZE.
+ *
+ * @param address The starting address of the memory region to check.
+ * @param length  The length (in bytes) of the memory region to check.
+ * @return true if the region is fully within the flash memory range, false otherwise.
+ ******************************************************************************/
+__STATIC_INLINE bool verifyAddressRange(uint32_t address,
+                                        uint32_t length);
+__STATIC_INLINE bool verifyAddressRange(uint32_t address,
+                                        uint32_t length)
+{
+  // Flash starts at FLASH_BASE, and is FLASH_SIZE large
+  if ((length > FLASH_SIZE)
+#if (FLASH_BASE > 0x0UL)
+      || (address < FLASH_BASE)
+#endif
+      || (address > FLASH_BASE + FLASH_SIZE)) {
+    return false;
+  }
+
+  return ((address + length) <= FLASH_BASE + FLASH_SIZE);
+}
+
+/***************************************************************************//**
+ * @brief Checks if a memory region is erased (all bits set to 1).
+ *
+ * This function iterates over the specified memory region and checks if every
+ * 32-bit word is equal to 0xFFFFFFFF, which indicates an erased state in flash memory.
+ *
+ * @param address The starting address of the memory region to check.
+ * @param length  The length (in bytes) of the memory region to check. Must be a multiple of 4.
+ * @return true if all 32-bit words in the region are erased (0xFFFFFFFF), false otherwise.
+ ******************************************************************************/
+__STATIC_INLINE bool verifyErased(uint32_t address,
+                                  uint32_t length);
+__STATIC_INLINE bool verifyErased(uint32_t address,
+                                  uint32_t length)
+{
+  for (uint32_t i = 0; i < length; i += 4) {
+    if (*(uint32_t *)(address + i) != 0xFFFFFFFF) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * @brief Reboots the system with GPIO retention and enters EM4 sleep mode
+ *
+ * This function implements a complete EM4 GPIO retention workflow by:
+ * 1. Validating the provided GPIO configuration parameters
+ * 2. Persisting GPIO configurations to BURAM for retention across EM4 cycles
+ * 3. Entering EM4 sleep mode with configurable wakeup behavior
+ *
+ * The wakeup mechanism is controlled by the auto_configure_wakeup parameter:
+ * - When true: BURTC is configured for scheduled wakeup before entering EM4
+ * - When false: EM4 is entered directly, allowing the application to handle wakeup configuration
+ *
+ * @param[in] pins                  Pointer to array of GPIO pin configurations to retain
+ * @param[in] num_pins              Number of pins to retain (range: 1 to MAX_EM4_RETAINED_PINS)
+ * @param[in] auto_configure_wakeup Wakeup configuration flag (true: BURTC wakeup, false: direct EM4 entry)
+ *
+ * @return On success, this function transitions the system to EM4 sleep mode and does not return
+ *         - BOOTLOADER_ERROR_GPIO_RETENTION_INVALID: Invalid parameters or EM4 GPIO retention not available
+ *         - Other error codes from btl_em4GpioRetentionConfigSave() on GPIO retention save failure
+ */
+int32_t bootloader_rebootAndInstallWithGpioRetention(const gpio_em4_retention_t* pins, uint8_t num_pins, bool auto_configure_wakeup);
+
+#if defined(BURTC_PRESENT)
+/***************************************************************************//**
+ * @brief Configure BURTC and enter EM4 sleep mode.
+ *
+ * This function configures BURTC for EM4 wakeup and enters EM4 sleep mode.
+ * Used when EM4 GPIO retention component is installed.
+ *
+ * @note This function does not return as it puts the system into EM4 sleep mode.
+ ******************************************************************************/
+__STATIC_INLINE void configureBurtcAndEnterEM4(void);
+__STATIC_INLINE void configureBurtcAndEnterEM4(void)
+{
+  // Configure BURTC for EM4 wakeup
+  BURTC_Init_TypeDef burtcInit = BURTC_INIT_DEFAULT;
+  burtcInit.start = true;
+  burtcInit.debugRun = false;
+  burtcInit.clkDiv = burtcClkDiv_1;
+  burtcInit.compare0Top = true;
+  burtcInit.em4comp = true;
+  burtcInit.em4overflow = false;
+
+  // Enable BURTC clock
+  CMU_ClockEnable(cmuClock_BURTC, true);
+
+  // Initialize BURTC
+  BURTC_Init(&burtcInit);
+
+  // Set compare value for wakeup (configurable via BURTC_WAKEUP_CYCLES)
+  BURTC_CompareSet(0, BURTC_WAKEUP_CYCLES);
+
+  // Clear and enable interrupts
+  BURTC_IntClear(BURTC_IF_COMP | BURTC_IF_OF);
+  BURTC_IntEnable(BURTC_IEN_COMP | BURTC_IEN_OF);
+  NVIC_EnableIRQ(BURTC_IRQn);
+
+  // Enter EM4
+  EMU_EnterEM4();
+}
+#endif // BURTC_PRESENT
 
 /** @} (end addtogroup CommonInterface) */
 /** @} (end addtogroup Interface) */

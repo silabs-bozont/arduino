@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,22 +31,18 @@
 
 #define PSA_WANT_KEY_TYPE_AES 1
 #define PSA_WANT_ALG_CCM 1
-#define PSA_WANT_ALG_CMAC 1
-#define PSA_WANT_ALG_SHA_224 1
-#define PSA_WANT_ALG_SHA_256 1
 #define PSA_WANT_ALG_ECB_NO_PADDING 1
+#define PSA_WANT_ALG_CMAC 1
+#define PSA_WANT_ALG_SHA_256 1
 #define PSA_WANT_ALG_ECDSA 1
 #define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR 1
 #define PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY 1
-#define PSA_WANT_ECC_SECP_R1_192 1
-#define PSA_WANT_ECC_SECP_R1_224 1
 #define PSA_WANT_ECC_SECP_R1_256 1
 #define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC 1
 #define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT 1
 #define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT 1
 #define PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE 1
 #define PSA_WANT_ALG_ECDH 1
-#define PSA_WANT_ALG_DETERMINISTIC_ECDSA 1
 #define PSA_WANT_ALG_HKDF 1
 #define PSA_WANT_ALG_HMAC 1
 #define PSA_WANT_KEY_TYPE_HMAC 1
@@ -55,7 +51,12 @@
 #define PSA_WANT_ALG_TLS12_PSK_TO_MS 1
 #define MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 
-#define MBEDTLS_PSA_KEY_SLOT_COUNT (22 + 15 + 1 + SL_PSA_KEY_USER_SLOT_COUNT + 1)
+#if defined(KSU_MAX_KEY_SLOTS) && defined(SEMAILBOX_PRESENT)
+#include "sli_ksu_keyslots_config.h"
+#define MBEDTLS_PSA_KEY_SLOT_COUNT (22 + 2 + 15 + 1 + SL_PSA_KEY_USER_SLOT_COUNT + SLI_KSU_MAX_KEY_SLOTS - SLI_KSU_KEY_SLOT_USER_START + 1)
+#else
+#define MBEDTLS_PSA_KEY_SLOT_COUNT (22 + 2 + 15 + 1 + SL_PSA_KEY_USER_SLOT_COUNT + 1)
+#endif
 #ifndef SL_PSA_ITS_MAX_FILES
 #define SL_PSA_ITS_MAX_FILES (1 + SL_PSA_ITS_USER_MAX_FILES)
 #endif

@@ -27,7 +27,7 @@
 #if defined(SL_TRUSTZONE_NONSECURE)
 
 /* The NonSecure app must use the crypto_values.h from the trusted-firmware-m repo. */
-#include "../../trusted-firmware-m/interface/include/psa/crypto_values.h"
+#include "interface/include/psa/crypto_values.h"
 
 #else /* SL_TRUSTZONE_NONSECURE */
 
@@ -925,6 +925,8 @@
 #define PSA_ALG_RIPEMD160                       ((psa_algorithm_t) 0x02000004)
 /** SHA1 */
 #define PSA_ALG_SHA_1                           ((psa_algorithm_t) 0x02000005)
+/** HASH-AES-MMO */
+#define PSA_ALG_AES_MMO_ZIGBEE                  ((psa_algorithm_t) 0x02000007)
 /** SHA2-224 */
 #define PSA_ALG_SHA_224                         ((psa_algorithm_t) 0x02000008)
 /** SHA2-256 */

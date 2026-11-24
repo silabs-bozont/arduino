@@ -106,6 +106,8 @@ extern "C" {
 #include <stdint.h>
 #include <stdio.h>
 
+#include <platform/silabs/tracing/SilabsTracingConfig.h>
+
 #ifdef SLI_SI91X_MCU_INTERFACE
 #include "si91x_device.h"
 extern uint32_t SystemCoreClock;
@@ -128,6 +130,10 @@ extern uint32_t SystemCoreClock;
 #include "SEGGER_SYSVIEW_FreeRTOS.h"
 #endif
 
+#if defined(SL_MATTER_EM4_SLEEP) && (SL_MATTER_EM4_SLEEP == 1)
+void sl_matter_em4_check(uint32_t expected_idle_time_ms);
+#endif // defined(SL_MATTER_EM4_SLEEP) && (SL_MATTER_EM4_SLEEP == 1)
+
 /*-----------------------------------------------------------
  * Application specific definitions.
  *
@@ -143,6 +149,9 @@ extern uint32_t SystemCoreClock;
 /* Energy saving modes. */
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 #define configUSE_TICKLESS_IDLE 1
+#if defined(SL_MATTER_EM4_SLEEP) && (SL_MATTER_EM4_SLEEP == 1)
+#define configPRE_SLEEP_PROCESSING(x) sl_matter_em4_check(x)
+#endif // defined(SL_MATTER_EM4_SLEEP) && (SL_MATTER_EM4_SLEEP == 1)
 #elif (SLI_SI91X_MCU_INTERFACE && SL_ICD_ENABLED)
 #define configUSE_TICKLESS_IDLE 1
 #define configEXPECTED_IDLE_TIME_BEFORE_SLEEP 70
@@ -153,7 +162,13 @@ extern uint32_t SystemCoreClock;
 #define configUSE_TICKLESS_IDLE 0
 #endif // SL_CATALOG_POWER_MANAGER_PRESENT
 
+// Set the FreeRTOS tick rate depending on the MCU interface.
+#ifdef SLI_SI91X_MCU_INTERFACE
+// For Si91x SoCs, a 1000Hz tick rate provides an exact 1ms systick period
+#define configTICK_RATE_HZ (1000)
+#else // EFR32 platforms
 #define configTICK_RATE_HZ (1024)
+#endif // SLI_SI91X_MCU_INTERFACE
 
 /* Definition used by Keil to replace default system clock source. */
 #define configOVERRIDE_DEFAULT_TICK_CONFIGURATION 1
@@ -166,7 +181,31 @@ extern uint32_t SystemCoreClock;
 
 /* Main functions*/
 /* Run time stats gathering related definitions. */
+#if defined(TRACING_RUNTIME_STATS) && TRACING_RUNTIME_STATS == 1
+
+extern uint32_t ulGetRunTimeCounterValue(void);
+extern void vTaskSwitchedOut(void);
+extern void vTaskSwitchedIn(void);
+extern void vTaskDeleted(void * xTask);
+extern void vTaskCreated(void * xTask);
+extern void vTaskMovedToReadyState(void * xTask);
+
+#define configGENERATE_RUN_TIME_STATS (1)
+#define configUSE_STATS_FORMATTING_FUNCTIONS (1)
+#define configRECORD_STACK_HIGH_ADDRESS (1)
+
+// Required for configGENERATE_RUN_TIME_STATS, but not used in this implementation.
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()                                                                                   \
+    {}
+#define portGET_RUN_TIME_COUNTER_VALUE() ulGetRunTimeCounterValue()
+#define traceTASK_SWITCHED_IN() vTaskSwitchedIn()
+#define traceTASK_DELETE(xTask) vTaskDeleted(xTask)
+#define traceTASK_CREATE(xTask) vTaskCreated(xTask)
+#define traceTASK_SWITCHED_OUT() vTaskSwitchedOut()
+#define traceMOVED_TASK_TO_READY_STATE(xTask) vTaskMovedToReadyState(xTask)
+#else
 #define configGENERATE_RUN_TIME_STATS (0)
+#endif // TRACING_RUNTIME_STATS
 
 /* Co-routine related definitions. */
 #define configUSE_CO_ROUTINES (0)
@@ -177,7 +216,7 @@ extern uint32_t SystemCoreClock;
 // Keep the timerTask at the highest prio as some of our stacks tasks leverage eventing with timers.
 #define configTIMER_TASK_PRIORITY (55) /* Highest priority */
 #define configTIMER_QUEUE_LENGTH (10)
-#define configTIMER_TASK_STACK_DEPTH (1024)
+#define configTIMER_TASK_STACK_DEPTH (1280 / sizeof(StackType_t))
 
 #ifdef SLI_SI91X_MCU_INTERFACE
 #ifdef __NVIC_PRIO_BITS
@@ -216,11 +255,12 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configMAX_PRIORITIES (56)
 #define configMINIMAL_STACK_SIZE (320) /* Number of words to use for Idle and Timer stacks */
 
-#ifdef HEAP_MONITORING
+#if defined(HEAP_MONITORING) || (defined(TRACING_RUNTIME_STATS) && TRACING_RUNTIME_STATS == 1)
+// Required otherwise all 3 Bluetooth tasks get the same name in the stats
 #define configMAX_TASK_NAME_LEN (24)
 #else
 #define configMAX_TASK_NAME_LEN (10)
-#endif // HEAP_MONITORING
+#endif
 
 #define configUSE_16_BIT_TICKS (0)
 #define configIDLE_SHOULD_YIELD (1)
@@ -231,7 +271,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configUSE_TRACE_FACILITY 1
 #define configQUEUE_REGISTRY_SIZE (10)
 #define configUSE_QUEUE_SETS (0)
-#define configUSE_NEWLIB_REENTRANT (1)
+#define configUSE_NEWLIB_REENTRANT 0
 #define configENABLE_BACKWARD_COMPATIBILITY (1)
 #define configSUPPORT_STATIC_ALLOCATION (1)
 #define configSUPPORT_DYNAMIC_ALLOCATION (1)
@@ -244,15 +284,15 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 
 #ifndef configTOTAL_HEAP_SIZE
 #ifdef SL_WIFI
-#ifdef DIC_ENABLE
+#ifdef SL_MATTER_ENABLE_AWS
 #ifdef SLI_SI91X_MCU_INTERFACE
-#define configTOTAL_HEAP_SIZE ((size_t) ((75 + EXTRA_HEAP_k) * 1024))
+#define configTOTAL_HEAP_SIZE ((size_t) ((60 + EXTRA_HEAP_k) * 1024))
 #else
 #define configTOTAL_HEAP_SIZE ((size_t) ((68 + EXTRA_HEAP_k) * 1024))
 #endif // SLI_SI91X_MCU_INTERFACE
 #else
 #define configTOTAL_HEAP_SIZE ((size_t) ((42 + EXTRA_HEAP_k) * 1024))
-#endif // DIC
+#endif // SL_MATTER_ENABLE_AWS
 #else  // SL_WIFI
 #if SL_CONFIG_OPENTHREAD_LIB == 1
 #define configTOTAL_HEAP_SIZE ((size_t) ((40 + EXTRA_HEAP_k) * 1024))
@@ -268,7 +308,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define INCLUDE_vTaskDelete (1)
 #define INCLUDE_vTaskSuspend (1)
 #define INCLUDE_xResumeFromISR (1)
-#define INCLUDE_vTaskDelayUntil (1)
+#define INCLUDE_xTaskDelayUntil (1)
 #define INCLUDE_vTaskDelay (1)
 #define INCLUDE_xTaskGetSchedulerState (1)
 #define INCLUDE_xTaskGetCurrentTaskHandle (1)
@@ -282,6 +322,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define INCLUDE_xSemaphoreGetMutexHolder (1)
 #define INCLUDE_xTimerPendFunctionCall (1)
 #define INCLUDE_xTaskGetHandle (1)
+#define INCLUDE_xTaskAbortDelay (1)
 
 /* Stop if an assertion fails. */
 #define configASSERT(x)                                                                                                            \
@@ -322,7 +363,7 @@ standard names. */
     (configNUM_USER_THREAD_LOCAL_STORAGE_POINTERS + configNUM_SDK_THREAD_LOCAL_STORAGE_POINTERS + 1)
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__cplusplus)
 /* For the linker. */
 #define fabs __builtin_fabs
 #endif
@@ -334,3 +375,4 @@ standard names. */
 #ifdef __cplusplus
 }
 #endif
+

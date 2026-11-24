@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ extern const uint32_t sl_iostream_instances_count;
 
 extern sl_iostream_t *sl_iostream_recommended_console_stream;
 
-sl_iostream_t *sl_iostream_get_handle(char *name);
+sl_iostream_t *sl_iostream_get_handle(const char *name);
 
 void sl_iostream_set_console_instance(void);
 

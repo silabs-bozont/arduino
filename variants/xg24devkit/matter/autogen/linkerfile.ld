@@ -32,13 +32,76 @@
    FLASH      (rx)  : ORIGIN = 0x8006000, LENGTH = 0x178000
    RAM        (rwx) : ORIGIN = 0x20000004, LENGTH = 0x3fffc
    BOOTLOADER_RESET_REGION (rwx) : ORIGIN = 0x20000000, LENGTH = 0x4
+   /* Dummy region is used for the dummy segment, which in turn never gets data
+    * loaded, but is only used to calculate the size of objects placed in it. */
+   DUMMY      (!ax) : ORIGIN = 0xffe88000, LENGTH = 0x178000
  }
+
+/*******************************************************************************
+ * Due to an issue in GNU LD, which results in wrongly applying the writeable
+ * flag to a text section (thereby triggering an error since the memory block is
+ * declared rx), we need to define our segments manually.
+ *
+ * Typical Silicon Labs program layout:
+ *
+ * ----- START OF APPLICATION FLASH -----
+ * R   - Vector table
+ * R X - RAM functions (copied to RAM at startup)
+ * R   - Read-only data
+ * R X - Code
+ * R X - Secure Gateways (Trustzone S only)
+ * R X - extab
+ * R X - exidx
+ * R   - startup copy table
+ * R   - startup zeroization table
+ * RW  - Initialised RAM data (copied to RAM at startup)
+ *     - [unallocated space]
+ *     - NVM (defined using linker symbols only, not an ELF section)
+ * ----- END OF APPLICATION FLASH -----
+ *
+ * ----- START OF APPLICATION RAM -----
+ * RW  - Bootloader reset reason (if present)
+ * RW  - stack
+ * RW  - stack sealing
+ * RW  - BSS (zero-init RAM)
+ * RW  - uninitialised RAM
+ * R X - RAM functions
+ * RW  - Initialised RAM
+ * RW  - Heap (automatically expanded to end of RAM)
+ * ----- END OF APPLICATION RAM -----
+ *
+ * ----- START OF DUMMY REGION -----
+ * RW  - NVM sections (not loadable, only such that linker can calculate the size
+ *       of the symbols placed inside it, to subtract that size from the end of
+ *       the available flash space)
+ * ----- END OF DUMMY REGION -----
+ *
+ * For the purpose of defining segments, we need a new segment whenever the
+ * data loaded changes type. That means e.g. we need three segments for all RAM
+ * content: the initial RW segment, the RX segment, and the final RW segment.
+ ******************************************************************************/
+
+PHDRS
+{
+  vectors PT_LOAD FLAGS(4);       /* Flash content before RAM functions is R */
+  readonly PT_LOAD FLAGS(4);      /* Readonly content after RAM functions */
+  text PT_LOAD FLAGS(5);          /* Executable flash content after readonly */
+  tables PT_LOAD FLAGS(4);        /* Tables supporting startup copying are R */
+  empty PT_LOAD FLAGS(4);         /* Empty area is R */
+
+  ram_pre_code PT_LOAD FLAGS(6);  /* All RAM content before RAMfuncs is RW */
+  ram_code PT_LOAD FLAGS(5);      /* RAMfuncs need to be RX */
+  ram_data PT_LOAD FLAGS(6);      /* Relocatable RAM data needs own segment */
+  ram_post_data PT_LOAD FLAGS(6); /* All RAM content after data is RW */
+  btl_data PT_LOAD FLAGS(6);      /* Bootloader data is in a separate region */
+
+  dummy_seg PT_NULL FLAGS(4);     /* Dummy segment for dummy sections */
+}
 
 ENTRY(Reset_Handler)
 
 SECTIONS
 {
-
   .vectors :
   {
     linker_vectors_begin = .;
@@ -47,25 +110,25 @@ SECTIONS
 
     __Vectors_End = .;
     __Vectors_Size = __Vectors_End - __Vectors;
-    __lma_ramfuncs_start__ = .;
-  } > FLASH
+  } > FLASH :vectors
   .bootloader_reset_section (NOLOAD):
   {
     __ResetReasonStart__ = .;
     . = . + 4;
     . = ALIGN(4);
     __ResetReasonEnd__ = .;
-  } > BOOTLOADER_RESET_REGION
+  } > BOOTLOADER_RESET_REGION :btl_data
 
   .stack (NOLOAD):
   {
     . = ALIGN(8);
+    __stack_limit = .;
     __StackLimit = .;
     KEEP(*(.stack*))
     . = ALIGN(4);
+    __stack = .;
     __StackTop = .;
-    PROVIDE(__stack = __StackTop);
-  } > RAM
+  } > RAM :ram_pre_code
 
   .bss :
   {
@@ -75,35 +138,31 @@ SECTIONS
     *(COMMON)
     . = ALIGN(32);
     __bss_end__ = .;
-  } > RAM
+  } > RAM :ram_pre_code
 
-
-  .noinit (NOLOAD):
+  .noinit (NOLOAD) : ALIGN(32)
   {
     *(.noinit*);
-    . = ALIGN(32);
-  } > RAM
+  } > RAM :ram_pre_code
 
-
-  text_application_ram :
+  text_application_ram : ALIGN(32)
   {
     . = ALIGN(32);
     __vma_ramfuncs_start__ = .;
-    __text_application_ram_start__ = .;
 
+    /* text_application_ram */
     *(text_application_ram)
 
     . = ALIGN(32);
     __vma_ramfuncs_end__ = .;
-    __text_application_ram_end__ = .;
-  } > RAM AT > FLASH
+  } > RAM AT > FLASH :ram_code
+
+  __lma_ramfuncs_start__ = LOADADDR(text_application_ram);
+  __lma_ramfuncs_end__ = LOADADDR(text_application_ram) + SIZEOF(text_application_ram);
 
   .rodata :
   {
-    __lma_ramfuncs_end__ = .;
-    __rodata_start__ = .;
-    __rodata_end__ = .;
-  } > FLASH
+  } > FLASH :readonly
 
   .text :
   {
@@ -132,18 +191,18 @@ SECTIONS
 
     *(.rodata*)
     *(.eh_frame*)
-  } > FLASH
+  } > FLASH :text
 
   .ARM.extab :
   {
     *(.ARM.extab* .gnu.linkonce.armextab.*)
-  } > FLASH
+  } > FLASH :text
 
   __exidx_start = .;
   .ARM.exidx :
   {
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-  } > FLASH
+  } > FLASH :text
   __exidx_end = .;
 
   .copy.table :
@@ -163,7 +222,7 @@ SECTIONS
     */
 
     __copy_table_end__ = .;
-  } > FLASH
+  } > FLASH :tables
 
   .zero.table :
   {
@@ -176,13 +235,10 @@ SECTIONS
     */
 
     __zero_table_end__ = .;
-    __etext = .;
-  } > FLASH
+  } > FLASH :tables
 
   .data :
   {
-    . = ALIGN(4);
-    __data_start__ = .;
     *(vtable)
     *(SORT_BY_ALIGNMENT(.data*))
     . = ALIGN(4);
@@ -209,10 +265,21 @@ SECTIONS
 
     . = ALIGN(4);
     /* All data end */
-    __data_end__ = .;
 
-  } > RAM AT > FLASH
+  } > RAM AT > FLASH :ram_data
 
+  /* Values to support copying initialised values at startup */
+  __etext = LOADADDR(.data);
+  __data_start__ = ADDR(.data);
+  __data_end__ = ADDR(.data) + SIZEOF(.data);
+
+  ASSERT((__etext % 4) == 0, "Data section needs to be word-aligned in LMA")
+  ASSERT((__data_start__ % 4) == 0, "Data section needs to be word-aligned in VMA")
+  ASSERT((__data_end__ % 4) == 0, "Data section needs to be word-multiple sized")
+  /* Sets the difference between VMA and LMA to 0 for the next NOLOAD sections */
+  .empty :
+  {
+  } > FLASH :empty
 
 /* Calculate heap size based on RAM limits. */
 heap_limit = ORIGIN(RAM) + LENGTH(RAM);  /* End of RAM */
@@ -223,26 +290,24 @@ heap_size = heap_limit - __HeapBase;
     __HeapBase = .;
     . += heap_size;
     __end__ = .;
-    end = __end__;
     _end = __end__;
     KEEP(*(.memory_manager_heap*))
     __HeapLimit = ORIGIN(RAM) + LENGTH(RAM);
-  } > RAM
+  } > RAM :ram_post_data
 
-  __heap_size = __HeapLimit - __HeapBase;
   __ram_end__ = 0x20000004 + 0x3fffc;
   __main_flash_end__ = 0x8006000 + 0x178000;
 
    /* This is where we handle flash storage blocks. We use dummy sections for finding the configured
    * block sizes and then "place" them at the end of flash when the size is known. */
-  .internal_storage (DSECT) : {
+  .internal_storage (NOLOAD) : {
     KEEP(*(.internal_storage*))
-  } > FLASH
+  } > DUMMY :dummy_seg
 
 
-  .nvm (DSECT) : {
+  .nvm (NOLOAD) : {
     KEEP(*(.simee*))
-  } > FLASH
+  } > DUMMY :dummy_seg
 
   __ramfuncs_start__ = __vma_ramfuncs_start__;
   __ramfuncs_end__ = __vma_ramfuncs_end__;
@@ -254,8 +319,12 @@ heap_size = heap_limit - __HeapBase;
 
   linker_storage_begin = linker_storage_end - SIZEOF(.internal_storage);
   ASSERT((linker_storage_begin >= (__etext + SIZEOF(.data))), "FLASH memory overflowed !")
+  HIDDEN(memory_flash_end = 0x8006000 + 0x178000);
+  HIDDEN(physical_flash_end = 0x8000000 + 0x180000);
+  ASSERT( memory_flash_end <= physical_flash_end, "The template contribution to memory_flash_size exceeds the available flash size. Check your SLCC or SLCP file to review the flash size defined by memory_flash_size.")
 
 
-  app_flash_end = 0x8006000 + 0x178000;
+  HIDDEN(app_flash_end = 0x8006000 + 0x178000);
   ASSERT( (linker_nvm_begin + SIZEOF(.nvm)) <= app_flash_end, "NVM3 is excessing the flash size !")
+
 }

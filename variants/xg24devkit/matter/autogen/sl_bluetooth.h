@@ -34,6 +34,7 @@
 #include <stdbool.h>
 #include "sl_power_manager.h"
 #include "sl_bluetooth_config.h"
+#include "sl_bt_stack_init.h"
 #include "sl_bt_api.h"
 #define SL_BT_COMPONENT_ADVERTISERS 0
 

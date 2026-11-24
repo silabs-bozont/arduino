@@ -15,6 +15,8 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_INTERNAL_RUNTIME_SHAPE_H_
 #define TENSORFLOW_LITE_KERNELS_INTERNAL_RUNTIME_SHAPE_H_
 
+#include <cstring>
+
 #include "tensorflow/lite/kernels/internal/compatibility.h"
 
 namespace tflite {
@@ -61,6 +63,8 @@ class RuntimeShape {
 
   ~RuntimeShape() {}
 
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Warray-bounds"
   int32_t DimensionsCount() const { return size_; }
   int32_t Dims(int i) const {
     TFLITE_DCHECK_GE(i, 0);
@@ -72,6 +76,7 @@ class RuntimeShape {
     TFLITE_DCHECK_LT(i, size_);
     dims_[i] = val;
   }
+  #pragma GCC diagnostic pop
 
   static RuntimeShape ExtendedShape(int new_shape_size,
                                     const RuntimeShape& shape) {

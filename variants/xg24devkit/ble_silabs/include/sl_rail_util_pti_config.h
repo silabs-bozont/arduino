@@ -31,18 +31,16 @@
 #ifndef SL_RAIL_UTIL_PTI_CONFIG_H
 #define SL_RAIL_UTIL_PTI_CONFIG_H
 
-#include "rail_types.h"
-
 // <<< Use Configuration Wizard in Context Menu >>>
 // <h> PTI Configuration
 
 // <o SL_RAIL_UTIL_PTI_MODE> PTI mode
-// <RAIL_PTI_MODE_UART=> UART
-// <RAIL_PTI_MODE_UART_ONEWIRE=> UART onewire
-// <RAIL_PTI_MODE_SPI=> SPI
-// <RAIL_PTI_MODE_DISABLED=> Disabled
-// <i> Default: RAIL_PTI_MODE_UART
-#define SL_RAIL_UTIL_PTI_MODE           RAIL_PTI_MODE_UART
+// <SL_RAIL_PTI_MODE_UART=> UART
+// <SL_RAIL_PTI_MODE_UART_ONEWIRE=> UART onewire
+// <SL_RAIL_PTI_MODE_SPI=> SPI
+// <SL_RAIL_PTI_MODE_DISABLED=> Disabled
+// <i> Default: SL_RAIL_PTI_MODE_UART
+#define SL_RAIL_UTIL_PTI_MODE           SL_RAIL_PTI_MODE_UART
 
 // <o SL_RAIL_UTIL_PTI_BAUD_RATE_HZ> PTI Baud Rate (Hertz)
 // <147800-20000000:1>
@@ -55,19 +53,29 @@
 // <<< sl:start pin_tool >>>
 // <pti signal=DOUT,(DFRAME),(DCLK)> SL_RAIL_UTIL_PTI
 // $[PTI_SL_RAIL_UTIL_PTI]
+#ifndef SL_RAIL_UTIL_PTI_PERIPHERAL             
 #define SL_RAIL_UTIL_PTI_PERIPHERAL              PTI
+#endif
 
 // PTI DOUT on PC06
+#ifndef SL_RAIL_UTIL_PTI_DOUT_PORT              
 #define SL_RAIL_UTIL_PTI_DOUT_PORT               SL_GPIO_PORT_C
+#endif
+#ifndef SL_RAIL_UTIL_PTI_DOUT_PIN               
 #define SL_RAIL_UTIL_PTI_DOUT_PIN                6
+#endif
 
 // PTI DFRAME on PC07
+#ifndef SL_RAIL_UTIL_PTI_DFRAME_PORT            
 #define SL_RAIL_UTIL_PTI_DFRAME_PORT             SL_GPIO_PORT_C
+#endif
+#ifndef SL_RAIL_UTIL_PTI_DFRAME_PIN             
 #define SL_RAIL_UTIL_PTI_DFRAME_PIN              7
-
+#endif
 
 // [PTI_SL_RAIL_UTIL_PTI]$
 
 // <<< sl:end pin_tool >>>
 
 #endif // SL_RAIL_UTIL_PTI_CONFIG_H
+
