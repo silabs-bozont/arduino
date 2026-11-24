@@ -35,6 +35,8 @@
 #ifndef OPENTHREAD_PLATFORM_DNS_H_
 #define OPENTHREAD_PLATFORM_DNS_H_
 
+#include <stdbool.h>
+
 #include <openthread/instance.h>
 #include <openthread/message.h>
 
@@ -57,13 +59,30 @@ extern "C" {
 typedef struct otPlatDnsUpstreamQuery otPlatDnsUpstreamQuery;
 
 /**
+ * Indicates whether upstream DNS query functionality is available on the platform.
+ *
+ * This function allows the platform to inform the OpenThread stack if no upstream DNS server is
+ * available.
+ *
+ * This function is used to optimize query handling. If this function returns `false` (e.g., no upstream DNS server is
+ * currently available), one can avoid attempting an upstream resolution (which would likely time out) and instead
+ * immediately send an appropriate negative response (e.g., `SERVFAIL`) to the DNS client.
+ *
+ * @param[in] aInstance  The OpenThread instance.
+ *
+ * @retval TRUE   Upstream DNS query functionality is available.
+ * @retval FALSE  Upstream DNS query functionality is not available.
+ */
+bool otPlatDnsIsUpstreamQueryAvailable(otInstance *aInstance);
+
+/**
  * Starts an upstream query transaction.
  *
  * - In success case (and errors represented by DNS protocol messages), the platform is expected to call
  *   `otPlatDnsUpstreamQueryDone`.
- * - The OpenThread core may cancel a (possibly timeout) query transaction by calling
- *   `otPlatDnsCancelUpstreamQuery`, the platform must not call `otPlatDnsUpstreamQueryDone` on a
- *   cancelled transaction.
+ * - The OpenThread core may cancel a query transaction (possibly due to a timeout) by invoking
+ *   `otPlatDnsCancelUpstreamQuery()`. The platform MUST still call `otPlatDnsUpstreamQueryDone()` on a
+ *   cancelled transaction to release the transaction.
  *
  * @param[in] aInstance  The OpenThread instance structure.
  * @param[in] aTxn       A pointer to the opaque DNS query transaction object.
@@ -74,7 +93,7 @@ void otPlatDnsStartUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery *
 /**
  * Cancels a transaction of upstream query.
  *
- * The platform must call `otPlatDnsUpstreamQueryDone` to release the resources.
+ * The platform MUST call `otPlatDnsUpstreamQueryDone()` to release the transaction.
  *
  * @param[in] aInstance  The OpenThread instance structure.
  * @param[in] aTxn       A pointer to the opaque DNS query transaction object.
@@ -84,14 +103,14 @@ void otPlatDnsCancelUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery 
 /**
  * The platform calls this function to finish DNS query.
  *
- * The transaction will be released, so the platform must not call on the same transaction twice. This function passes
+ * The transaction will be released, so the platform MUST NOT call on the same transaction twice. This function passes
  * the ownership of `aResponse` to OpenThread stack.
  *
- * Platform can pass a nullptr to close a transaction without a response.
+ * Platform can pass NULL to close a transaction without a response.
  *
  * @param[in] aInstance  The OpenThread instance structure.
  * @param[in] aTxn       A pointer to the opaque DNS query transaction object.
- * @param[in] aResponse  A message buffer of the DNS response payload or `nullptr` to close a transaction without a
+ * @param[in] aResponse  A message buffer of the DNS response payload or NULL to close a transaction without a
  *                       response.
  */
 extern void otPlatDnsUpstreamQueryDone(otInstance *aInstance, otPlatDnsUpstreamQuery *aTxn, otMessage *aResponse);
@@ -104,4 +123,4 @@ extern void otPlatDnsUpstreamQueryDone(otInstance *aInstance, otPlatDnsUpstreamQ
 }
 #endif
 
-#endif
+#endif // OPENTHREAD_PLATFORM_DNS_H_

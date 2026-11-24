@@ -73,3 +73,4 @@ extern "C" {
 #endif
 
 #endif // SL_PWM_INIT_LED0_CONFIG_H
+

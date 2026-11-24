@@ -19,9 +19,9 @@
 // <h>Zigbee Network Steering configuration
 
 // <o SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_CHANNEL_MASK> Channel Mask (hex) <0-0xFFFFFFFF> <f.h>
-// <i> Default: 0x0318C800
+// <i> Default: 0x02108800
 // <i> The channels that the plugin will scan when forming and joining.
-#define SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_CHANNEL_MASK       0x0318C800
+#define SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_CHANNEL_MASK       0x02108800
 
 // <o SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_RADIO_TX_POWER> Radio output power <-8..20>
 // <i> Default: 3
@@ -53,11 +53,12 @@
 // <i> When enabled, network steering will attempt to join each network using the install code derived key, centralized key, and distributed key at the same time, rather than trying each key individually. Users that wish to prioritize joining using install code keys should not check this option.
 #define SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_TRY_ALL_KEYS   1
 
-// <q SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_ENABLE_AUTOSTART> Enable steering auto-start
+// <q SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_ENABLE_AUTOSTART> Enable steering auto-start. For zigbee_z3_light, this also controls whether the light will form its own network after failing to find a suitable network to join.
 // <i> Default: TRUE
-// <i> Provides a configuration for applications to control the behavior of sl_zigbee_af_network_steering_autostart.  That function will call sl_zigbee_af_network_steering_start when this configured enabled and do nothing if it is disabled.  Can be used for testing, which may need more predictability over when network steering is started to get more consistent results.
+// <i> Provides a configuration for applications to control whether network-steering should be started when the device has initialized. If the device had previously joined a network and is already online, steering is not started.
 #define SL_ZIGBEE_AF_PLUGIN_NETWORK_STEERING_ENABLE_AUTOSTART   1
 
 // </h>
 
 // <<< end of configuration section >>>
+

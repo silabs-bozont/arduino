@@ -2166,7 +2166,8 @@ thingplusmatter_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/thingplusmatter/thingplusmatter_ble_arduino.slcp",
-    "additional_files": []
+    "additional_files": ["slcp/thingplusmatter/sl_spidrv_eusart_thingplus1_config.h",
+                         "slcp/thingplusmatter/sl_iostream_eusart_thingplus1_config.h"]
 }
 
 thingplusmatter_ble_arduino_prebuilt_platform_config = {
@@ -2177,7 +2178,8 @@ thingplusmatter_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/thingplusmatter/thingplusmatter_ble_arduino.slcp",
-    "additional_files": []
+    "additional_files": ["slcp/thingplusmatter/sl_spidrv_eusart_thingplus1_config.h",
+                         "slcp/thingplusmatter/sl_iostream_eusart_thingplus1_config.h"]
 }
 
 thingplusmatter_ble_silabs_platform_config = {

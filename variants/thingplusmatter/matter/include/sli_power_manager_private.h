@@ -29,8 +29,10 @@
  ******************************************************************************/
 
 #include "sl_power_manager.h"
+#include "sli_power_manager_common_private.h"
 #include "sl_slist.h"
 #include "sl_code_classification.h"
+#include "em_device.h"
 
 #if defined(SL_COMPONENT_CATALOG_PRESENT)
 #include "sl_component_catalog.h"
@@ -48,6 +50,10 @@
 #include "sl_cycle_counter.h"
 #endif
 
+#if defined(SL_CATALOG_SYSTEMVIEW_TRACE_PRESENT) && defined(__GNUC__)
+#include "SEGGER_SYSVIEW.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -56,9 +62,11 @@ extern "C" {
  *******************************   DEFINES   ***********************************
  ******************************************************************************/
 
-#define SLI_POWER_MANAGER_EM_TABLE_SIZE  2
+#if defined(SL_CATALOG_SYSTEMVIEW_TRACE_PRESENT) && defined(__GNUC__)
+#define SLI_POWER_MANAGER_ENABLE_SYSTEMVIEW
+#define SLI_SYSTEMVIEW_MARKER_ID_SLEEP  0
+#endif
 
-#define SLI_POWER_MANAGER_EM4_ENTRY_WAIT_LOOPS 200
 /*******************************************************************************
  *****************************   DATA TYPES   *********************************
  ******************************************************************************/
@@ -106,12 +114,6 @@ uint32_t sli_power_manager_convert_delay_us_to_tick(uint32_t time_us);
  ******************************************************************************/
 uint32_t sli_power_manager_get_default_high_frequency_minimum_offtime(void);
 
-/*******************************************************************************
- * Restores the Low Frequency clocks according to which LF oscillators are used.
- ******************************************************************************/
-SL_CODE_CLASSIFY(SL_CODE_COMPONENT_POWER_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
-void sli_power_manager_low_frequency_restore(void);
-
 /***************************************************************************//**
  * Informs the power manager if the high accuracy/high frequency clock
  * is used, prior to scheduling an early clock restore.
@@ -121,14 +123,6 @@ void sli_power_manager_low_frequency_restore(void);
 SL_CODE_CLASSIFY(SL_CODE_COMPONENT_POWER_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
 bool sli_power_manager_is_high_freq_accuracy_clk_used(void);
 #endif
-
-/*******************************************************************************
- * Gets the delay associated the wake-up process from EM23.
- *
- * @return Delay for the complete wake-up process with full restore.
- ******************************************************************************/
-SL_CODE_CLASSIFY(SL_CODE_COMPONENT_POWER_MANAGER, SL_CODE_CLASS_TIME_CRITICAL)
-uint32_t sli_power_manager_get_wakeup_process_time_overhead(void);
 
 #if !defined(SL_CATALOG_POWER_MANAGER_NO_DEEPSLEEP_PRESENT)
 /*******************************************************************************

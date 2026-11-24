@@ -58,6 +58,7 @@ extern "C" {
 // ENUMS
 
 /// Oscillators
+#if !defined(DEVICE_CLOCK_INTERNAL_PRESENT)
 SL_ENUM(sl_oscillator_t) {
   SL_OSCILLATOR_FSRCO,      ///< FSRCO Oscillator
   SL_OSCILLATOR_HFRCODPLL,  ///< HFRCODPLL Oscillator
@@ -65,15 +66,18 @@ SL_ENUM(sl_oscillator_t) {
   SL_OSCILLATOR_HFRCOEM23,  ///< HFRCOEM23 Oscillator
   SL_OSCILLATOR_RFFPLL,     ///< RFFPLL Oscillator
   SL_OSCILLATOR_USBPLL,     ///< USBPLL Oscillator
-  SL_OSCILLATOR_SOCPLL,     ///< SOCPLL Oscillator
+  SL_OSCILLATOR_SOCPLL0,    ///< SOCPLL0 Oscillator
   SL_OSCILLATOR_LFXO,       ///< LFXO Oscillator
   SL_OSCILLATOR_LFRCO,      ///< LFRCO Oscillator
   SL_OSCILLATOR_ULFRCO,     ///< ULFRCO Oscillator
   SL_OSCILLATOR_CLKIN0,     ///< CLKIN0 Oscillator
-  SL_OSCILLATOR_FLPLL       ///< FLPLL Oscillator
+  SL_OSCILLATOR_FLPLL,      ///< FLPLL Oscillator
+  SL_OSCILLATOR_INVALID     ///< INVALID Oscillator
 };
+#endif
 
 /// Clock Branches
+#if !defined(DEVICE_CLOCK_INTERNAL_PRESENT)
 SL_ENUM(sl_clock_branch_t) {
   SL_CLOCK_BRANCH_SYSCLK,        ///< SYSCLK Clock Branch
   SL_CLOCK_BRANCH_HCLK,          ///< HCLK Clock Branch
@@ -97,6 +101,7 @@ SL_ENUM(sl_clock_branch_t) {
   SL_CLOCK_BRANCH_SYSRTCCLK,     ///< SYSRTCCLK Clock Branch
   SL_CLOCK_BRANCH_EUART0CLK,     ///< EUART0CLK Clock Branch
   SL_CLOCK_BRANCH_EUSART0CLK,    ///< EUSART0CLK Clock Branch
+  SL_CLOCK_BRANCH_EUSART1CLK,    ///< EUSART1CLK Clock Branch
   SL_CLOCK_BRANCH_DPLLREFCLK,    ///< DPLLREFCLK Clock Branch
   SL_CLOCK_BRANCH_I2C0CLK,       ///< I2C0CLK Clock Branch
   SL_CLOCK_BRANCH_LCDCLK,        ///< LCDCLK Clock Branch
@@ -109,8 +114,17 @@ SL_ENUM(sl_clock_branch_t) {
   SL_CLOCK_BRANCH_VDAC1CLK,      ///< VDAC1CLK Clock Branch
   SL_CLOCK_BRANCH_USB0CLK,       ///< USB0CLK Clock Branch
   SL_CLOCK_BRANCH_FLPLLREFCLK,   ///< FLPLLREFCLK Clock Branch
+  SL_CLOCK_BRANCH_PDM0CLK,       ///< PDM0CLK Clock Branch
+  SL_CLOCK_BRANCH_CAN0CLK,       ///< CAN0CLK Clock Branch
+  SL_CLOCK_BRANCH_CAN1CLK,       ///< CAN1CLK Clock Branch
+  SL_CLOCK_BRANCH_HCLKDIVN,      ///< HCLKDIVN Clock Branch
+  SL_CLOCK_BRANCH_CPUCLK,        ///< CPUCLK Clock Branch
+  SL_CLOCK_BRANCH_ADC0CLK,       ///< ADC0CLK Clock Branch
+  SL_CLOCK_BRANCH_ADC1CLK,       ///< ADC1CLK Clock Branch
+  SL_CLOCK_BRANCH_LEDSINK0CLK,   ///< LEDSINK0CLK Clock Branch
   SL_CLOCK_BRANCH_INVALID        ///< INVALID Clock Branch
 };
+#endif
 
 // ----------------------------------------------------------------------------
 // DEFINES
@@ -164,11 +178,17 @@ SL_ENUM(sl_clock_branch_t) {
 /// Define for ADC0 peripheral bus clock pointer.
 #define SL_BUS_CLOCK_ADC0 (&SL_BUS_CLOCK_ADC0_VALUE)
 
+/// Define for ADC1 peripheral bus clock pointer.
+#define SL_BUS_CLOCK_ADC1 (&SL_BUS_CLOCK_ADC1_VALUE)
+
 /// Define for AGC peripheral bus clock pointer.
 #define SL_BUS_CLOCK_AGC (&SL_BUS_CLOCK_AGC_VALUE)
 
 /// Define for AMUXCP0 peripheral bus clock pointer.
 #define SL_BUS_CLOCK_AMUXCP0 (&SL_BUS_CLOCK_AMUXCP0_VALUE)
+
+/// Define for AMUXCP1 peripheral bus clock pointer.
+#define SL_BUS_CLOCK_AMUXCP1 (&SL_BUS_CLOCK_AMUXCP1_VALUE)
 
 /// Define for BUFC peripheral bus clock pointer.
 #define SL_BUS_CLOCK_BUFC (&SL_BUS_CLOCK_BUFC_VALUE)
@@ -178,6 +198,12 @@ SL_ENUM(sl_clock_branch_t) {
 
 /// Define for BURTC peripheral bus clock pointer.
 #define SL_BUS_CLOCK_BURTC (&SL_BUS_CLOCK_BURTC_VALUE)
+
+/// Define for CAN0 peripheral bus clock pointer.
+#define SL_BUS_CLOCK_CAN0 (&SL_BUS_CLOCK_CAN0_VALUE)
+
+/// Define for CAN1 peripheral bus clock pointer.
+#define SL_BUS_CLOCK_CAN1 (&SL_BUS_CLOCK_CAN1_VALUE)
 
 /// Define for CRYPTOACC peripheral bus clock pointer.
 #define SL_BUS_CLOCK_CRYPTOACC (&SL_BUS_CLOCK_CRYPTOACC_VALUE)
@@ -272,6 +298,9 @@ SL_ENUM(sl_clock_branch_t) {
 /// Define for KSU peripheral bus clock pointer.
 #define SL_BUS_CLOCK_KSU (&SL_BUS_CLOCK_KSU_VALUE)
 
+/// Define for L1ICACHE0 peripheral bus clock pointer.
+#define SL_BUS_CLOCK_L1ICACHE0 (&SL_BUS_CLOCK_L1ICACHE0_VALUE)
+
 /// Define for L2ICACHE0 peripheral bus clock pointer.
 #define SL_BUS_CLOCK_L2ICACHE0 (&SL_BUS_CLOCK_L2ICACHE0_VALUE)
 
@@ -290,8 +319,14 @@ SL_ENUM(sl_clock_branch_t) {
 /// Define for LESENSE peripheral bus clock pointer.
 #define SL_BUS_CLOCK_LESENSE (&SL_BUS_CLOCK_LESENSE_VALUE)
 
+/// Define for LEDSINK peripheral bus clock pointer.
+#define SL_BUS_CLOCK_LEDSINK0 (&SL_BUS_CLOCK_LEDSINK0_VALUE)
+
 /// Define for LETIMER0 peripheral bus clock pointer.
 #define SL_BUS_CLOCK_LETIMER0 (&SL_BUS_CLOCK_LETIMER0_VALUE)
+
+/// Define for LETIMER1 peripheral bus clock pointer.
+#define SL_BUS_CLOCK_LETIMER1 (&SL_BUS_CLOCK_LETIMER1_VALUE)
 
 /// Define for LFRCO peripheral bus clock pointer.
 #define SL_BUS_CLOCK_LFRCO (&SL_BUS_CLOCK_LFRCO_VALUE)
@@ -325,6 +360,9 @@ SL_ENUM(sl_clock_branch_t) {
 
 /// Define for PIXELRZ1 peripheral bus clock pointer.
 #define SL_BUS_CLOCK_PIXELRZ1 (&SL_BUS_CLOCK_PIXELRZ1_VALUE)
+
+/// Define for PORTAL peripheral bus clock pointer.
+#define SL_BUS_CLOCK_PORTAL (&SL_BUS_CLOCK_PORTAL_VALUE)
 
 /// Define for PRORTC peripheral bus clock pointer.
 #define SL_BUS_CLOCK_PRORTC (&SL_BUS_CLOCK_PRORTC_VALUE)
@@ -492,11 +530,17 @@ extern const uint32_t SL_BUS_CLOCK_ACMP1_VALUE;
 // External declaration for ADC0 peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_ADC0_VALUE;
 
+// External declaration for ADC1 peripheral bus clock value.
+extern const uint32_t SL_BUS_CLOCK_ADC1_VALUE;
+
 // External declaration for AGC peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_AGC_VALUE;
 
 // External declaration for AMUXCP0 peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_AMUXCP0_VALUE;
+
+// External declaration for AMUXCP1 peripheral bus clock value.
+extern const uint32_t SL_BUS_CLOCK_AMUXCP1_VALUE;
 
 // External declaration for BUFC peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_BUFC_VALUE;
@@ -506,6 +550,12 @@ extern const uint32_t SL_BUS_CLOCK_BURAM_VALUE;
 
 // External declaration for BURTC peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_BURTC_VALUE;
+
+// External declaration for CAN0 peripheral bus clock value.
+extern const uint32_t SL_BUS_CLOCK_CAN0_VALUE;
+
+// External declaration for CAN1 peripheral bus clock value.
+extern const uint32_t SL_BUS_CLOCK_CAN1_VALUE;
 
 // External declaration for CRYPTOACC peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_CRYPTOACC_VALUE;
@@ -600,6 +650,9 @@ extern const uint32_t SL_BUS_CLOCK_KEYSCAN_VALUE;
 // External declaration for KSU peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_KSU_VALUE;
 
+// External declaration for L1ICACHE0 peripheral bus clock value.
+extern const uint32_t SL_BUS_CLOCK_L1ICACHE0_VALUE;
+
 // External declaration for L2ICACHE0 peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_L2ICACHE0_VALUE;
 
@@ -618,8 +671,14 @@ extern const uint32_t SL_BUS_CLOCK_LEDDRV0_VALUE;
 // External declaration for LESENSE peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_LESENSE_VALUE;
 
+// External declaration for LEDSINK peripheral bus clock value.
+extern const uint32_t SL_BUS_CLOCK_LEDSINK0_VALUE;
+
 // External declaration for LETIMER0 peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_LETIMER0_VALUE;
+
+// External declaration for LETIMER1 peripheral bus clock value.
+extern const uint32_t SL_BUS_CLOCK_LETIMER1_VALUE;
 
 // External declaration for LFRCO peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_LFRCO_VALUE;
@@ -653,6 +712,9 @@ extern const uint32_t SL_BUS_CLOCK_PIXELRZ0_VALUE;
 
 // External declaration for PIXELRZ1 peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_PIXELRZ1_VALUE;
+
+// External declaration for PORTAL peripheral bus clock value.
+extern const uint32_t SL_BUS_CLOCK_PORTAL_VALUE;
 
 // External declaration for PRORTC peripheral bus clock value.
 extern const uint32_t SL_BUS_CLOCK_PRORTC_VALUE;

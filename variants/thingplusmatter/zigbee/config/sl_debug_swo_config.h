@@ -35,6 +35,10 @@
 
 // <h>SWO Configuration
 
+// <q SL_DEBUG_SWO_ENABLE> Enable Debug SWO
+// <i> Default: 1
+#define SL_DEBUG_SWO_ENABLE                     1
+
 // <o SL_DEBUG_SWO_FREQ> SWO Frequency
 // <i> Must be 875 kHz for communication with Silicon Labs debuggers
 // <i> Default: 875000
@@ -97,3 +101,4 @@
 // <<< sl:end pin_tool >>>
 
 #endif // SL_DEBUG_SWO_CONFIG_H
+

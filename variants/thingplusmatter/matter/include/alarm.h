@@ -81,6 +81,6 @@ bool efr32AlarmIsRunning(otInstance *aInstance);
  * @param[in]  aInstance  The OpenThread instance structure.
  *
  */
-void efr32AlarmProcess(otInstance *aInstance);
+void efr32AlarmProcess(const otInstance *aInstance);
 
 #endif // _ALARM_H

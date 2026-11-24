@@ -46,6 +46,7 @@
 #ifndef OPENTHREAD_PLATFORM_MULTIPAN_H_
 #define OPENTHREAD_PLATFORM_MULTIPAN_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <openthread/error.h>
@@ -115,7 +116,7 @@ extern void otPlatMultipanSwitchoverDone(otInstance *aInstance, bool aSuccess);
  *
  * @param[in] aIid  The IID of the interface.
  *
- * @retval  Instance pointer if aIid is has an instance assigned, nullptr otherwise.
+ * @retval  Instance pointer if aIid is has an instance assigned, NULL otherwise.
  */
 otInstance *otPlatMultipanIidToInstance(uint8_t aIid);
 

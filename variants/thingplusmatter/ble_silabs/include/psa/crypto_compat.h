@@ -18,7 +18,7 @@
 #if defined(SL_TRUSTZONE_NONSECURE)
 
 /* The NonSecure app must use the crypto_compat.h from the trusted-firmware-m repo. */
-#include "../../trusted-firmware-m/interface/include/psa/crypto_compat.h"
+#include "interface/include/psa/crypto_compat.h"
 
 #else /* SL_TRUSTZONE_NONSECURE */
 

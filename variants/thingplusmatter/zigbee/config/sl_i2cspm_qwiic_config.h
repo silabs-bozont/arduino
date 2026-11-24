@@ -69,3 +69,4 @@
 // <<< sl:end pin_tool >>>
 
 #endif // SL_I2CSPM_QWIIC_CONFIG_H
+

@@ -166,7 +166,7 @@ otError otPlatRadioExtensionSetRxAntennaMode(uint8_t aMode);
  *
  * @param[out]  aActivePhy  A pointer to the location where the current phy
  *                          state will be returned. Phy states are defined by
- *                          the RAIL `sl_rail_util_ieee802154_radio_config_t`
+ *                          the RAIL `sl_rail_ieee802154_phy_t`
  *                          enumeration.
  *
  * @return Error code indicating success of the function call.
@@ -291,7 +291,7 @@ otError otPlatRadioExtensionSetGpioInputOverride(uint8_t aGpioIndex, bool aEnabl
  *
  * @param[out]  aActivePhy  A pointer to the location where the current phy
  *                          state will be returned. Phy states are defined by
- *                          the RAIL `sl_rail_util_ieee802154_radio_config_t`
+ *                          the RAIL `sl_rail_ieee802154_phy_t`
  *                          enumeration.
  *
  * @return Error code indicating success of the function call.
@@ -577,11 +577,11 @@ otError otPlatRadioExtensionSetRadioHoldoff(bool aEnabled);
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 /**
- * Get the PTI (Packet Trace Information) radio config.
+ * Get the IEEE802.15.4 PHY identifier
  *
  * Requires the `ot_test_custom_cli` component.
  *
- * @sa  RAIL API: **RAIL_IEEE802154_GetPtiRadioConfig()**
+ * @sa  RAIL API: **sl_rail_ieee802154_get_phy_id()**
  *
  * @param[out]  aRadioConfig  A pointer to the location where the PTI radio
  *                            config will be returned.  The value is defined
@@ -603,10 +603,10 @@ otError otPlatRadioExtensionGetPtiRadioConfig(uint16_t *aRadioConfig);
  *
  * Requires the `ot_test_custom_cli` component.
  *
- * @sa  RAIL API: **RAIL_IEEE802154_ConfigCcaMode()**
+ * @sa  RAIL API: **sl_rail_ieee802154_config_cca_mode()**
  *
  * @param[in]  aMode  The CCA mode to set. Modes are defined by the RAIL
- *                    `RAIL_IEEE802154_CcaMode_t` enumeration.
+ *                    `sl_rail_ieee802154_cca_mode_t` enumeration.
  *
  * @return Error code indicating success of the function call.
  *
@@ -685,6 +685,27 @@ otError otPlatRadioExtensionClearRadioCounters(void);
  *
  */
 
+/**
+ * Get the current used heap size for memory usage extension.
+ *
+ * @param[out] aUsedHeap  Pointer to store the current used heap size.
+ *
+ * @retval OT_ERROR_NONE         Successfully obtained the value.
+ * @retval OT_ERROR_INVALID_ARGS aUsedHeap is NULL.
+ * @retval OT_ERROR_NOT_FOUND    Not implemented or not available.
+ */
+otError otPlatRadioExtensionGetUsedHeap(uint32_t *aUsedHeap);
+
+/**
+ * Get the current heap high watermark for memory usage extension.
+ *
+ * @param[out] aheapHighWatermark  Pointer to store the current heap high watermark.
+ *
+ * @retval OT_ERROR_NONE         Successfully obtained the value.
+ * @retval OT_ERROR_INVALID_ARGS aheapHighWatermark is NULL.
+ * @retval OT_ERROR_NOT_FOUND    Not implemented or not available.
+ */
+otError otPlatRadioExtensionGetHighWaterMark(uint32_t *aheapHighWatermark);
 #ifdef __cplusplus
 }
 #endif

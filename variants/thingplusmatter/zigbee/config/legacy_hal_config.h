@@ -45,3 +45,4 @@
 #endif /* LEGACY_HAL_CONFIG_H */
 
 // <<< end of configuration section >>>
+

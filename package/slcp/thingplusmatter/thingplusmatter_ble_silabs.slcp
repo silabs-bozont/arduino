@@ -1,6 +1,6 @@
 project_name: bt_arduino_gsdk_config_sparkfunthingplus
 package: Bluetooth
-label: Bluetooth - Arduino GSDK config for the SparkFun Thing Plus Matter (Based on SoC Empty)
+label: Bluetooth Host - Arduino GSDK config for the SparkFun Thing Plus Matter (Based on SoC Empty)
 description: >
   This slcp can be used in place of SoC Empty to generate the
   SDK files needed for the Arduino Core.
@@ -32,7 +32,7 @@ component:
   - id: component_catalog
   - id: mpu
   - id: bt_post_build
-  - id: sl_system
+  - id: sl_main
   - id: clock_manager
   - id: device_init
   - id: bluetooth_feature_dynamic_gattdb
@@ -64,7 +64,6 @@ component:
   - id: memory_manager_cpp
 
 source:
-  - path: main.c
   - path: app.c
 
 include:

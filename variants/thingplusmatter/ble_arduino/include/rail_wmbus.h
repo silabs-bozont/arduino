@@ -37,21 +37,37 @@
 extern "C" {
 #endif
 
+///
 /// @addtogroup WMBUS Wireless M-Bus
 /// @ingroup Protocol_Specific
 /// @brief Wireless M-Bus (WMBUS) configuration
 /// @{
+///
 
 /**
  * @enum RAIL_WMBUS_Phy_t
  * @brief The RX variant of the WMBUS T+C PHY.
+ *
+ * @deprecated RAIL 2.x synonym of \ref sl_rail_wmbus_phy_t.
  */
 RAIL_ENUM(RAIL_WMBUS_Phy_t) {
-  /** \ref RAIL_RxPacketDetails_t::subPhyId indicating a mode T frame A packet */
+  /**
+   * \ref RAIL_RxPacketDetails_t::subPhyId indicating a mode T frame A packet.
+   *
+   * @deprecated RAIL 2.x synonym of \ref SL_RAIL_WMBUS_MODE_T_FRAME_A.
+   */
   RAIL_WMBUS_ModeTFrameA = 0U,
-  /** \ref RAIL_RxPacketDetails_t::subPhyId indicating a mode C frame A packet */
+  /**
+   * \ref RAIL_RxPacketDetails_t::subPhyId indicating a mode C frame A packet.
+   *
+   * @deprecated RAIL 2.x synonym of \ref SL_RAIL_WMBUS_MODE_C_FRAME_A.
+   */
   RAIL_WMBUS_ModeCFrameA = 2U,
-  /** \ref RAIL_RxPacketDetails_t::subPhyId indicating a mode C frame B packet */
+  /**
+   * \ref RAIL_RxPacketDetails_t::subPhyId indicating a mode C frame B packet.
+   *
+   * @deprecated RAIL 2.x synonym of \ref SL_RAIL_WMBUS_MODE_C_FRAME_B.
+   */
   RAIL_WMBUS_ModeCFrameB = 3U,
 };
 
@@ -61,6 +77,8 @@ RAIL_ENUM(RAIL_WMBUS_Phy_t) {
 #define RAIL_WMBUS_ModeCFrameA ((RAIL_WMBUS_Phy_t) RAIL_WMBUS_ModeCFrameA)
 #define RAIL_WMBUS_ModeCFrameB ((RAIL_WMBUS_Phy_t) RAIL_WMBUS_ModeCFrameB)
 #endif //DOXYGEN_SHOULD_SKIP_THIS
+
+#ifndef SLI_LIBRAIL_ALIAS
 
 /**
  * Configure WMBUS simultaneous M2O RX of T and C modes feature.
@@ -78,9 +96,13 @@ RAIL_ENUM(RAIL_WMBUS_Phy_t) {
  * The preprocessor symbol \ref RAIL_WMBUS_SUPPORTS_SIMULTANEOUS_T_C_RX and the
  * runtime function \ref RAIL_WMBUS_SupportsSimultaneousTCRx() may be used to
  * test for support.
+ *
+ * @deprecated RAIL 2.x synonym of \ref sl_rail_wmbus_config().
  */
 RAIL_Status_t RAIL_WMBUS_Config(RAIL_Handle_t railHandle,
                                 bool enableSimultaneousTCRx);
+
+#endif//SLI_LIBRAIL_ALIAS
 
 /// @} // End of group WMBUS
 

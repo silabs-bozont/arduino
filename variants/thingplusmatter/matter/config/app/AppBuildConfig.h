@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,14 +37,20 @@
 // <q CHIP_CONFIG_SUBSCRIPTION_TIMEOUT_RESUMPTION> Matter Subscription Timeout Resumption
 #define CHIP_CONFIG_SUBSCRIPTION_TIMEOUT_RESUMPTION 1
 
-// <i> Default: 1
+// <i> Default: 0
 // <q CHIP_CONFIG_ENABLE_READ_CLIENT> Read Client
-#define CHIP_CONFIG_ENABLE_READ_CLIENT 1
+#ifndef CHIP_CONFIG_ENABLE_READ_CLIENT
+#define CHIP_CONFIG_ENABLE_READ_CLIENT 0
+#endif
 
 // <i> Default: 1
 // <q CHIP_CONFIG_ENABLE_SESSION_RESUMPTION> Session Resumption
 #define CHIP_CONFIG_ENABLE_SESSION_RESUMPTION 1
 
+// <i> Default: 0
+// <q CHIP_CONFIG_ENABLE_GROUPCAST> Groupcast
+#define CHIP_CONFIG_ENABLE_GROUPCAST 0
 // <<< end of configuration section >>>
 
 #endif  // APP_APPBUILDCONFIG_H_
+

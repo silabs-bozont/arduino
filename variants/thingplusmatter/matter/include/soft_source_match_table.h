@@ -37,9 +37,6 @@
 #define SOFT_SOURCE_MATCH_TABLE_H
 
 #include "openthread-core-config.h"
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-#include "spinel/openthread-spinel-config.h"
-#endif
 #include <openthread/platform/radio.h>
 
 #include <stdint.h>
@@ -49,42 +46,28 @@ extern "C" {
 #endif
 
 #ifndef RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-#define RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM OPENTHREAD_SPINEL_CONFIG_MAX_SRC_MATCH_ENTRIES
-#else
-#define RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
-#endif
+#define RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM RADIO_CONFIG_MAX_SRC_MATCH_ENTRIES
 #endif
 
 #ifndef RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-#define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM OPENTHREAD_SPINEL_CONFIG_MAX_SRC_MATCH_ENTRIES
-#else
-#define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
-#endif
+#define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM RADIO_CONFIG_MAX_SRC_MATCH_ENTRIES
 #endif
 
 #ifndef RADIO_CONFIG_SRC_MATCH_PANID_NUM
-#if OPENTHREAD_CONFIG_MULTIPAN_RCP_ENABLE
-#define RADIO_CONFIG_SRC_MATCH_PANID_NUM 3
-#else
-#define RADIO_CONFIG_SRC_MATCH_PANID_NUM 1
-#endif
+#define RADIO_CONFIG_SRC_MATCH_PANID_NUM RADIO_INTERFACE_COUNT
 #endif
 
 #if RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM || RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM
-void utilsSoftSrcMatchSetPanId(uint8_t iid, uint16_t aPanId);
+void utilsSoftSrcMatchSetPanId(otInstance *aInstance, uint16_t aPanId);
 #endif // RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM || RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM
 
 #if RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM
-int16_t utilsSoftSrcMatchShortFindEntry(uint8_t iid, uint16_t aShortAddress);
+int16_t utilsSoftSrcMatchShortFindEntry(otInstance *aInstance, uint16_t aShortAddress);
 #endif // RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM
 
 #if RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM
-int16_t utilsSoftSrcMatchExtFindEntry(uint8_t iid, const otExtAddress *aExtAddress);
+int16_t utilsSoftSrcMatchExtFindEntry(otInstance *aInstance, const otExtAddress *aExtAddress);
 #endif // RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM
-
-uint8_t utilsSoftSrcMatchFindIidFromPanId(otPanId panId);
 
 #ifdef __cplusplus
 } // extern "C"

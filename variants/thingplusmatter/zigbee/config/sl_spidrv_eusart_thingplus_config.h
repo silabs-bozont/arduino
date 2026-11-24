@@ -97,3 +97,4 @@
 // <<< sl:end pin_tool >>>
 
 #endif // SL_SPIDRV_EUSART_THINGPLUS_CONFIG_HEUSART_
+
