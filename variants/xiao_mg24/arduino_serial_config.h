@@ -39,6 +39,10 @@ extern "C" {
   #include "em_eusart.h"
   #include "sl_iostream_handles.h"
   #include "sl_iostream_uart.h"
+  #include "sl_status.h"
+
+  sl_status_t sl_iostream_usart_init_xiao_mg24(void);
+  sl_status_t sl_iostream_eusart_init_xiao_mg24_1(void);
 }
 
 #define SL_SERIAL_PERIPHERAL SL_IOSTREAM_USART_XIAO_MG24_PERIPHERAL

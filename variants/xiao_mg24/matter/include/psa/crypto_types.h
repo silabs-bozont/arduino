@@ -21,7 +21,7 @@
 #if defined(SL_TRUSTZONE_NONSECURE)
 
 /* The NonSecure app must use the crypto_types.h from the trusted-firmware-m repo. */
-#include "../../trusted-firmware-m/interface/include/psa/crypto_types.h"
+#include "interface/include/psa/crypto_types.h"
 
 #else /* SL_TRUSTZONE_NONSECURE */
 

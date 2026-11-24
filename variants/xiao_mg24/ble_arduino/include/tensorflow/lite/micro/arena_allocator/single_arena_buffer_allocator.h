@@ -119,7 +119,7 @@ class SingleArenaBufferAllocator : public INonPersistentBufferAllocator,
   // Returns a pointer to the current end of the tail buffer.
   uint8_t* tail() const;
 
- private:
+ public:
   size_t GetBufferSize() const;
   uint8_t* buffer_head_;
   uint8_t* buffer_tail_;

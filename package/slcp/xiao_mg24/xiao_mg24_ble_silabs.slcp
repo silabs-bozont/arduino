@@ -1,6 +1,6 @@
 project_name: bt_arduino_gsdk_config_xiao_mg24
 package: Bluetooth
-label: Bluetooth Host - Arduino GSDK config for the Seeed Studio Xiao MG24 (Based on SoC Empty)
+label: Bluetooth Host - Arduino GSDK config for the Seeed Studio XIAO MG24 (Based on SoC Empty)
 description: >
   This slcp can be used in place of SoC Empty to generate the
   SDK files needed for the Arduino Core.
@@ -17,7 +17,7 @@ filter:
 
 sdk_extension:
   - id: aiml
-    version: 2.0.0
+    version: 3.0.2
 
 component:
   - id: bluetooth_stack
@@ -36,7 +36,7 @@ component:
   - id: component_catalog
   - id: mpu
   - id: bt_post_build
-  - id: sl_system
+  - id: sl_main
   - id: clock_manager
   - id: device_init
   - id: bluetooth_feature_dynamic_gattdb
@@ -76,7 +76,6 @@ component:
     from: aiml
 
 source:
-  - path: main.c
   - path: app.c
 
 include:
@@ -90,11 +89,6 @@ config_file:
       component: iostream_usart
       instance: xiao_mg24
       file_id: iostream_usart_config
-  - path: sl_iostream_eusart_xiao_mg24_1_config.h
-    override:
-      component: iostream_eusart
-      instance: xiao_mg24_1
-      file_id: iostream_eusart_config
   - path: sl_spidrv_eusart_xiao_mg24_config.h
     override:
       component: spidrv_eusart
@@ -105,6 +99,11 @@ config_file:
       component: spidrv_eusart
       instance: xiao_mg24_1
       file_id: spidrv_eusart_config
+  - path: sl_iostream_eusart_xiao_mg24_1_config.h
+    override:
+      component: iostream_eusart
+      instance: xiao_mg24_1
+      file_id: iostream_eusart_config
   - path: sl_i2cspm_xiao_mg24_config.h
     override:
       component: i2cspm
@@ -129,7 +128,9 @@ configuration:
     value: "0"
     condition:
       - psa_crypto
-  - name: SL_SPIDRV_XIAO_MG24_CS_CONTROL
+  - name: SL_SPIDRV_EUSART_XIAO_MG24_CS_CONTROL
+    value: "spidrvCsControlApplication"
+  - name: SL_SPIDRV_EUSART_XIAO_MG24_1_CS_CONTROL
     value: "spidrvCsControlApplication"
   - name: SL_TFLITE_MICRO_ARENA_SIZE
     value: "8192"

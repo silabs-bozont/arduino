@@ -1,6 +1,6 @@
 {
   "fileFormat": 2,
-  "featureLevel": 107,
+  "featureLevel": 110,
   "creator": "zap",
   "keyValuePairs": [
     {
@@ -18,16 +18,16 @@
   ],
   "package": [
     {
-      "pathRelativity": "relativeToZap",
-      "path": "../../../../../../../../../../../siliconlabs/sisdk_2024.12.1_matter_2.5.1_arduino_fork/app/zcl/zcl-zap.json",
+      "pathRelativity": "absolute",
+      "path": "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/zigbee/app/zcl/zcl-zap.json",
       "type": "zcl-properties",
       "category": "zigbee",
       "version": 1,
       "description": "Zigbee Silabs ZCL data"
     },
     {
-      "pathRelativity": "relativeToZap",
-      "path": "../../../../../../../../../../../siliconlabs/sisdk_2024.12.1_matter_2.5.1_arduino_fork/protocol/zigbee/app/framework/gen-template/gen-templates.json",
+      "pathRelativity": "absolute",
+      "path": "/Users/tajozsi/.silabs/slt/installs/conan/p/simplf21f16a407b39/p/zigbee/app/framework/gen-template/gen-templates.json",
       "type": "gen-templates-json",
       "category": "zigbee",
       "version": "zigbee-v0"

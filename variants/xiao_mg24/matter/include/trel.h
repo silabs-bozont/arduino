@@ -31,8 +31,8 @@
  *   This file includes compile-time configurations for TREL.
  */
 
-#ifndef CONFIG_TREL_H_
-#define CONFIG_TREL_H_
+#ifndef OT_CORE_CONFIG_TREL_H_
+#define OT_CORE_CONFIG_TREL_H_
 
 /**
  * @addtogroup config-trel
@@ -44,13 +44,64 @@
  */
 
 /**
+ * @def OPENTHREAD_CONFIG_TREL_MANAGE_DNSSD_ENABLE
+ *
+ * Define as 1 to have the OpenThread core TREL implementation directly manage mDNS (DNS-SD) service registration
+ * and peer discovery (browse and service/address resolution of TREL service for TREL peer discovery).
+ *
+ * When this feature is disabled, the mDNS (DNS-SD) functions are delegated to the platform layer. More details are
+ * provided in the `platform/trel.h` API documentation.
+ */
+#ifndef OPENTHREAD_CONFIG_TREL_MANAGE_DNSSD_ENABLE
+#define OPENTHREAD_CONFIG_TREL_MANAGE_DNSSD_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TREL_DELEGATE_INFRA_TO_HOST_ENABLE
+ *
+ * Define as 1 when TREL runs on a device without a local infrastructure interface and delegates
+ * infrastructure operations to the connected host.
+ *
+ * This applies to NCP (Network Co-Processor) builds where the full Thread stack runs on the
+ * co-processor and the infrastructure interface is provided by the host over Spinel.
+ */
+#ifndef OPENTHREAD_CONFIG_TREL_DELEGATE_INFRA_TO_HOST_ENABLE
+#define OPENTHREAD_CONFIG_TREL_DELEGATE_INFRA_TO_HOST_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TREL_DNSSD_DISCOVERY_STABILIZATION_ENABLE
+ *
+ * Define as 1 to enable extra handling for platform DNS-SD browse/remove races when discovering TREL peers:
+ * debouncing browse REMOVE events, resolve epoch tracking to ignore stale resolver callbacks, and soft refresh
+ * on re-discovery.
+ *
+ * Requires `OPENTHREAD_CONFIG_TREL_MANAGE_DNSSD_ENABLE`.
+ *
+ * Intended for NCP architectures where DNS-SD is proxied through a host (e.g., OTBR). Defaults to disabled so
+ * POSIX/RCP builds retain upstream discovery behavior.
+ */
+#ifndef OPENTHREAD_CONFIG_TREL_DNSSD_DISCOVERY_STABILIZATION_ENABLE
+#define OPENTHREAD_CONFIG_TREL_DNSSD_DISCOVERY_STABILIZATION_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TREL_USE_HEAP_ENABLE
+ *
+ * Define as 1 to allow TREL modules to use heap allocated objects (e.g. for the TREL peer table).
+ */
+#ifndef OPENTHREAD_CONFIG_TREL_USE_HEAP_ENABLE
+#define OPENTHREAD_CONFIG_TREL_USE_HEAP_ENABLE OPENTHREAD_CONFIG_TREL_MANAGE_DNSSD_ENABLE
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_TREL_PEER_TABLE_SIZE
  *
- * Specifies the capacity of TREL peer table. Only non-zero value
- * will be directly used for setting the TREL peer table capacity.
- * Zero value lets the size to be determined by the OT stack itself
- * which is derived based on other configurations such as a child
- * table size, neighbor table size, etc.
+ * Specifies the capacity of TREL peer table. Only non-zero value will be directly used for setting the TREL peer table
+ * capacity. Zero value lets the size to be determined by the OT stack itself which is derived based on other
+ * configurations such as a child table size, neighbor table size, etc.
+ *
+ * Applicable when `OPENTHREAD_CONFIG_TREL_USE_HEAP_ENABLE` is not used.
  */
 #ifndef OPENTHREAD_CONFIG_TREL_PEER_TABLE_SIZE
 #define OPENTHREAD_CONFIG_TREL_PEER_TABLE_SIZE (0)
@@ -60,4 +111,4 @@
  * @}
  */
 
-#endif // CONFIG_TREL_H_
+#endif // OT_CORE_CONFIG_TREL_H_

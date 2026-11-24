@@ -23,13 +23,30 @@
 
 // ---- Lighting Example App Config ----
 
-#define APP_TASK_NAME "Lit"
-
-#define BLE_DEV_NAME "Arduino Matter Device"
+#ifdef SL_CATALOG_ZIGBEE_ZCL_FRAMEWORK_CORE_PRESENT
+#include "sl_cmp_config.h"
+#ifdef SL_MATTER_ZIGBEE_CMP
+#include "ZigbeeCMPConfig.h"
+#elif defined(SL_MATTER_ZIGBEE_SEQUENTIAL)
+#include "ZigbeeSequentialConfig.h"
+#endif // SL_MATTER_ZIGBEE_CMP
+#else
+#define APP_TASK_NAME "Light"
+#define BLE_DEV_NAME "Arduino Matter"
 
 // Time it takes in ms for the simulated actuator to move from one
 // state to another.
-#define ACTUATOR_MOVEMENT_PERIOS_MS 10
+#define ACTUATOR_MOVEMENT_PERIOD_MS 10
+
+#define LIGHT_ENDPOINT 1
+
+// Application-defined error codes in the CHIP_ERROR space.
+#define APP_ERROR_EVENT_QUEUE_FAILED CHIP_APPLICATION_ERROR(0x01)
+#define APP_ERROR_CREATE_TASK_FAILED CHIP_APPLICATION_ERROR(0x02)
+#define APP_ERROR_UNHANDLED_EVENT CHIP_APPLICATION_ERROR(0x03)
+#define APP_ERROR_CREATE_TIMER_FAILED CHIP_APPLICATION_ERROR(0x04)
+#define APP_ERROR_START_TIMER_FAILED CHIP_APPLICATION_ERROR(0x05)
+#define APP_ERROR_STOP_TIMER_FAILED CHIP_APPLICATION_ERROR(0x06)
 
 #define ON_DEMO_BITMAP                                                                                                             \
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xfc,  \
@@ -86,3 +103,11 @@
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01, 0x80, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x03, 0xc0, 0xff, 0xff, 0xff, 0xff,    \
         0xff, 0xff, 0x3f, 0xfc, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,    \
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+#endif // SL_CATALOG_ZIGBEE_ZCL_FRAMEWORK_CORE_PRESENT
+
+// Must match with Matter Light endpoint
+#define LIGHT_ENDPOINT 1
+
+// Time it takes in ms for the simulated actuator to move from one
+// state to another.
+#define ACTUATOR_MOVEMENT_PERIOD_MS 10

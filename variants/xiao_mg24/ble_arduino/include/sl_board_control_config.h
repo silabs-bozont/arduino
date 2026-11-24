@@ -55,22 +55,35 @@
 
 // <gpio> SL_BOARD_ENABLE_VCOM
 // $[GPIO_SL_BOARD_ENABLE_VCOM]
-#define SL_BOARD_ENABLE_VCOM_PORT               SL_GPIO_PORT_B
-#define SL_BOARD_ENABLE_VCOM_PIN                0
+#ifndef SL_BOARD_ENABLE_VCOM_PORT               
+#define SL_BOARD_ENABLE_VCOM_PORT                SL_GPIO_PORT_B
+#endif
+#ifndef SL_BOARD_ENABLE_VCOM_PIN                
+#define SL_BOARD_ENABLE_VCOM_PIN                 0
+#endif
 // [GPIO_SL_BOARD_ENABLE_VCOM]$
 
 // <gpio> SL_BOARD_ENABLE_DISPLAY
 // $[GPIO_SL_BOARD_ENABLE_DISPLAY]
-#define SL_BOARD_ENABLE_DISPLAY_PORT            SL_GPIO_PORT_C
-#define SL_BOARD_ENABLE_DISPLAY_PIN             9
+#ifndef SL_BOARD_ENABLE_DISPLAY_PORT            
+#define SL_BOARD_ENABLE_DISPLAY_PORT             SL_GPIO_PORT_C
+#endif
+#ifndef SL_BOARD_ENABLE_DISPLAY_PIN             
+#define SL_BOARD_ENABLE_DISPLAY_PIN              9
+#endif
 // [GPIO_SL_BOARD_ENABLE_DISPLAY]$
 
 // <gpio> SL_BOARD_ENABLE_SENSOR_RHT
 // $[GPIO_SL_BOARD_ENABLE_SENSOR_RHT]
-#define SL_BOARD_ENABLE_SENSOR_RHT_PORT         SL_GPIO_PORT_D
-#define SL_BOARD_ENABLE_SENSOR_RHT_PIN          3
+#ifndef SL_BOARD_ENABLE_SENSOR_RHT_PORT         
+#define SL_BOARD_ENABLE_SENSOR_RHT_PORT          SL_GPIO_PORT_D
+#endif
+#ifndef SL_BOARD_ENABLE_SENSOR_RHT_PIN          
+#define SL_BOARD_ENABLE_SENSOR_RHT_PIN           3
+#endif
 // [GPIO_SL_BOARD_ENABLE_SENSOR_RHT]$
 
 // <<< sl:end pin_tool >>>
 
 #endif // SL_BOARD_CONTROL_CONFIG_H
+

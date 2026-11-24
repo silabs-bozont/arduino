@@ -86,3 +86,4 @@
 #endif /* SL_LEGACY_HAL_WDOG_CONFIG_H */
 
 // <<< end of configuration section >>>
+

@@ -110,7 +110,6 @@ class AllocationInfoBuilder {
   // Returns a pointer to the built AllocationInfo array.
   AllocationInfo* Finish() const { return info_.allocation_info; }
 
- private:
   // Mark the given Allocation info as first created at the specified allocation
   // scope count. Only the first creation must be recorded since the allocation
   // scope count monotonically increases throughout the lifetime marking
@@ -129,7 +128,8 @@ class AllocationInfoBuilder {
 
   const tflite::Model* model_ = nullptr;
   INonPersistentBufferAllocator* non_persistent_allocator_ = nullptr;
-  GraphAllocationInfo info_;
+  GraphAllocationInfo info_ =
+      {};  // Prevents problems caused by accessing uninitialized memory.
   int allocation_scope_count_ = 0;
 };
 

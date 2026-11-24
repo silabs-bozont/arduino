@@ -20,9 +20,20 @@
 
 // <o SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_MAX_ATTEMPTS> Max Attempts <1-255>
 // <i> Default: 3
-// <i> The maximum number of attempts the node should make when sending or retrying the Node Descriptor, Request Key, or Verify Key messages. This field corresponds to the bdbTcLinkKeyExchangeAttemptsMax attribute in the Base Device Behavior specification.
+// <i> The maximum number of attempts the node should make each TCLK Update Iteration when sending or retrying the Node Descriptor, Request Key, or Verify Key messages. This field corresponds to the bdbTcLinkKeyExchangeAttemptsMax attribute in the Base Device Behavior specification.
 #define SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_MAX_ATTEMPTS   3
+
+// <o SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_MAX_ITERATIONS> Max Attempts <1-255>
+// <i> Default: 1
+// <i> The maximum number of iterations of the TCLK update permitted before a failure is declared using the On-Network TCLK Update procedure. This field corresponds to the bdbcfTCLKUpdateMaxIterations attribute in the Base Device Behavior specification.
+#define SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_MAX_ITERATIONS   1
+
+// <o SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_TIMER_SEC> TCLK update timer <0-4294967>
+// <i> Default: 86400
+// <i> The time to wait (in seconds) after one TCLK update operation completes before issuing a new TCLK update operation. 0 means no new TCLK update operation will be issued.
+#define SL_ZIGBEE_AF_PLUGIN_UPDATE_TC_LINK_KEY_TIMER_SEC   86400
 
 // </h>
 
 // <<< end of configuration section >>>
+
