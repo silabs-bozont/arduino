@@ -4,3 +4,5 @@ package/gen_gsdk*
 package/install_host*
 package/generate_gsdk.cfg
 installed.json
+# Staged next to board SLCPs during Zigbee generate; source of truth is common/arduino_zigbee.zap
+package/slcp/*/config/zcl/zcl_config.zap

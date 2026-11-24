@@ -202,6 +202,8 @@ def generate_gsdk(current_platform_config):
         cleanup_direct_generate(keep_gen_folder)
     else:
         cleanup(slcp_folder, slcp_file_name, additional_files, keep_gen_folder)
+    if is_zigbee:
+        cleanup_zigbee_zap_for_project(project_slcp_file)
 
     print(f"Output location: {output_dir}")
     print("Finished!")
@@ -305,6 +307,23 @@ def prepare_zigbee_zap_for_project(project_slcp_file, zigbee_zap_file):
     if os.path.abspath(src_zap) != os.path.abspath(dest_zap):
         shutil.copy(dest_zap, src_zap)
         print(f"Updated shared Zigbee ZAP: {src_zap}")
+
+
+def cleanup_zigbee_zap_for_project(project_slcp_file):
+    """
+    Remove the board-local staged copy of the shared Zigbee ZAP after generate.
+    Source of truth remains slcp/common/arduino_zigbee.zap.
+    """
+    project_dir = os.path.dirname(os.path.abspath(project_slcp_file))
+    dest_dir = os.path.join(project_dir, "config", "zcl")
+    dest_zap = os.path.join(dest_dir, "zcl_config.zap")
+    if os.path.isfile(dest_zap):
+        os.remove(dest_zap)
+        print(f"Removed staged Zigbee ZAP: {dest_zap}")
+    # Drop empty staging dirs left behind
+    for path in (dest_dir, os.path.join(project_dir, "config")):
+        if os.path.isdir(path) and not os.listdir(path):
+            os.rmdir(path)
 
 
 def rewrite_matter_zap_sdk_packages(zap_file_path):
