@@ -32,9 +32,11 @@
 
 // The NVM3 key space is divided into several domains, the usable user domain is 0x00000 - 0x0FFFF
 #define NVM3_USER_KEY_SPACE_END 0x0FFFFu
-
-#define NVM3_OBJECT_SIZE (NVM3_DEFAULT_MAX_OBJECT_SIZE)
+#define EEPROM_NVM3_OBJECT_SIZE 254u
 #define NVM3_MAX_SIZE 10240u
+
+static_assert(EEPROM_NVM3_OBJECT_SIZE <= NVM3_DEFAULT_MAX_OBJECT_SIZE,
+              "EEPROM_NVM3_OBJECT_SIZE must fit within NVM3_DEFAULT_MAX_OBJECT_SIZE");
 
 uint8_t eeprom_read_byte(uint32_t addr)
 {
@@ -42,15 +44,15 @@ uint8_t eeprom_read_byte(uint32_t addr)
     return 0xFFu;
   }
 
-  uint32_t object_idx = addr / NVM3_OBJECT_SIZE;
-  uint32_t data_idx = addr % NVM3_OBJECT_SIZE;
+  uint32_t object_idx = addr / EEPROM_NVM3_OBJECT_SIZE;
+  uint32_t data_idx = addr % EEPROM_NVM3_OBJECT_SIZE;
 
   if (object_idx > NVM3_USER_KEY_SPACE_END) {
     return 0xFFu;
   }
 
-  uint8_t object_cache[NVM3_OBJECT_SIZE];
-  Ecode_t status = nvm3_readData(nvm3_defaultHandle, object_idx, (void*)object_cache, NVM3_OBJECT_SIZE);
+  uint8_t object_cache[EEPROM_NVM3_OBJECT_SIZE];
+  Ecode_t status = nvm3_readData(nvm3_defaultHandle, object_idx, (void*)object_cache, EEPROM_NVM3_OBJECT_SIZE);
 
   if (status != ECODE_NVM3_OK) {
     return 0xFFu;
@@ -64,30 +66,30 @@ void eeprom_write_byte(uint32_t addr, uint8_t value)
     return;
   }
 
-  uint32_t object_idx = addr / NVM3_OBJECT_SIZE;
-  uint32_t data_idx = addr % NVM3_OBJECT_SIZE;
+  uint32_t object_idx = addr / EEPROM_NVM3_OBJECT_SIZE;
+  uint32_t data_idx = addr % EEPROM_NVM3_OBJECT_SIZE;
 
   if (object_idx > NVM3_USER_KEY_SPACE_END) {
     return;
   }
 
   // Read the object from NVM3
-  uint8_t object_cache[NVM3_OBJECT_SIZE];
-  Ecode_t status = nvm3_readData(nvm3_defaultHandle, object_idx, (void*)object_cache, NVM3_OBJECT_SIZE);
+  uint8_t object_cache[EEPROM_NVM3_OBJECT_SIZE];
+  Ecode_t status = nvm3_readData(nvm3_defaultHandle, object_idx, (void*)object_cache, EEPROM_NVM3_OBJECT_SIZE);
   if (status != ECODE_NVM3_OK && status != ECODE_NVM3_ERR_KEY_NOT_FOUND) {
     return;
   }
 
   // Initialize the object if it's currently non-existent
   if (status == ECODE_NVM3_ERR_KEY_NOT_FOUND) {
-    memset(object_cache, 0xFFu, NVM3_OBJECT_SIZE);
+    memset(object_cache, 0xFFu, EEPROM_NVM3_OBJECT_SIZE);
   }
 
   // Update the requested value
   object_cache[data_idx] = value;
 
   // Write the object back to NVM3
-  nvm3_writeData(nvm3_defaultHandle, object_idx, object_cache, NVM3_OBJECT_SIZE);
+  nvm3_writeData(nvm3_defaultHandle, object_idx, object_cache, EEPROM_NVM3_OBJECT_SIZE);
 
   // Do repacking if needed
   if (nvm3_repackNeeded(nvm3_defaultHandle)) {
