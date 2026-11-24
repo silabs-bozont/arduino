@@ -16,10 +16,12 @@ all_variants = [
     ["thingplusmatter", "ble_arduino"],
     ["thingplusmatter", "ble_silabs"],
     ["thingplusmatter", "matter"],
+    ["thingplusmatter", "zigbee"],
     ["xg24explorerkit", "none"],
     ["xg24explorerkit", "ble_arduino"],
     ["xg24explorerkit", "ble_silabs"],
     ["xg24explorerkit", "matter"],
+    ["xg24explorerkit", "zigbee"],
     ["xg24devkit", "none"],
     ["xg24devkit", "ble_arduino"],
     ["xg24devkit", "ble_silabs"],
@@ -36,6 +38,7 @@ all_variants = [
     ["xiao_mg24", "ble_arduino"],
     ["xiao_mg24", "ble_silabs"],
     ["xiao_mg24", "matter"],
+    ["xiao_mg24", "zigbee"],
 ]
 
 all_ble = [
