@@ -2,8 +2,9 @@
  * @file
  * @brief Describes the DMA registers
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef SX_DMA_H
 #define SX_DMA_H

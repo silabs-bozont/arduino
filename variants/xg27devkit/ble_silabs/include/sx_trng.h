@@ -4,8 +4,9 @@
  *          the BA431 (N)DRNG
  *          (see BA431_NDRNG_DataSheet.pdf)
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef SX_TRNG_H
 #define SX_TRNG_H

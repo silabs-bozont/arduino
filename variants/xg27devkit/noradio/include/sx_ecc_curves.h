@@ -3,8 +3,9 @@
  * @brief This file contains the hard-coded curve parameters
  *          for common ECC
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef SX_ECC_CURVES_H
 #define SX_ECC_CURVES_H

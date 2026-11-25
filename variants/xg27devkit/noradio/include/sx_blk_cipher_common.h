@@ -3,6 +3,8 @@
  * @brief Defines common macros used by block ciphers for configure input/output
  *        data, used in AES, SM4 and ARIA
  * @copyright Copyright (c) 2019 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
 
 #ifndef BLK_CIPHER_COMMON_H

@@ -3,8 +3,9 @@
  * @brief Defines the procedures to make primitive operations with the BA414EP
  * Public Key Engine
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H

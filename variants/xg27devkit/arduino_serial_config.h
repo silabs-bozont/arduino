@@ -34,6 +34,10 @@ extern "C" {
   #include "em_usart.h"
   #include "sl_iostream_handles.h"
   #include "sl_iostream_uart.h"
+  #include "sl_status.h"
+
+  sl_status_t sl_iostream_usart_init_vcom(void);
+  sl_status_t sl_iostream_usart_init_xg27devkit1(void);
 }
 
 #define SL_SERIAL_PERIPHERAL SL_IOSTREAM_USART_VCOM_PERIPHERAL

@@ -3,6 +3,8 @@
  * @brief Defines the procedures to make operations with
  *          the BA411 AES function
  * @copyright Copyright (c) 2016-2019 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
 
 #ifndef SX_AES_H

@@ -77,26 +77,46 @@
 // <<< sl:start pin_tool >>>
 // <eusart signal=TX,RX,SCLK,(CS)> SL_SPIDRV_EUSART_EXP
 // $[EUSART_SL_SPIDRV_EUSART_EXP]
+#ifndef SL_SPIDRV_EUSART_EXP_PERIPHERAL         
 #define SL_SPIDRV_EUSART_EXP_PERIPHERAL          EUSART0
+#endif
+#ifndef SL_SPIDRV_EUSART_EXP_PERIPHERAL_NO      
 #define SL_SPIDRV_EUSART_EXP_PERIPHERAL_NO       0
+#endif
 
 // EUSART0 TX on PC00
+#ifndef SL_SPIDRV_EUSART_EXP_TX_PORT            
 #define SL_SPIDRV_EUSART_EXP_TX_PORT             SL_GPIO_PORT_C
+#endif
+#ifndef SL_SPIDRV_EUSART_EXP_TX_PIN             
 #define SL_SPIDRV_EUSART_EXP_TX_PIN              0
+#endif
 
 // EUSART0 RX on PC01
+#ifndef SL_SPIDRV_EUSART_EXP_RX_PORT            
 #define SL_SPIDRV_EUSART_EXP_RX_PORT             SL_GPIO_PORT_C
+#endif
+#ifndef SL_SPIDRV_EUSART_EXP_RX_PIN             
 #define SL_SPIDRV_EUSART_EXP_RX_PIN              1
+#endif
 
 // EUSART0 SCLK on PC02
+#ifndef SL_SPIDRV_EUSART_EXP_SCLK_PORT          
 #define SL_SPIDRV_EUSART_EXP_SCLK_PORT           SL_GPIO_PORT_C
+#endif
+#ifndef SL_SPIDRV_EUSART_EXP_SCLK_PIN           
 #define SL_SPIDRV_EUSART_EXP_SCLK_PIN            2
+#endif
 
 // EUSART0 CS on PB02
+#ifndef SL_SPIDRV_EUSART_EXP_CS_PORT            
 #define SL_SPIDRV_EUSART_EXP_CS_PORT             SL_GPIO_PORT_B
+#endif
+#ifndef SL_SPIDRV_EUSART_EXP_CS_PIN             
 #define SL_SPIDRV_EUSART_EXP_CS_PIN              2
-
+#endif
 // [EUSART_SL_SPIDRV_EUSART_EXP]$
 // <<< sl:end pin_tool >>>
 
 #endif // SL_SPIDRV_EUSART_EXP_CONFIG_HEUSART_
+

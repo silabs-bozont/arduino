@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright 2024 Silicon Laboratories Inc. www.silabs.com
+ * Copyright 2026 Silicon Laboratories Inc. www.silabs.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,10 +50,6 @@ extern sl_iostream_instance_info_t sl_iostream_instance_xg27devkit1_info;
 
 // Initialize only iostream usart instance(s)
 void sl_iostream_usart_init_instances(void);
-
-sl_status_t sl_iostream_usart_init_vcom(void);
-
-sl_status_t sl_iostream_usart_init_xg27devkit1(void);
 
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 

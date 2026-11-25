@@ -3,7 +3,7 @@
  * @brief EFR32BG27 GPIO register and bit field definitions
  ******************************************************************************
  * # License
- * <b>Copyright 2025 Silicon Laboratories, Inc. www.silabs.com</b>
+ * <b>Copyright 2026 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -323,6 +323,8 @@ typedef struct gpio_typedef{
   GPIO_TIMERROUTE_TypeDef   TIMERROUTE_TGL[5U];      /**< timer0 DBUS config registers                       */
   GPIO_USARTROUTE_TypeDef   USARTROUTE_TGL[2U];      /**< usart0 DBUS config registers                       */
 } GPIO_TypeDef;
+
+#define GPIO_PORT_INDEX                               0x0000000FUL
 
 /* Bit fields for GPIO IPVERSION */
 #define _GPIO_IPVERSION_RESETVALUE                    0x00000005UL                             /**< Default value for GPIO_IPVERSION            */

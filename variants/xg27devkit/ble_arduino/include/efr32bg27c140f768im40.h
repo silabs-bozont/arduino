@@ -4,7 +4,7 @@
  *        for EFR32BG27C140F768IM40
  ******************************************************************************
  * # License
- * <b>Copyright 2025 Silicon Laboratories, Inc. www.silabs.com</b>
+ * <b>Copyright 2026 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -53,6 +53,7 @@ typedef enum IRQn{
   MemoryManagement_IRQn  = -12,             /*!< -12 Cortex-M Memory Management Interrupt */
   BusFault_IRQn          = -11,             /*!< -11 Cortex-M Bus Fault Interrupt         */
   UsageFault_IRQn        = -10,             /*!< -10 Cortex-M Usage Fault Interrupt       */
+  SecureFault_IRQn       = -9,              /*!< -9  Cortex-M Secure Fault Interrupt      */
   SVCall_IRQn            = -5,              /*!< -5  Cortex-M SV Call Interrupt           */
   DebugMonitor_IRQn      = -4,              /*!< -4  Cortex-M Debug Monitor Interrupt     */
   PendSV_IRQn            = -2,              /*!< -2  Cortex-M Pend SV Interrupt           */
@@ -398,6 +399,8 @@ typedef enum IRQn{
 #define GPIO_EM4WU8_PIN                                   7U            /**< Pin of EM4WU8.*/
 #define GPIO_EM4WU9_PORT                                  GPIO_PD_INDEX /**< Port of EM4WU9.*/
 #define GPIO_EM4WU9_PIN                                   2U            /**< Pin of EM4WU9.*/
+#define GPIO_EM4WU_PINS_MASK                              0x03D90000UL  /**< Mask of EM4WU pins available on this OPN.*/
+#define GPIO_EM4WU_PIN_COUNT                              7U            /**< Number of EM4WU pins available on this OPN.*/
 #define GPIO_THMSW_EN_PORT                                GPIO_PC_INDEX /**< Port of THMSW_EN.*/
 #define GPIO_THMSW_EN_PIN                                 0U            /**< Pin of THMSW_EN.*/
 #define GPIO_THMSW_HALFSWITCH_PORT                        GPIO_PC_INDEX /**< Port of THMSW_HALFSWITCH.*/
@@ -1288,6 +1291,10 @@ typedef enum IRQn{
 #define EUSART_NOT_EM2_CAPABLE(n)      (((n) == 0) ? EUSART0_NOT_EM2_CAPABLE \
                                         : 0x0UL)
 
+/* Instance macros for GPCRC */
+#define GPCRC_NUM(ref)                 (((ref) == GPCRC) ? 0 \
+                                        : -1)
+
 /* Instance macros for I2C */
 #define I2C(n)                         (((n) == 0) ? I2C0   \
                                         : ((n) == 1) ? I2C1 \
@@ -1316,6 +1323,14 @@ typedef enum IRQn{
 #define IADC_ENTRIES(n)                (((n) == 0) ? IADC0_ENTRIES \
                                         : 0x0UL)
 
+/* Instance macros for LDMA */
+#define LDMA_NUM(ref)                  (((ref) == LDMA) ? 0 \
+                                        : -1)
+
+/* Instance macros for LDMAXBAR */
+#define LDMAXBAR_NUM(ref)              (((ref) == LDMAXBAR) ? 0 \
+                                        : -1)
+
 /* Instance macros for LETIMER */
 #define LETIMER(n)                     (((n) == 0) ? LETIMER0 \
                                         : 0x0UL)
@@ -1323,6 +1338,10 @@ typedef enum IRQn{
                                         : -1)
 #define LETIMER_CNT_WIDTH(n)           (((n) == 0) ? LETIMER0_CNT_WIDTH \
                                         : 0x0UL)
+
+/* Instance macros for PDM */
+#define PDM_NUM(ref)                   (((ref) == PDM) ? 0 \
+                                        : -1)
 
 /* Instance macros for TIMER */
 #define TIMER(n)                       (((n) == 0) ? TIMER0   \

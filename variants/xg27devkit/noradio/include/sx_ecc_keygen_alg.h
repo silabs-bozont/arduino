@@ -7,8 +7,9 @@
  * of x and y coordinate for all but Montgomery and EdDSA.
  *
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef ECC_KEYGEN_ALG
 #define ECC_KEYGEN_ALG

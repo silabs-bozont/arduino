@@ -2,8 +2,9 @@
  * @file
  * @brief Defines the return codes for the CryptoSoC functions
  * @copyright Copyright (c) 2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef SX_ERRORS_H
 #define SX_ERRORS_H

@@ -274,7 +274,7 @@
 
 // <<< sl:start pin_tool >>>
 
-// <cmu signal=CLKIN0> SL_CLOCK_MANAGER_CLKIN0
+// <cmu signal=CLKIN0 optional=true> SL_CLOCK_MANAGER_CLKIN0
 // $[CMU_SL_CLOCK_MANAGER_CLKIN0]
 
 
@@ -283,3 +283,4 @@
 // <<< sl:end pin_tool >>>
 
 #endif /* SL_CLOCK_MANAGER_OSCILLATOR_CONFIG_H */
+

@@ -2,6 +2,8 @@
  * @file
  * @brief Provide types, helper macros and functions used everywhere.
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
 
 #ifndef CRYPTOLIB_TYPES_H

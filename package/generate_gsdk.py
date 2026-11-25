@@ -2294,7 +2294,7 @@ xg27devkit_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xg27devkit/xg27devkit_ble_arduino.slcp",
-    "additional_files": []
+    "additional_files": ["slcp/xg27devkit/sl_iostream_usart_xg27devkit1_config.h"]
 }
 
 xg27devkit_ble_arduino_prebuilt_platform_config = {
@@ -2305,7 +2305,7 @@ xg27devkit_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/xg27devkit/xg27devkit_ble_arduino.slcp",
-    "additional_files": []
+    "additional_files": ["slcp/xg27devkit/sl_iostream_usart_xg27devkit1_config.h"]
 }
 
 xg27devkit_ble_silabs_platform_config = {
