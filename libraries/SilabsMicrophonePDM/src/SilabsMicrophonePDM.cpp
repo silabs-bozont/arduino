@@ -25,7 +25,7 @@
  */
 
 #include "SilabsMicrophonePDM.h"
-#include "dmadrv.h"
+#include "sl_hal_ldma.h"
 #include "sl_mic.h"
 #include "sl_status.h"
 
@@ -111,7 +111,7 @@ bool MicrophonePDM::begin(uint8_t numChannel,
   _sampleRate = sampleRate;
   _buffer = buffer;
   _numFrames = bufferCount / numChannel;
-  if (_numFrames > DMADRV_MAX_XFER_COUNT) {
+  if (_numFrames > SL_HAL_LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
     // numFrames is too large.
     return false;
   }

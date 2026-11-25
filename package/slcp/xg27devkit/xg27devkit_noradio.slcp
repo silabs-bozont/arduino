@@ -42,7 +42,7 @@ component:
     instance:
     - led0
   - id: emlib_pdm
-  - id: dmadrv
+  - id: hal_pdm
   - id: gpiointerrupt
   - id: nvm3_default
   - id: nvm3_default_config

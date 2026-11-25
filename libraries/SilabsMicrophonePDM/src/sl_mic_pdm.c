@@ -1,81 +1,170 @@
-/*
- * This file is part of the Silicon Labs Arduino Core
+/***************************************************************************//**
+ * @file
+ * @brief PDM microphone driver
  *
- * The MIT License (MIT)
+ * Based on SiSDK boards/hardware/driver/mic/src/sl_mic_pdm.c with two Arduino
+ * adaptations only:
+ *   1. Runtime DIN/CLK pins + DSR (sketch provides pins; no sl_mic_pdm_config.h)
+ *   2. get_n_samples / start_streaming start a fresh linked discard→fill DMA
+ *      instead of patching the live discard ping-pong in the DONE IRQ.
+ *      On Series 2 LDMA the next linked descriptor is loaded before the IRQ
+ *      runs, so the stock SDK "flip reading_samples_to_buffer" handoff never
+ *      installs the fill (empty buffer → inf dBSPL). A short discard after
+ *      restart drops the CIC settle transient so levels match Studio/DMADRV.
+ *******************************************************************************
+ * # License
+ * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ *******************************************************************************
  *
- * Copyright 2023 Silicon Laboratories Inc. www.silabs.com
+ * SPDX-License-Identifier: Zlib
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * The licensor of this software is Silicon Laboratories Inc.
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * This software is provided 'as-is', without any express or implied
+ * warranty. In no event will the authors be held liable for any damages
+ * arising from the use of this software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ *
+ ******************************************************************************/
 #include <stddef.h>
+#include <stdint.h>
 #include <math.h>
-#include "dmadrv.h"
-#include "em_pdm.h"
-#include "em_cmu.h"
+#include "sl_clock_manager.h"
+#include "sl_device_clock.h"
+#include "sl_dma_manager.h"
+#include "sl_hal_ldma.h"
+#include "sl_hal_pdm.h"
+#include "sl_hal_gpio.h"
+#include "sl_gpio.h"
 #include "sl_mic.h"
 #include "sl_sleeptimer.h"
+#include "sl_device_peripheral.h"
 
-static bool dma_complete(unsigned int channel, unsigned int sequence_no, void *user_param);
+#if (defined(SL_CATALOG_POWER_MANAGER_PRESENT))
+#include "sl_power_manager.h"
+#endif
 
-static GPIO_Port_TypeDef pdm_din_port;
-static unsigned int pdm_din_pin;
-static GPIO_Port_TypeDef pdm_clk_port;
-static unsigned int pdm_clk_pin;
+#if !defined(_SILICON_LABS_32B_SERIES_2)
+#error "SilabsMicrophonePDM requires Series 2 devices"
+#endif
 
-// Local variables
+static bool dma_complete(uint32_t channel, uint32_t sequence_no, void *user_param);
+
+static sl_gpio_t pdm_din_gpio;
+static sl_gpio_t pdm_clk_gpio;
+
 static sl_mic_buffer_ready_callback_t buffer_ready_callback = NULL;
-static int16_t *sample_buffer;                // Pointer to current sample buffer
-static int16_t  *streaming_buffer[2];         // Buffers used to perform ping-pong operation
-static uint32_t sample_index;                 // Current sample index of sample buffer
-static uint32_t sample_count;                 // Number of samples to collect
-static volatile bool reading_samples_to_buffer; // Flag to show whether buffer is currently filling with samples
-static volatile bool streaming_in_progress;   // Flag to show if driver is running in streaming mode
-static bool mic_running;                      // Flag to show if mic is running
-static volatile bool mic_ready;               // Flag to show if is ready to read samples
-static bool initialized;                      // Flag to show if mic is initialized
-static uint8_t num_channels;                  // Number of channels
-static uint32_t discard_buffer;               // DMA discard pile
+static int16_t *sample_buffer;
+static int16_t  *streaming_buffer[2];
+static uint32_t sample_index;
+static uint32_t sample_count;
+static volatile bool reading_samples_to_buffer;
+static volatile bool streaming_in_progress;
+static bool mic_running;
+static volatile bool mic_ready;
+static bool initialized;
+static uint8_t num_channels;
+static uint32_t discard_buffer;
 
-static LDMA_TransferCfg_t dma_transfer_cfg = LDMA_TRANSFER_CFG_PERIPHERAL(ldmaPeripheralSignal_PDM_RXDATAV);
-static unsigned int dma_channel_id;
+#define MIC_PDM_MAX_XFER  (SL_HAL_LDMA_DESCRIPTOR_MAX_XFER_SIZE)
+/* Drop CIC/mic settle samples after each LDMA restart before the real fill. */
+#define MIC_POST_RESTART_DISCARD  512U
 
-static LDMA_Descriptor_t dma_descriptor[2] = {
-  LDMA_DESCRIPTOR_LINKREL_P2M_WORD(&PDM->RXDATA, &discard_buffer, 2047, 1),
-  LDMA_DESCRIPTOR_LINKREL_P2M_WORD(&PDM->RXDATA, &discard_buffer, 2047, -1)
+static sl_dma_handle_t *dma_handle;
+static uint8_t dma_channel_id;
+static volatile uint32_t dma_sequence_no;
+
+static const sl_hal_ldma_transfer_init_t dma_transfer_cfg =
+  SL_HAL_LDMA_TRANSFER_CFG_PERIPHERAL(SL_HAL_LDMA_PERIPHERAL_SIGNAL_PDM_RXDATAV);
+
+static sl_hal_ldma_descriptor_t dma_descriptor[2] = {
+  SL_HAL_LDMA_DESCRIPTOR_LINKREL_P2M(SL_HAL_LDMA_CTRL_SIZE_WORD, &PDM->RXDATA, &discard_buffer, (MIC_PDM_MAX_XFER - 1), 1),
+  SL_HAL_LDMA_DESCRIPTOR_LINKREL_P2M(SL_HAL_LDMA_CTRL_SIZE_WORD, &PDM->RXDATA, &discard_buffer, (MIC_PDM_MAX_XFER - 1), -1)
 };
 
 static sl_sleeptimer_timer_handle_t mic_wake_up_timer;
 
-/***************************************************************************//**
- * @brief Callback function for sleeptimer
- ******************************************************************************/
-void timeout_callback(sl_sleeptimer_timer_handle_t *handle, void *data)
+static void pdm_dma_irq_cb(void)
+{
+  (void)dma_complete((uint32_t)dma_channel_id, dma_sequence_no++, NULL);
+}
+
+static void timeout_callback(sl_sleeptimer_timer_handle_t *handle, void *data)
 {
   (void)handle;
   (void)data;
   mic_ready = true;
 }
+
+static void pdm_ldma_start(void)
+{
+  dma_sequence_no = 0;
+  sl_dma_manager_register_channel_irq_callback(dma_handle, dma_channel_id, pdm_dma_irq_cb);
+  sl_hal_ldma_clear_interrupts(LDMA0, 1UL << dma_channel_id);
+  sl_hal_ldma_init_transfer(LDMA0, dma_channel_id, &dma_transfer_cfg, &dma_descriptor[0]);
+  sl_hal_ldma_enable_interrupts(LDMA0, 1UL << dma_channel_id);
+  sl_hal_ldma_start_transfer(LDMA0, dma_channel_id);
+}
+
+static void pdm_ldma_start_discard_warmup(void)
+{
+  dma_descriptor[0].xfer.dst_inc    = SL_HAL_LDMA_CTRL_DST_INC_NONE;
+  dma_descriptor[0].xfer.dst_addr   = (uint32_t)&discard_buffer;
+  dma_descriptor[0].xfer.xfer_count = (MIC_PDM_MAX_XFER - 1);
+  dma_descriptor[0].xfer.done_ifs   = 1;
+  dma_descriptor[0].xfer.link       = 1;
+  dma_descriptor[0].xfer.link_mode  = SL_HAL_LDMA_LINK_MODE_REL;
+  dma_descriptor[0].xfer.link_addr  = 1 * SL_HAL_LDMA_DESCRIPTOR_NON_EXTEND_SIZE_WORD;
+
+  dma_descriptor[1].xfer.dst_inc    = SL_HAL_LDMA_CTRL_DST_INC_NONE;
+  dma_descriptor[1].xfer.dst_addr   = (uint32_t)&discard_buffer;
+  dma_descriptor[1].xfer.xfer_count = (MIC_PDM_MAX_XFER - 1);
+  dma_descriptor[1].xfer.done_ifs   = 1;
+  dma_descriptor[1].xfer.link       = 1;
+  dma_descriptor[1].xfer.link_mode  = SL_HAL_LDMA_LINK_MODE_REL;
+  dma_descriptor[1].xfer.link_addr  = -1 * (int32_t)SL_HAL_LDMA_DESCRIPTOR_NON_EXTEND_SIZE_WORD;
+
+  pdm_ldma_start();
+}
+
+static void pdm_ldma_start_discard_then_fill(void *dest, uint32_t fill_units)
+{
+  uint32_t discard_units = MIC_POST_RESTART_DISCARD;
+  if (discard_units > MIC_PDM_MAX_XFER) {
+    discard_units = MIC_PDM_MAX_XFER;
+  }
+
+  dma_descriptor[0].xfer.dst_inc    = SL_HAL_LDMA_CTRL_DST_INC_NONE;
+  dma_descriptor[0].xfer.dst_addr   = (uint32_t)&discard_buffer;
+  dma_descriptor[0].xfer.xfer_count = discard_units - 1;
+  dma_descriptor[0].xfer.done_ifs   = 0;
+  dma_descriptor[0].xfer.link       = 1;
+  dma_descriptor[0].xfer.link_mode  = SL_HAL_LDMA_LINK_MODE_REL;
+  dma_descriptor[0].xfer.link_addr  = 1 * SL_HAL_LDMA_DESCRIPTOR_NON_EXTEND_SIZE_WORD;
+
+  dma_descriptor[1].xfer.dst_inc    = SL_HAL_LDMA_CTRL_DST_INC_ONE;
+  dma_descriptor[1].xfer.dst_addr   = (uint32_t)dest;
+  dma_descriptor[1].xfer.xfer_count = fill_units - 1;
+  dma_descriptor[1].xfer.done_ifs   = 1;
+  dma_descriptor[1].xfer.link       = 0;
+
+  pdm_ldma_start();
+}
+
 /***************************************************************************//**
  *    Initializes the microphone
  ******************************************************************************/
-#ifdef _SILICON_LABS_32B_SERIES_2
 sl_status_t sl_mic_init(GPIO_Port_TypeDef din_port,
                         unsigned int din_pin,
                         GPIO_Port_TypeDef clk_port,
@@ -83,9 +172,6 @@ sl_status_t sl_mic_init(GPIO_Port_TypeDef din_port,
                         uint32_t sample_rate,
                         uint8_t n_channels,
                         uint8_t dsr)
-#else
-#error "Not supported"
-#endif
 {
   sl_status_t status;
 
@@ -93,93 +179,87 @@ sl_status_t sl_mic_init(GPIO_Port_TypeDef din_port,
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  /* Enable clocks */
-  CMU_ClockEnable(cmuClock_GPIO, true);
-  CMU_ClockEnable(cmuClock_PDM, true);
+  pdm_din_gpio.port = (sl_gpio_port_t)din_port;
+  pdm_din_gpio.pin = din_pin;
+  pdm_clk_gpio.port = (sl_gpio_port_t)clk_port;
+  pdm_clk_gpio.pin = clk_pin;
 
-  /* Setup GPIO pins */
-  pdm_din_port = din_port;
-  pdm_din_pin = din_pin;
-  pdm_clk_port = clk_port;
-  pdm_clk_pin = clk_pin;
-  GPIO_PinModeSet(din_port, din_pin, gpioModeInput, 0);
-  GPIO_PinModeSet(clk_port, clk_pin, gpioModePushPull, 0);
+  sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_GPIO);
+  sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_PDM);
 
-  // Set fast slew rate on PDM mic CLK and DATA pins
-  GPIO_SlewrateSet(din_port, 0x7, 0X7);
+  sl_gpio_set_pin_mode(&pdm_din_gpio, SL_GPIO_MODE_INPUT, 0);
+  sl_gpio_set_pin_mode(&pdm_clk_gpio, SL_GPIO_MODE_PUSH_PULL, 0);
 
-  /* Configure and enable clock and data routing locations */
-#ifdef _SILICON_LABS_32B_SERIES_2
+  sl_hal_gpio_set_slew_rate(&pdm_din_gpio, 0x7);
+  sl_hal_gpio_set_slew_rate_alternate(pdm_din_gpio.port, 0x7);
+
   GPIO->PDMROUTE.ROUTEEN |= GPIO_PDM_ROUTEEN_CLKPEN;
-  GPIO->PDMROUTE.DAT0ROUTE |= (din_port << _GPIO_PDM_DAT0ROUTE_PORT_SHIFT) | (din_pin << _GPIO_PDM_DAT0ROUTE_PIN_SHIFT);
-  GPIO->PDMROUTE.CLKROUTE |= (clk_port << _GPIO_PDM_CLKROUTE_PORT_SHIFT) | (clk_pin << _GPIO_PDM_CLKROUTE_PIN_SHIFT);
-#else
-  PDM->ROUTELOC0 = (PDM->ROUTELOC0 & ~_PDM_ROUTELOC0_DAT0LOC_MASK)
-                   | (SL_MIC_PDM_DAT0_LOC << _PDM_ROUTELOC0_DAT0LOC_SHIFT);
-  PDM->ROUTELOC1 = SL_MIC_PDM_CLK_LOC << _PDM_ROUTELOC1_CLKLOC_SHIFT;
-  PDM->ROUTEPEN |= PDM_ROUTEPEN_CLKPEN | PDM_ROUTEPEN_DAT0PEN;
-#endif
+  GPIO->PDMROUTE.DAT0ROUTE = (din_port << _GPIO_PDM_DAT0ROUTE_PORT_SHIFT)
+                             | (din_pin << _GPIO_PDM_DAT0ROUTE_PIN_SHIFT);
+  GPIO->PDMROUTE.CLKROUTE = (clk_port << _GPIO_PDM_CLKROUTE_PORT_SHIFT)
+                            | (clk_pin << _GPIO_PDM_CLKROUTE_PIN_SHIFT);
 
   if (dsr < 3 || dsr > 73) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  // Calculate gain (shift value) based on DSR and filter order
   uint8_t gain = 31 - (1 + (uint32_t)(log10f(pow(dsr, 5)) / log10f(2)));
 
-  // Calculate necessary prescaler based on desired sample rate and DSR
-  uint32_t clock_freq = CMU_ClockFreqGet(cmuClock_PDM);
+  uint32_t clock_freq;
+  sl_clock_branch_t clock_branch;
+  clock_branch = sl_device_peripheral_get_clock_branch(SL_PERIPHERAL_PDM);
+  sl_clock_manager_get_clock_branch_frequency(clock_branch, &clock_freq);
   uint32_t prescaler_val = (clock_freq / (sample_rate * dsr)) - 1;
 
   if (prescaler_val > 1024) {
     return SL_STATUS_FAIL;
   }
 
-  // Initialize the PDM
-  PDM_Init_TypeDef init = PDM_INIT_DEFAULT;
-  init.prescaler = prescaler_val;
-  init.dsr = dsr;
+  sl_hal_pdm_init_t init = SL_HAL_PDM_INIT_DEFAULT;
+  init.clk_prescaler = prescaler_val;
+  init.down_sampling_rate = dsr;
   init.gain = gain;
 
-  // Don't start PDM filter after initialization
-  init.start = false;
-
-#if defined(PDM_CTRL_OUTCLKEN)
-  init.outClkEn = false;
-#endif
-
   if (n_channels == 1) {
-    // Right-align the 16-bit sample in FIFO
-    init.dataFormat = pdmDataFormatRight16;
-    init.enableCh0Ch1Stereo = false;
-    init.numChannels = pdmNumberOfChannelsOne;
+    init.data_format = SL_HAL_PDM_DATA_FORMAT_RIGHT_16;
+    init.ch0ch1_stereo_enable = false;
+    init.number_channels = SL_HAL_PDM_NUMBER_OF_CHANNELS_ONE;
   } else if (n_channels == 2) {
-    // Pack two 16-bit samples in one 32-bit FIFO entry
-    init.dataFormat = pdmDataFormatDouble16;
-    init.enableCh0Ch1Stereo = true;
-    init.numChannels = pdmNumberOfChannelsTwo;
+    init.data_format = SL_HAL_PDM_DATA_FORMAT_DOUBLE_16;
+    init.ch0ch1_stereo_enable = true;
+    init.number_channels = SL_HAL_PDM_NUMBER_OF_CHANNELS_TWO;
   }
 
-  PDM_Init(PDM, &init);
+  sl_hal_pdm_init(PDM, &init);
 
-  // Setup DMA
-  DMADRV_Init();
-  status = DMADRV_AllocateChannel(&dma_channel_id, NULL);
-
-  if ( status != ECODE_EMDRV_DMADRV_OK ) {
+  status = sl_dma_manager_get_default_handle(&dma_handle);
+  if (status != SL_STATUS_OK) {
+    return SL_STATUS_FAIL;
+  }
+  sl_clock_manager_enable_bus_clock(SL_BUS_CLOCK_LDMAXBAR0);
+  status = sl_dma_manager_allocate_channel(dma_handle, &dma_channel_id);
+  if (status != SL_STATUS_OK) {
     return SL_STATUS_FAIL;
   }
 
-  dma_descriptor[0].xfer.dstInc = ldmaCtrlDstIncNone;
-  dma_descriptor[0].xfer.size = ldmaCtrlSizeWord;
+  dma_sequence_no = 0;
+  (void)sl_dma_manager_register_channel_irq_callback(dma_handle, dma_channel_id, pdm_dma_irq_cb);
 
-  dma_descriptor[1].xfer.dstInc = ldmaCtrlDstIncNone;
-  dma_descriptor[1].xfer.size = ldmaCtrlSizeWord;
+  dma_descriptor[0].xfer.dst_inc  = SL_HAL_LDMA_CTRL_DST_INC_NONE;
+  dma_descriptor[0].xfer.size     = SL_HAL_LDMA_CTRL_SIZE_WORD;
+  dma_descriptor[0].xfer.done_ifs = 1;
+  dma_descriptor[1].xfer.dst_inc  = SL_HAL_LDMA_CTRL_DST_INC_NONE;
+  dma_descriptor[1].xfer.size     = SL_HAL_LDMA_CTRL_SIZE_WORD;
+  dma_descriptor[1].xfer.done_ifs = 1;
 
   if (n_channels == 1) {
-    dma_descriptor[0].xfer.size = ldmaCtrlSizeHalf;
-    dma_descriptor[1].xfer.size = ldmaCtrlSizeHalf;
+    dma_descriptor[0].xfer.size = SL_HAL_LDMA_CTRL_SIZE_HALF;
+    dma_descriptor[1].xfer.size = SL_HAL_LDMA_CTRL_SIZE_HALF;
   }
+
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+  sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
+#endif
 
   reading_samples_to_buffer = false;
   streaming_in_progress = false;
@@ -208,13 +288,22 @@ sl_status_t sl_mic_get_n_samples(void *buffer, uint32_t n_frames)
   }
 
   while (!mic_ready) {
-    // Wait until mic is ready
   }
+
+  uint32_t first_chunk = n_frames;
+  if (first_chunk > MIC_PDM_MAX_XFER) {
+    first_chunk = MIC_PDM_MAX_XFER;
+  }
+
+  sl_hal_ldma_stop_transfer(LDMA0, dma_channel_id);
+  sl_hal_pdm_fifo_flush(PDM);
 
   sample_buffer = (int16_t *)buffer;
   sample_count = n_frames;
-  sample_index = 0;
+  sample_index = first_chunk;
   reading_samples_to_buffer = true;
+
+  pdm_ldma_start_discard_then_fill(sample_buffer, first_chunk);
 
   return SL_STATUS_OK;
 }
@@ -232,7 +321,7 @@ sl_status_t sl_mic_start_streaming(void *buffer, uint32_t n_frames, sl_mic_buffe
     return SL_STATUS_INVALID_STATE;
   }
 
-  if (n_frames > DMADRV_MAX_XFER_COUNT) {
+  if (n_frames > MIC_PDM_MAX_XFER) {
     return SL_STATUS_INVALID_PARAMETER;
   }
 
@@ -241,14 +330,19 @@ sl_status_t sl_mic_start_streaming(void *buffer, uint32_t n_frames, sl_mic_buffe
   }
 
   while (!mic_ready) {
-    // Wait until mic is ready
   }
 
+  sl_hal_ldma_stop_transfer(LDMA0, dma_channel_id);
+  sl_hal_pdm_fifo_flush(PDM);
+
   sample_count = n_frames;
+  sample_index = n_frames;
   streaming_buffer[0] = (int16_t *)buffer;
   streaming_buffer[1] = &(((int16_t *)buffer)[n_frames * num_channels]);
   buffer_ready_callback = callback;
   streaming_in_progress = true;
+
+  pdm_ldma_start_discard_then_fill(streaming_buffer[0], n_frames);
 
   return SL_STATUS_OK;
 }
@@ -258,17 +352,21 @@ sl_status_t sl_mic_start_streaming(void *buffer, uint32_t n_frames, sl_mic_buffe
  ******************************************************************************/
 sl_status_t sl_mic_deinit(void)
 {
-  /* Stop sampling */
-  DMADRV_StopTransfer(dma_channel_id);
+  sl_mic_stop();
 
-  // DE-initialize the PDM peripheral
-  PDM_DeInit(PDM);
+  sl_hal_pdm_stop(PDM);
+  sl_hal_pdm_clear(PDM);
+  sl_hal_pdm_fifo_flush(PDM);
+  sl_hal_pdm_reset(PDM);
 
-  GPIO_PinModeSet(pdm_clk_port, pdm_clk_pin, gpioModeDisabled, 0);
-  GPIO_PinModeSet(pdm_din_port, pdm_din_pin, gpioModeDisabled, 0);
+  sl_gpio_set_pin_mode(&pdm_clk_gpio, SL_GPIO_MODE_DISABLED, 0);
+  sl_gpio_set_pin_mode(&pdm_din_gpio, SL_GPIO_MODE_DISABLED, 0);
 
-  /* Free resources */
-  DMADRV_FreeChannel(dma_channel_id);
+  sl_dma_manager_free_channel(dma_handle, dma_channel_id);
+
+#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
+  sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
+#endif
 
   mic_running = false;
   initialized = false;
@@ -289,27 +387,12 @@ sl_status_t sl_mic_start(void)
     return SL_STATUS_INVALID_STATE;
   }
 
-  // Clear and start the PDM filter
-  PDM_Clear(PDM);
-  PDM_FifoFlush(PDM);
-  PDM_Start(PDM);
+  sl_hal_pdm_clear(PDM);
+  sl_hal_pdm_fifo_flush(PDM);
+  sl_hal_pdm_start(PDM);
 
-  // Reset descriptors, drop the first 4096 samples
-  dma_descriptor[0].xfer.dstInc = ldmaCtrlDstIncNone;
-  dma_descriptor[0].xfer.xferCnt = 2047;
-  dma_descriptor[0].xfer.dstAddr = (uint32_t) &discard_buffer;
-  dma_descriptor[1].xfer.dstInc = ldmaCtrlDstIncNone;
-  dma_descriptor[1].xfer.xferCnt = 2047;
-  dma_descriptor[1].xfer.dstAddr = (uint32_t) &discard_buffer;
+  pdm_ldma_start_discard_warmup();
 
-  // Start DMA
-  DMADRV_LdmaStartTransfer((int)dma_channel_id,
-                           (void*)&dma_transfer_cfg,
-                           (void*)&dma_descriptor[0],
-                           dma_complete,
-                           NULL);
-
-  // Start microphone wake-up timer
   sl_sleeptimer_start_timer_ms(&mic_wake_up_timer, 15, timeout_callback, NULL, 0, 0);
 
   mic_running = true;
@@ -326,13 +409,12 @@ sl_status_t sl_mic_stop(void)
     return SL_STATUS_INVALID_STATE;
   }
 
-  DMADRV_StopTransfer(dma_channel_id);
+  sl_hal_ldma_stop_transfer(LDMA0, dma_channel_id);
+  (void)sl_sleeptimer_stop_timer(&mic_wake_up_timer);
 
-  // Stop the PDM filter
-  PDM_Stop(PDM);
+  sl_hal_pdm_stop(PDM);
 
-  while ((PDM->STATUS & PDM_STATUS_ACT) == 1U) {
-    // Wait until PDM is no longer running
+  while ((sl_hal_pdm_get_status(PDM) & PDM_STATUS_ACT) == 1U) {
   }
 
   mic_running = false;
@@ -365,14 +447,12 @@ sl_status_t sl_mic_calculate_sound_level(float *sound_level, const int16_t *buff
     return SL_STATUS_INVALID_PARAMETER;
   }
 
-  // Calculate mean
   mean = 0.0f;
   for ( i = channel; i < (n_frames * num_channels); i += num_channels) {
     mean += (float) buffer[i];
   }
   mean = mean / (float) n_frames;
 
-  // Calculate variance
   power = 0;
   for ( i = channel; i < (n_frames * num_channels); i += num_channels) {
     sample = (((float)buffer[i] - mean) / 32767.0f);
@@ -380,7 +460,6 @@ sl_status_t sl_mic_calculate_sound_level(float *sound_level, const int16_t *buff
   }
   power = power / (float)n_frames;
 
-  // Convert to dBSPL
   *sound_level = 10.0f * log10f(power) + 120;
 
   return SL_STATUS_OK;
@@ -388,79 +467,74 @@ sl_status_t sl_mic_calculate_sound_level(float *sound_level, const int16_t *buff
 
 /***************************************************************************//**
  * @brief
- *  DMADRV transfer completion callback function.
- *
- * @details
- *  The callback function is called when a transfer is complete.
- *
- * @param[in] channel
- *  The DMA channel number.
- *
- * @param[in] sequenceNo
- *  The number of times the callback was called. Useful on long chains of
- *  linked transfers or on endless ping-pong type transfers.
- *
- * @param[in] userParam
- *  Optional user parameter supplied on DMA invocation.
- *
- * @return
- *   When doing ping-pong transfers, return true to continue or false to
- *   stop transfers.
+ *  DMA operation completion (ping-pong) handler.
  ******************************************************************************/
-static bool dma_complete(unsigned int channel,
-                         unsigned int sequenceNo,
+static bool dma_complete(uint32_t channel,
+                         uint32_t sequenceNo,
                          void *userParam)
 {
   (void)channel;
   (void)userParam;
 
-  LDMA_Descriptor_t *next_desc;
-
   if (reading_samples_to_buffer) {
-    // Set up the next descriptor
+    /* discard→fill: only the fill descriptor raises DONE. Common case is
+     * n_frames <= MAX_XFER so sample_index already equals sample_count. */
+    if (sample_index >= sample_count) {
+      reading_samples_to_buffer = false;
+      /* Keep PDM running; resume discard so the next get_n_samples does not
+       * re-settle the filter from cold (matches quiet-room ~48 dBSPL). */
+      pdm_ldma_start_discard_warmup();
+      return true;
+    }
+
+    sl_hal_ldma_descriptor_t *next_desc;
     if (sequenceNo & 0x01) {
       next_desc = &dma_descriptor[0];
     } else {
       next_desc = &dma_descriptor[1];
     }
 
-    if (sample_index < sample_count) {
-      // There are samples to get, place them in sample buffer
-      next_desc->xfer.dstInc = ldmaCtrlDstIncOne;
-      next_desc->xfer.dstAddr = (uint32_t)&sample_buffer[sample_index];
+    next_desc->xfer.dst_inc   = SL_HAL_LDMA_CTRL_DST_INC_ONE;
+    next_desc->xfer.dst_addr  = (uint32_t)&sample_buffer[sample_index * num_channels];
+    next_desc->xfer.done_ifs  = 1;
+    next_desc->xfer.link      = 1;
+    next_desc->xfer.link_mode = SL_HAL_LDMA_LINK_MODE_REL;
+    next_desc->xfer.link_addr = ((sequenceNo & 0x01) ? 1 : -1)
+                                * (int32_t)SL_HAL_LDMA_DESCRIPTOR_NON_EXTEND_SIZE_WORD;
 
-      if ((sample_count - sample_index) > 2048) {
-        // There are more than 2048 samples to get, set xferCnt to max
-        next_desc->xfer.xferCnt = 2047;
-        // Increase sample index
-        sample_index += 2048;
-      } else {
-        // Set xferCnt to remaining number of samples
-        next_desc->xfer.xferCnt = (sample_count - sample_index) - 1;
-        sample_index += (sample_count - sample_index);
-      }
+    if ((sample_count - sample_index) > MIC_PDM_MAX_XFER) {
+      next_desc->xfer.xfer_count = (MIC_PDM_MAX_XFER - 1);
+      sample_index += MIC_PDM_MAX_XFER;
     } else {
-      next_desc->xfer.dstInc = ldmaCtrlDstIncNone;
-      next_desc->xfer.xferCnt = 2047;
-      next_desc->xfer.dstAddr = (uint32_t) &discard_buffer;
-    }
-    if ( (dma_descriptor[0].xfer.dstInc == ldmaCtrlDstIncNone)
-         && (dma_descriptor[1].xfer.dstInc == ldmaCtrlDstIncNone) ) {
-      // Sample buffer is complete if both descriptors have returned back to default
-      // Stop PDM when sample buffer is complete
-      reading_samples_to_buffer = false;
-      sl_mic_stop();
+      next_desc->xfer.xfer_count = (sample_count - sample_index) - 1;
+      sample_index += (sample_count - sample_index);
     }
   } else if (streaming_in_progress) {
-    unsigned int idx_next = 1 - (sequenceNo % 2);
+    if (sequenceNo == 0) {
+      /* First fill (streaming_buffer[0]) done — switch to ping-pong. */
+      dma_descriptor[0].xfer.dst_inc    = SL_HAL_LDMA_CTRL_DST_INC_ONE;
+      dma_descriptor[0].xfer.xfer_count = sample_count - 1;
+      dma_descriptor[0].xfer.dst_addr   = (uint32_t)streaming_buffer[1];
+      dma_descriptor[0].xfer.done_ifs   = 1;
+      dma_descriptor[0].xfer.link       = 1;
+      dma_descriptor[0].xfer.link_mode  = SL_HAL_LDMA_LINK_MODE_REL;
+      dma_descriptor[0].xfer.link_addr  = 1 * SL_HAL_LDMA_DESCRIPTOR_NON_EXTEND_SIZE_WORD;
 
-    if (dma_descriptor[idx_next].xfer.dstInc == ldmaCtrlDstIncNone) {
-      // Initialize descriptor for streaming mode
-      dma_descriptor[idx_next].xfer.dstInc = ldmaCtrlDstIncOne;
-      dma_descriptor[idx_next].xfer.xferCnt = sample_count - 1;
-      dma_descriptor[idx_next].xfer.dstAddr = (uint32_t)streaming_buffer[idx_next];
+      dma_descriptor[1].xfer.dst_inc    = SL_HAL_LDMA_CTRL_DST_INC_ONE;
+      dma_descriptor[1].xfer.xfer_count = sample_count - 1;
+      dma_descriptor[1].xfer.dst_addr   = (uint32_t)streaming_buffer[0];
+      dma_descriptor[1].xfer.done_ifs   = 1;
+      dma_descriptor[1].xfer.link       = 1;
+      dma_descriptor[1].xfer.link_mode  = SL_HAL_LDMA_LINK_MODE_REL;
+      dma_descriptor[1].xfer.link_addr  = -1 * (int32_t)SL_HAL_LDMA_DESCRIPTOR_NON_EXTEND_SIZE_WORD;
+
+      pdm_ldma_start();
+
+      if (buffer_ready_callback) {
+        buffer_ready_callback(streaming_buffer[0], sample_count);
+      }
     } else {
-      // Buffer ready
+      uint32_t idx_next = 1 - (sequenceNo % 2);
       if (buffer_ready_callback) {
         buffer_ready_callback(streaming_buffer[idx_next], sample_count);
       }

@@ -54,7 +54,7 @@ component:
     instance:
     - led0
   - id: emlib_pdm
-  - id: dmadrv
+  - id: hal_pdm
   - id: gpiointerrupt
   - id: mbedtls_ccm
   - id: emlib_rmu
