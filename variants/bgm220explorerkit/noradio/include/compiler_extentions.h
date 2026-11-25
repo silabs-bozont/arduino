@@ -1,3 +1,8 @@
+/**
+ * @file
+ * SPDX-License-Identifier: Zlib
+ */
+
 #ifndef COMPILER_EXTENTIONS_H
 #define COMPILER_EXTENTIONS_H
 

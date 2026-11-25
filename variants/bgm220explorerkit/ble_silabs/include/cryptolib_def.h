@@ -1,3 +1,7 @@
+/**
+ * @file
+ * SPDX-License-Identifier: Zlib
+ */
 
 #ifndef CRYPTOLIB_DEF_H
 #define CRYPTOLIB_DEF_H

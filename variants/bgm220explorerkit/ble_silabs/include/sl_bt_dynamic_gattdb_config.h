@@ -47,7 +47,7 @@
 // <i> * 1: Include the static GATT database.
 // <i> * 0: Do not include the static GATT database.
 // <i>
-#define SL_BT_GATTDB_INCLUDE_STATIC_DATABASE     (1)
+#define SL_BT_GATTDB_INCLUDE_STATIC_DATABASE     0
 
 // <o SL_BT_GATTDB_ENABLE_GATT_CACHING> GATT Caching support configuration
 // <i> Default: 1 (Enabled)
@@ -90,3 +90,4 @@
 sl_status_t sl_bt_dynamic_gattdb_configure();
 
 #endif // SL_BT_DYNAMIC_GATTDB_CONFIG_H
+

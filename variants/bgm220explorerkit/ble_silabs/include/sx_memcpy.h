@@ -2,6 +2,8 @@
  * @file
  * @brief Provides a family of memcpy functions accelerated by the cryptoDMA
  * @copyright Copyright (c) 2016-2019 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
 
 #ifndef CRYPTODMA_H

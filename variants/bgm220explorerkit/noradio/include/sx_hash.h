@@ -3,8 +3,9 @@
  * @brief Declares the constants and functions to make operations
  *          with the BA413 hash function
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef SX_HASH_H
 #define SX_HASH_H

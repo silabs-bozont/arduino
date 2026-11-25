@@ -1,6 +1,6 @@
 project_name: bt_arduino_gsdk_config_bgm220explorerkit
 package: Bluetooth
-label: Bluetooth - Arduino GSDK config for the BGM220 Explorer Kit (brd4314a) (Based on SoC Empty)
+label: Bluetooth Host - Arduino GSDK config for the BGM220 Explorer Kit (brd4314a) (Based on SoC Empty)
 description: >
   This slcp can be used in place of SoC Empty to generate the
   SDK files needed for the Arduino Core.
@@ -16,25 +16,27 @@ filter:
     value: ["Beginner"]
 
 component:
+  # Feature set aligned with SiSDK bt_soc_blinky on xG22/BGM220 (32KB RAM):
+  # SiSDK baremetal blinky uses legacy advertiser + peripheral + gatt_server only.
+  # FreeRTOS blinky is excluded on efr32xg22 — we keep FreeRTOS for Arduino
+  # but drop scanners/extended/SM which the SoC example does not include.
   - id: bluetooth_stack
   - id: bluetooth_feature_legacy_advertiser
-  - id: bluetooth_feature_extended_advertiser
+  - id: bluetooth_feature_connection_role_peripheral
   - id: bluetooth_feature_connection
   - id: bluetooth_feature_gatt
   - id: bluetooth_feature_gatt_server
-  - id: bluetooth_feature_legacy_scanner
-  - id: bluetooth_feature_extended_scanner
-  - id: bluetooth_feature_sm
   - id: bluetooth_feature_system
+  - id: bluetooth_feature_dynamic_gattdb
+  - id: nvm3_default
   - id: bootloader_interface
   - id: app_assert
   - id: component_catalog
   - id: mpu
   - id: bt_post_build
-  - id: sl_system
+  - id: sl_main
   - id: clock_manager
   - id: device_init
-  - id: bluetooth_feature_dynamic_gattdb
   - id: udelay
   - id: app_log
   - id: iostream_usart
@@ -61,7 +63,6 @@ component:
   - id: memory_manager_cpp
 
 source:
-  - path: main.c
   - path: app.c
 
 include:
@@ -70,19 +71,35 @@ include:
       - path: app.h
 
 configuration:
-  # Stack/heap sizes and various buffers are cut back to fit into the 32k of RAM
+  # Stack/heap/buffers cut for 32KB RAM
   - name: SL_STACK_SIZE
-    value: 2048
+    value: 2000
   - name: SL_HEAP_SIZE
     value: 8500
+  - name: SL_MAIN_START_TASK_STACK_SIZE_BYTES
+    value: 4096
   - name: NVM3_DEFAULT_CACHE_SIZE
     value: 10
   - name: configTOTAL_HEAP_SIZE
-    value: 5120
+    value: 5000
   - name: configTIMER_TASK_STACK_DEPTH
-    value: 80
+    value: 240
   - name: configTIMER_QUEUE_LENGTH
     value: 5
+  - name: SL_BT_CONFIG_MAX_CONNECTIONS
+    value: "1"
+  - name: SL_BT_CONFIG_CONNECTION_DATA_LENGTH
+    value: "27"
+  - name: SL_BT_CONFIG_BUFFER_SIZE
+    value: "3150"
+  - name: SL_BLUETOOTH_COMMON_BUFFER_MEMORY_SIZE
+    value: "3150"
+  - name: SL_BT_CONTROLLER_BUFFER_MEMORY
+    value: "3150"
+  - name: SL_BT_RTOS_EVENT_HANDLER_STACK_SIZE
+    value: "2048"
+  - name: SL_BT_GATTDB_INCLUDE_STATIC_DATABASE
+    value: "0"
   # --------------------------------------
   - name: SL_PSA_KEY_USER_SLOT_COUNT
     value: 0
@@ -92,6 +109,10 @@ configuration:
     value: 1
   - name: SL_SPIDRV_USART_MIKROE_CS_CONTROL
     value: "spidrvCsControlApplication"
+  - name: SL_IOSTREAM_USART_VCOM_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
+  - name: SL_IOSTREAM_EUSART_MIKROE_RESTRICT_ENERGY_MODE_TO_ALLOW_RECEPTION
+    value: "0"
 
 tag:
   - hardware:rf:band:2400

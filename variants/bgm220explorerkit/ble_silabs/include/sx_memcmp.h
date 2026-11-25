@@ -2,8 +2,9 @@
  * @file
  * @brief Provides a family of memcmp functions showing constant-time operation
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef MEMCMP_H
 #define MEMCMP_H

@@ -42,10 +42,50 @@
 // Defines and Macros
 
 // Persistent key ID ranges.
-#define SLI_PSA_KEY_ID_RANGE_THREAD_START (0x00020000)
-#define SLI_PSA_KEY_ID_RANGE_THREAD_END   (0x0002FFFF)
-#define SLI_PSA_KEY_ID_RANGE_ZIGBEE_START (0x00030000)
-#define SLI_PSA_KEY_ID_RANGE_ZIGBEE_END   (0x0003FFFF)
+// Silicon Labs SDK 'Middleware' allocation
+#define SLI_PSA_KEY_ID_RANGE_PLATFORM_START (0x00004200)
+#define SLI_PSA_KEY_ID_RANGE_PLATFORM_END   (0x000042FF)
+#define SLI_PSA_KEY_ID_RANGE_MATTER_START   (0x00004400)
+#define SLI_PSA_KEY_ID_RANGE_MATTER_END     (0x000045FF)
+#define SLI_PSA_KEY_ID_RANGE_FIND_START     (0x00004600)
+#define SLI_PSA_KEY_ID_RANGE_FIND_END       (0x000046FF)
+// Silicon Labs SDK 'Stack' allocation
+#define SLI_PSA_KEY_ID_RANGE_THREAD_START   (0x00020000)
+#define SLI_PSA_KEY_ID_RANGE_THREAD_END     (0x0002FFFF)
+#define SLI_PSA_KEY_ID_RANGE_ZIGBEE_START   (0x00030000)
+#define SLI_PSA_KEY_ID_RANGE_ZIGBEE_END     (0x0003FFFF)
+#define SLI_PSA_KEY_ID_RANGE_BLE_START      (0x00040000)
+#define SLI_PSA_KEY_ID_RANGE_BLE_END        (0x0004FFFF)
+#define SLI_PSA_KEY_ID_RANGE_BLE_MESH_START (0x00060000)
+#define SLI_PSA_KEY_ID_RANGE_BLE_MESH_END   (0x0006FFFF)
+#define SLI_PSA_KEY_ID_RANGE_ZWAVE_START    (0x00070000)
+#define SLI_PSA_KEY_ID_RANGE_ZWAVE_END      (0x0007FFFF)
+#define SLI_PSA_KEY_ID_RANGE_WISUN_START    (0x00090000)
+#define SLI_PSA_KEY_ID_RANGE_WISUN_END      (0x0009FFFF)
+
+// -----------------------------------------------------------------------------
+// KSU key usage flags (vendor-specific PSA extension)
+#if defined(SLI_PSA_DRIVER_FEATURE_KSU)
+
+// New KSU key attributes API (SLI_ prefixed, may change when PSA supports vendor attributes)
+typedef uint32_t sli_psa_ksu_key_attributes_t;
+
+#if defined(SL_PSA_KEY_LOCATION_KSU_1)
+/// Allow key usage with LPWAES engine
+#define SLI_PSA_KSU_KEY_ATTR_ALLOW_LPWAES      ((sli_psa_ksu_key_attributes_t) 0x04000000)
+/// Allow key usage with HOSTCRYPTO engine
+#define SLI_PSA_KSU_KEY_ATTR_ALLOW_HOSTCRYPTO  ((sli_psa_ksu_key_attributes_t) 0x08000000)
+#endif // SL_PSA_KEY_LOCATION_KSU_1
+
+/// Disallow psa_copy_key to copy source keys with location other than KSU (e.g. source key
+/// location is SL_PSA_KEY_LOCATION_WRAPPED) to a KSU (target) location.
+/// SLI_PSA_KSU_KEY_ATTR_DISALLOW_KSU is not applicable for key that have location KSU.
+/// psa_import_key will return PSA_ERROR_INVALID_ARGUMENT if a key is imported with location
+/// SL_PSA_KEY_LOCATION_KSU_x and usage attributes have SLI_PSA_KSU_KEY_ATTR_DISALLOW_KSU set.
+#define SLI_PSA_KSU_KEY_ATTR_DISALLOW_KSU      ((sli_psa_ksu_key_attributes_t) 0x80000000)
+/// Initialize KSU key attributes
+#define SLI_PSA_KSU_KEY_ATTRIBUTES_INIT        ((sli_psa_ksu_key_attributes_t) 0x00000000)
+#endif //SLI_PSA_DRIVER_FEATURE_KSU
 
 // Convert a type name into an enum entry name, since enum entries and type
 // names share the same C namespace.

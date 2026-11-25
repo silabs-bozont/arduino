@@ -3,6 +3,8 @@
  * @copyright Copyright (c) 2018 Silex Insight. All Rights reserved
  * @file
  *
+ * SPDX-License-Identifier: Zlib
+ *
  * By using the sx_rng structure defined in this file different RNG
  * implementations can be provided as parameter to functions which require
  * generation of random vales.

@@ -3,8 +3,9 @@
  * @brief Defines the procedures to make DH operations with
  *          the BA414EP pub key
  * @copyright Copyright (c) 2016-2018 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
-
 
 #ifndef SX_DH_ALG_H
 #define SX_DH_ALG_H

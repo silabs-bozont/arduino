@@ -56,14 +56,23 @@ extern "C" {
 
 // <timer channel=OUTPUT> SL_PWM_LED0
 // $[TIMER_SL_PWM_LED0]
+#ifndef SL_PWM_LED0_PERIPHERAL                  
 #define SL_PWM_LED0_PERIPHERAL                   TIMER0
+#endif
+#ifndef SL_PWM_LED0_PERIPHERAL_NO               
 #define SL_PWM_LED0_PERIPHERAL_NO                0
+#endif
 
+#ifndef SL_PWM_LED0_OUTPUT_CHANNEL              
 #define SL_PWM_LED0_OUTPUT_CHANNEL               0
+#endif
 // TIMER0 CC0 on PA04
+#ifndef SL_PWM_LED0_OUTPUT_PORT                 
 #define SL_PWM_LED0_OUTPUT_PORT                  SL_GPIO_PORT_A
+#endif
+#ifndef SL_PWM_LED0_OUTPUT_PIN                  
 #define SL_PWM_LED0_OUTPUT_PIN                   4
-
+#endif
 // [TIMER_SL_PWM_LED0]$
 
 // <<< sl:end pin_tool >>>
@@ -73,3 +82,4 @@ extern "C" {
 #endif
 
 #endif // SL_PWM_INIT_LED0_CONFIG_H
+

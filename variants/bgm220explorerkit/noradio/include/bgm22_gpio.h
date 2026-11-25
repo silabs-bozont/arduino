@@ -3,7 +3,7 @@
  * @brief BGM22 GPIO register and bit field definitions
  ******************************************************************************
  * # License
- * <b>Copyright 2025 Silicon Laboratories, Inc. www.silabs.com</b>
+ * <b>Copyright 2026 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * SPDX-License-Identifier: Zlib
@@ -309,6 +309,7 @@ typedef struct gpio_typedef{
   GPIO_USARTROUTE_TypeDef   USARTROUTE_TGL[2U];      /**< usart0 DBUS config registers                       */
 } GPIO_TypeDef;
 
+#define GPIO_PORT_INDEX                                 0x0000000FUL
 #define GPIO_PORTA                                      0x00000000UL                    /**< PORTA index                                  */
 #define GPIO_PORTB                                      0x00000001UL                    /**< PORTB index                                  */
 #define GPIO_PORTC                                      0x00000002UL                    /**< PORTC index                                  */

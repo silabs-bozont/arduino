@@ -75,10 +75,11 @@
 // <i> and will be word aligned when it is applied at the task creation.
 // <i> The event task is not created and this configuration is unused if the
 // <i> Bluetooth Event System IPC component is included in the application
-#define SL_BT_RTOS_EVENT_HANDLER_STACK_SIZE     (1000)
+#define SL_BT_RTOS_EVENT_HANDLER_STACK_SIZE     2048
 
 // </h> End Priority Configuration for Bluetooth RTOS Tasks
 
 // <<< end of configuration section >>>
 
 #endif // SL_BT_RTOS_CONFIG_S2_H
+

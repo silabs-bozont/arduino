@@ -3,6 +3,8 @@
  * @brief Defines macros to be used to retrieve the hardware configuration
  * of CryptoMaster, i.e. what IPs are included.
  * @copyright Copyright (c) 2016-2020 Silex Insight. All Rights reserved
+ *
+ * SPDX-License-Identifier: Zlib
  */
 
 #ifndef SX_HW_CFG_H

@@ -16,9 +16,8 @@ filter:
     value: ["Beginner"]
 
 component:
-  - id: sl_system
+  - id: sl_main
   - id: device_init
-  - id: device_init_nvic
   - id: psa_crypto
   - id: power_manager
   - id: bootloader_interface
@@ -54,7 +53,6 @@ component:
   - id: memory_manager_cpp
 
 source:
-  - path: main.c
   - path: app.c
 
 include:
