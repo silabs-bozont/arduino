@@ -2882,7 +2882,8 @@ lyra24p20_ble_arduino_platform_config = {
     "prebuild": False,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/lyra24p20/lyra24p20_ble_arduino.slcp",
-    "additional_files": []
+    "additional_files": ["slcp/lyra24p20/sl_spidrv_eusart_lyra24p20_config.h",
+                         "slcp/lyra24p20/sl_iostream_eusart_lyra24p20_config.h"]
 }
 
 lyra24p20_ble_arduino_prebuilt_platform_config = {
@@ -2893,7 +2894,8 @@ lyra24p20_ble_arduino_prebuilt_platform_config = {
     "prebuild": True,
     "protocol_stack": 'ble_arduino',
     "slcp_file": "slcp/lyra24p20/lyra24p20_ble_arduino.slcp",
-    "additional_files": []
+    "additional_files": ["slcp/lyra24p20/sl_spidrv_eusart_lyra24p20_config.h",
+                         "slcp/lyra24p20/sl_iostream_eusart_lyra24p20_config.h"]
 }
 
 lyra24p20_ble_silabs_platform_config = {

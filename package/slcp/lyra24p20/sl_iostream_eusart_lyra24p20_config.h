@@ -86,20 +86,19 @@
 // <<< end of configuration section >>>
 
 // <<< sl:start pin_tool >>>
-// <usart signal=TX,RX,(CTS),(RTS)> SL_IOSTREAM_EUSART_LYRA24P20
-// $[USART_SL_IOSTREAM_EUSART_LYRA24P20]
+// <eusart signal=TX,RX,(CTS),(RTS)> SL_IOSTREAM_EUSART_LYRA24P20
+// $[EUSART_SL_IOSTREAM_EUSART_LYRA24P20]
 #define SL_IOSTREAM_EUSART_LYRA24P20_PERIPHERAL        EUSART0
 #define SL_IOSTREAM_EUSART_LYRA24P20_PERIPHERAL_NO     0
-
-// USART0 TX on PA05
-#define SL_IOSTREAM_EUSART_LYRA24P20_TX_PORT           gpioPortB
-#define SL_IOSTREAM_EUSART_LYRA24P20_TX_PIN            1
-
-// USART0 RX on PA06
-#define SL_IOSTREAM_EUSART_LYRA24P20_RX_PORT           gpioPortB
-#define SL_IOSTREAM_EUSART_LYRA24P20_RX_PIN            2
-
-// [USART_SL_IOSTREAM_EUSART_LYRA24P20]$
+// [EUSART_SL_IOSTREAM_EUSART_LYRA24P20]$
 // <<< sl:end pin_tool >>>
 
+// Fixed Arduino Serial1 routing (kept outside pin_tool markers so SLC board
+// generation cannot strip them on SiSDK 2026.6).
+#define SL_IOSTREAM_EUSART_LYRA24P20_TX_PORT           SL_GPIO_PORT_B
+#define SL_IOSTREAM_EUSART_LYRA24P20_TX_PIN            1
+#define SL_IOSTREAM_EUSART_LYRA24P20_RX_PORT           SL_GPIO_PORT_B
+#define SL_IOSTREAM_EUSART_LYRA24P20_RX_PIN            2
+
 #endif
+

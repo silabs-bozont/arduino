@@ -726,7 +726,7 @@ lyra24p20.menu.protocol_stack.none.build.precompiled_libs=
 
 lyra24p20.menu.protocol_stack.ble_arduino.build.precompiled_libs="{build.variant.path}/ble_arduino/libbgcommon.a" "{build.variant.path}/ble_arduino/liblinklayer.a" "{build.variant.path}/ble_arduino/librail_config_bgm240pb32vna_gcc.a" "{build.variant.path}/ble_arduino/librail_module_efr32xg24_gcc_release.a"
 
-lyra24p20.menu.protocol_stack.ble_silabs.build.precompiled_libs="{build.variant.path}/ble_silabs/libbgapi_core.a" "{build.variant.path}/ble_silabs/libbgcommon.a" "{build.variant.path}/ble_silabs/libble_bgapi_gatt_client.a" "{build.variant.path}/ble_silabs/libble_bgapi_gatt_server.a" "{build.variant.path}/ble_silabs/libble_bgapi.a" "{build.variant.path}/ble_silabs/libble_host_accept_list_stub.a" "{build.variant.path}/ble_silabs/libble_host_hal_series2.a" "{build.variant.path}/ble_silabs/libble_host_hci.a" "{build.variant.path}/ble_silabs/libble_host.a" "{build.variant.path}/ble_silabs/libble_system.a" "{build.variant.path}/ble_silabs/libbondingdb.a" "{build.variant.path}/ble_silabs/liblinklayer.a" "{build.variant.path}/ble_arduino/librail_config_bgm240pb32vna_gcc.a" "{build.variant.path}/ble_arduino/librail_module_efr32xg24_gcc_release.a"
+lyra24p20.menu.protocol_stack.ble_silabs.build.precompiled_libs="{build.variant.path}/ble_silabs/libbgapi_command.a" "{build.variant.path}/ble_silabs/libbgapi_core.a" "{build.variant.path}/ble_silabs/libbgapi_device.a" "{build.variant.path}/ble_silabs/libbgapi_event.a" "{build.variant.path}/ble_silabs/libbgapi_protocol.a" "{build.variant.path}/ble_silabs/libbgapi_trace_stub.a" "{build.variant.path}/ble_silabs/libbgcommon.a" "{build.variant.path}/ble_silabs/libble_bgapi.a" "{build.variant.path}/ble_silabs/libble_bgapi_gatt_client.a" "{build.variant.path}/ble_silabs/libble_bgapi_gatt_server.a" "{build.variant.path}/ble_silabs/libble_host.a" "{build.variant.path}/ble_silabs/libble_host_accept_list_stub.a" "{build.variant.path}/ble_silabs/libble_host_connection_subrating_stub.a" "{build.variant.path}/ble_silabs/libble_host_core.a" "{build.variant.path}/ble_silabs/libble_host_crypto.a" "{build.variant.path}/ble_silabs/libble_host_crypto_lib_psa.a" "{build.variant.path}/ble_silabs/libble_host_hal_series2.a" "{build.variant.path}/ble_silabs/libble_host_hci.a" "{build.variant.path}/ble_silabs/libble_host_local_privacy.a" "{build.variant.path}/ble_silabs/libble_host_periodic_advertiser_stub.a" "{build.variant.path}/ble_silabs/libble_host_resolving_list_stub.a" "{build.variant.path}/ble_silabs/libble_host_rpa_resolution.a" "{build.variant.path}/ble_silabs/libble_host_system.a" "{build.variant.path}/ble_silabs/libble_system.a" "{build.variant.path}/ble_silabs/libbondingdb.a" "{build.variant.path}/ble_silabs/liblinklayer.a" "{build.variant.path}/ble_silabs/librail_config_bgm240pb32vna_gcc.a" "{build.variant.path}/ble_silabs/librail_module_efr32xg24_gcc_release.a"
 
 lyra24p20.build.board_specific_macros='-DNUM_LEDS=2' '-DNUM_BTN=2' '-DNUM_HW_SERIAL=2' '-DNUM_HW_SPI=2' '-DNUM_HW_I2C=1' '-DNUM_DAC_HW=2' '-DARDUINO_MAIN_TASK_STACK_SIZE=2048'
 
@@ -746,7 +746,7 @@ lyra24p20.menu.protocol_stack.none.build.c_flags=-mcpu={build.mcu} -mthumb -mfpu
 
 lyra24p20.menu.protocol_stack.none.build.cpp_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c -g {compiler.warning_flags} {build.float_flags} -std=gnu++17 -Wall -Wextra -fdata-sections -ffunction-sections -fomit-frame-pointer -imacros sl_gcc_preinclude.h -mcmse --specs=nano.specs -g
 
-lyra24p20.menu.protocol_stack.none.build.ld_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard --specs=nano.specs -Xlinker -Map {compiler.mapfile_path} -Wl,--gc-sections -Wl,--wrap=_free_r -Wl,--wrap=_malloc_r -Wl,--wrap=_calloc_r -Wl,--wrap=_realloc_r
+lyra24p20.menu.protocol_stack.none.build.ld_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard --specs=nano.specs -Xlinker -Map {compiler.mapfile_path} -Wl,--gc-sections -Wl,--wrap=_free_r -Wl,--wrap=_malloc_r -Wl,--wrap=_calloc_r -Wl,--wrap=_realloc_r -Wl,--wrap=main
 
 lyra24p20.menu.protocol_stack.none.build.ld_libs=-lstdc++ -lgcc -lc -lm -lnosys -lsupc++
 
@@ -756,7 +756,7 @@ lyra24p20.menu.protocol_stack.ble_arduino.build.c_flags=-mcpu={build.mcu} -mthum
 
 lyra24p20.menu.protocol_stack.ble_arduino.build.cpp_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c -g {compiler.warning_flags} {build.float_flags} -std=gnu++17 -Wall -Wextra -fdata-sections -ffunction-sections -fomit-frame-pointer -imacros sl_gcc_preinclude.h -mcmse --specs=nano.specs -g
 
-lyra24p20.menu.protocol_stack.ble_arduino.build.ld_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard --specs=nano.specs -Xlinker -Map {compiler.mapfile_path} -Wl,--gc-sections -Wl,--wrap=_free_r -Wl,--wrap=_malloc_r -Wl,--wrap=_calloc_r -Wl,--wrap=_realloc_r
+lyra24p20.menu.protocol_stack.ble_arduino.build.ld_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard --specs=nano.specs -Xlinker -Map {compiler.mapfile_path} -Wl,--gc-sections -Wl,--wrap=_free_r -Wl,--wrap=_malloc_r -Wl,--wrap=_calloc_r -Wl,--wrap=_realloc_r -fno-lto -Wl,--wrap=main
 
 lyra24p20.menu.protocol_stack.ble_arduino.build.ld_libs=-lstdc++ -lgcc -lc -lm -lnosys -lsupc++
 
@@ -766,7 +766,7 @@ lyra24p20.menu.protocol_stack.ble_silabs.build.c_flags=-mcpu={build.mcu} -mthumb
 
 lyra24p20.menu.protocol_stack.ble_silabs.build.cpp_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c -g {compiler.warning_flags} {build.float_flags} -std=gnu++17 -Wall -Wextra -fdata-sections -ffunction-sections -fomit-frame-pointer -imacros sl_gcc_preinclude.h -mcmse --specs=nano.specs -g
 
-lyra24p20.menu.protocol_stack.ble_silabs.build.ld_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard --specs=nano.specs -Xlinker -Map {compiler.mapfile_path} -Wl,--gc-sections -Wl,--wrap=_free_r -Wl,--wrap=_malloc_r -Wl,--wrap=_calloc_r -Wl,--wrap=_realloc_r -flto=auto
+lyra24p20.menu.protocol_stack.ble_silabs.build.ld_flags=-mcpu={build.mcu} -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard --specs=nano.specs -Xlinker -Map {compiler.mapfile_path} -Wl,--gc-sections -Wl,--wrap=_free_r -Wl,--wrap=_malloc_r -Wl,--wrap=_calloc_r -Wl,--wrap=_realloc_r -fno-lto -Wl,--wrap=main
 
 lyra24p20.menu.protocol_stack.ble_silabs.build.ld_libs=-lstdc++ -lgcc -lc -lm -lnosys -lsupc++
 

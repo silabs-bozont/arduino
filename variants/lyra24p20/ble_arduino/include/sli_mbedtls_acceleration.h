@@ -97,7 +97,9 @@
  * See MBEDTLS_CMAC_C for more information.
  */
 #if defined(CRYPTOACC_PRESENT) || defined(SEMAILBOX_PRESENT)
-  #define MBEDTLS_CMAC_ALT
+  #if !defined(SLI_EXCLUDE_PSA_SE_SYMCRYPTO_DRIVERS)
+    #define MBEDTLS_CMAC_ALT
+  #endif
 #endif
 
 /**
@@ -136,7 +138,8 @@
  *
  * See MBEDTLS_SHA1_C for more information.
  */
-#if defined(CRYPTOACC_PRESENT) || defined(SEMAILBOX_PRESENT)
+#if defined(CRYPTOACC_PRESENT) \
+  || (defined(SEMAILBOX_PRESENT) && !defined(SLI_EXCLUDE_PSA_SE_SYMCRYPTO_DRIVERS))
   #define MBEDTLS_SHA1_ALT
 #endif
 
@@ -160,7 +163,8 @@
  *
  * See MBEDTLS_SHA256_C for more information.
  */
-#if defined(CRYPTOACC_PRESENT) || defined(SEMAILBOX_PRESENT)
+#if defined(CRYPTOACC_PRESENT) \
+  || (defined(SEMAILBOX_PRESENT) && !defined(SLI_EXCLUDE_PSA_SE_SYMCRYPTO_DRIVERS))
   #define MBEDTLS_SHA256_ALT
 #endif
 

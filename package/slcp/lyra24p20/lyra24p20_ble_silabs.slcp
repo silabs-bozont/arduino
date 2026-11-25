@@ -32,7 +32,7 @@ component:
   - id: component_catalog
   - id: mpu
   - id: bt_post_build
-  - id: sl_system
+  - id: sl_main
   - id: clock_manager
   - id: device_init
   - id: bluetooth_feature_dynamic_gattdb
@@ -64,7 +64,6 @@ component:
   - id: memory_manager_cpp
 
 source:
-  - path: main.c
   - path: app.c
 
 include:

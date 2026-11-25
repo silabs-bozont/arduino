@@ -41,3 +41,4 @@
 /** @} (end addtogroup spidrv) */
 
 #endif /* __SILICON_LABS_SPIDRV_CONFIG_H__ */
+
