@@ -29,15 +29,22 @@
 
 extern "C" {
 #include "af.h"
+#include "cmsis_os2.h"
+
+bool zigbee_af_is_ready(void);
+void zigbee_af_wait_ready(void);
 }
 
 // Guard for application framework APIs called from outside AF callback context
 // like the Arduino task. Pattern: acquire -> AF work -> release -> wakeup.
 // The AF mutex is recursive - nested guards are safe to use.
+// Waits for AF init before acquire - early setup() calls must not assert on a
+// NULL mutex when Arduino runs before the AF task has created it.
 class ZigbeeAfLock {
 public:
   ZigbeeAfLock()
   {
+    zigbee_af_wait_ready();
     sl_zigbee_af_acquire_lock();
   }
 

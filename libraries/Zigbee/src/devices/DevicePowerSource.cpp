@@ -68,13 +68,6 @@ DevicePowerSource::DevicePowerSource(const char* device_name, uint8_t endpoint_i
   attribute_report_completed(false),
   attribute_report_status(SL_STATUS_FAIL)
 {
-  uint8_t power_source = SL_ZIGBEE_ZCL_POWER_SOURCE_BATTERY;
-  ZigbeeAfLock lock;
-  sl_zigbee_af_write_server_attribute(this->endpoint_id,
-                                      ZCL_BASIC_CLUSTER_ID,
-                                      ZCL_POWER_SOURCE_ATTRIBUTE_ID,
-                                      &power_source,
-                                      ZCL_ENUM8_ATTRIBUTE_TYPE);
 }
 
 uint8_t DevicePowerSource::GetBatteryPercentageRemaining()

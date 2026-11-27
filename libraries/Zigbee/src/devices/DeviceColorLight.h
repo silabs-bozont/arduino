@@ -51,6 +51,7 @@ public:
                              uint16_t attribute_id,
                              uint8_t size,
                              uint8_t* value) override;
+  void RestorePersistedState() override;
 
 private:
   enum {

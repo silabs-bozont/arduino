@@ -40,11 +40,6 @@ DeviceColorLight::DeviceColorLight(const char* device_name, uint8_t endpoint_id)
   color_mode(COLOR_MODE_HUE_SATURATION)
 {
   HsvToXy(this->hue, this->saturation, &this->current_x, &this->current_y);
-  ZigbeeAfLock lock;
-  WriteColorModeAttributes();
-  WriteHueAttributes();
-  WriteSaturationAttribute();
-  WriteXyAttributes();
 }
 
 uint8_t DeviceColorLight::GetHue()
@@ -156,6 +151,70 @@ void DeviceColorLight::SetXy(uint16_t x, uint16_t y)
     WriteXyAttributes();
   }
   CallDeviceChangeCallback();
+}
+
+void DeviceColorLight::RestorePersistedState()
+{
+  DeviceDimmableLight::RestorePersistedState();
+
+  uint8_t hue_value = 0;
+  uint8_t saturation_value = 0;
+  uint8_t mode_value = COLOR_MODE_HUE_SATURATION;
+  uint16_t x_value = 0;
+  uint16_t y_value = 0;
+  uint16_t color_capabilities = 0;
+
+  ZigbeeAfLock lock;
+  if (sl_zigbee_af_read_server_attribute(this->endpoint_id,
+                                         ZCL_COLOR_CONTROL_CLUSTER_ID,
+                                         ZCL_COLOR_CONTROL_CURRENT_HUE_ATTRIBUTE_ID,
+                                         &hue_value,
+                                         sizeof(hue_value)) == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
+    this->hue = NormalizeColorValue(hue_value);
+  }
+  if (sl_zigbee_af_read_server_attribute(this->endpoint_id,
+                                         ZCL_COLOR_CONTROL_CLUSTER_ID,
+                                         ZCL_COLOR_CONTROL_CURRENT_SATURATION_ATTRIBUTE_ID,
+                                         &saturation_value,
+                                         sizeof(saturation_value)) == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
+    this->saturation = NormalizeColorValue(saturation_value);
+  }
+  if (sl_zigbee_af_read_server_attribute(this->endpoint_id,
+                                         ZCL_COLOR_CONTROL_CLUSTER_ID,
+                                         ZCL_COLOR_CONTROL_COLOR_MODE_ATTRIBUTE_ID,
+                                         &mode_value,
+                                         sizeof(mode_value)) == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
+    this->color_mode = mode_value;
+  }
+  if (sl_zigbee_af_read_server_attribute(this->endpoint_id,
+                                         ZCL_COLOR_CONTROL_CLUSTER_ID,
+                                         ZCL_COLOR_CONTROL_CURRENT_X_ATTRIBUTE_ID,
+                                         reinterpret_cast<uint8_t*>(&x_value),
+                                         sizeof(x_value)) == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
+    this->current_x = NormalizeXyValue(x_value);
+  }
+  if (sl_zigbee_af_read_server_attribute(this->endpoint_id,
+                                         ZCL_COLOR_CONTROL_CLUSTER_ID,
+                                         ZCL_COLOR_CONTROL_CURRENT_Y_ATTRIBUTE_ID,
+                                         reinterpret_cast<uint8_t*>(&y_value),
+                                         sizeof(y_value)) == SL_ZIGBEE_ZCL_STATUS_SUCCESS) {
+    this->current_y = NormalizeXyValue(y_value);
+  }
+
+  // ZAP default advertises hue/sat only; update once if capabilities are wrong.
+  if (sl_zigbee_af_read_server_attribute(this->endpoint_id,
+                                         ZCL_COLOR_CONTROL_CLUSTER_ID,
+                                         ZCL_COLOR_CONTROL_COLOR_CAPABILITIES_ATTRIBUTE_ID,
+                                         reinterpret_cast<uint8_t*>(&color_capabilities),
+                                         sizeof(color_capabilities)) == SL_ZIGBEE_ZCL_STATUS_SUCCESS
+      && color_capabilities != COLOR_CAPABILITIES) {
+    color_capabilities = COLOR_CAPABILITIES;
+    sl_zigbee_af_write_server_attribute(this->endpoint_id,
+                                        ZCL_COLOR_CONTROL_CLUSTER_ID,
+                                        ZCL_COLOR_CONTROL_COLOR_CAPABILITIES_ATTRIBUTE_ID,
+                                        reinterpret_cast<uint8_t*>(&color_capabilities),
+                                        ZCL_BITMAP16_ATTRIBUTE_TYPE);
+  }
 }
 
 void DeviceColorLight::HandleAttributeChange(uint16_t cluster_id,
@@ -469,10 +528,6 @@ void DeviceColorLight::XyToHsv(uint16_t x, uint16_t y, uint8_t* hue, uint8_t* sa
 
 void DeviceColorLight::WriteColorModeAttributes()
 {
-  uint16_t color_capabilities = COLOR_CAPABILITIES;
-  uint8_t number_of_primaries = 0;
-  uint8_t options = 0;
-
   sl_zigbee_af_write_server_attribute(this->endpoint_id,
                                       ZCL_COLOR_CONTROL_CLUSTER_ID,
                                       ZCL_COLOR_CONTROL_COLOR_MODE_ATTRIBUTE_ID,
@@ -483,21 +538,6 @@ void DeviceColorLight::WriteColorModeAttributes()
                                       ZCL_COLOR_CONTROL_ENHANCED_COLOR_MODE_ATTRIBUTE_ID,
                                       &this->color_mode,
                                       ZCL_ENUM8_ATTRIBUTE_TYPE);
-  sl_zigbee_af_write_server_attribute(this->endpoint_id,
-                                      ZCL_COLOR_CONTROL_CLUSTER_ID,
-                                      ZCL_COLOR_CONTROL_COLOR_CAPABILITIES_ATTRIBUTE_ID,
-                                      reinterpret_cast<uint8_t*>(&color_capabilities),
-                                      ZCL_BITMAP16_ATTRIBUTE_TYPE);
-  sl_zigbee_af_write_server_attribute(this->endpoint_id,
-                                      ZCL_COLOR_CONTROL_CLUSTER_ID,
-                                      ZCL_COLOR_CONTROL_NUMBER_OF_PRIMARIES_ATTRIBUTE_ID,
-                                      &number_of_primaries,
-                                      ZCL_INT8U_ATTRIBUTE_TYPE);
-  sl_zigbee_af_write_server_attribute(this->endpoint_id,
-                                      ZCL_COLOR_CONTROL_CLUSTER_ID,
-                                      ZCL_COLOR_CONTROL_OPTIONS_ATTRIBUTE_ID,
-                                      &options,
-                                      ZCL_BITMAP8_ATTRIBUTE_TYPE);
 }
 
 void DeviceColorLight::WriteHueAttributes()

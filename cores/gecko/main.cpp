@@ -29,6 +29,9 @@
 #ifdef ARDUINO_MATTER
 #include <MatterConfig.h>
 #endif
+#ifdef ARDUINO_ZIGBEE
+#include "sl_zigbee_rtos_task_config.h"
+#endif
 extern "C" {
 #include "cmsis_os2.h"
 }
@@ -54,9 +57,18 @@ int main()
   escape_hatch();
   gpio_interrupt_handler_init();
 
-  // Main task is osPriorityRealtime7 by default - drop to arduino_task_priority
-  // (below protocol tasks) and yield so they can finish init before setup()
+  #ifdef ARDUINO_ZIGBEE
+  // Zigbee stack busy-spins while ms-to-next-wakeup is 0. At Normal priority
+  // that starved Arduino for ~2s. Match stack priority through setup() so
+  // FreeRTOS time-slices during that window (non-Zigbee setup work can run).
+  // Drop back to Normal before loop().
+  osThreadSetPriority(osThreadGetId(), (osPriority_t)SL_ZIGBEE_STACK_RTOS_TASK_PRIORITY);
+  #else
+  // Main task starts at osPriorityRealtime7. Drop priority and let protocol
+  // tasks run before setup().
   osThreadSetPriority(osThreadGetId(), arduino_task_priority);
+  #endif
+
   osThreadYield();
 
   #ifdef ARDUINO_MATTER
@@ -65,6 +77,11 @@ int main()
   #endif
 
   setup();
+
+  #ifdef ARDUINO_ZIGBEE
+  osThreadSetPriority(osThreadGetId(), arduino_task_priority);
+  #endif
+
   while (1) {
     loop();
     handle_serial_events();

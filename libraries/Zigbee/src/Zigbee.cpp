@@ -30,6 +30,7 @@
 
 extern "C" {
 #include "af.h"
+#include "cmsis_os2.h"
 #include "sl_zigbee_system_common.h"
 #include "zigbee_app_framework_event.h"
 #include "network-steering.h"
@@ -45,7 +46,27 @@ extern uint8_t sli_zigbee_dynamic_capabilities;
 
 ZigbeeClass Zigbee;
 
+static volatile bool s_zigbee_af_ready = false;
 static sl_zigbee_af_event_t network_steering_retry_event;
+
+extern "C" bool zigbee_af_is_ready(void)
+{
+  return s_zigbee_af_ready;
+}
+
+// Blocks until AF init has completed
+extern "C" void zigbee_af_wait_ready(void)
+{
+  while (!s_zigbee_af_ready) {
+    osDelay(1);
+  }
+}
+
+// First AF tick runs only after sli_zigbee_app_framework_init_callback() returns
+extern "C" void sl_zigbee_af_main_tick_cb(void)
+{
+  s_zigbee_af_ready = true;
+}
 
 static sl_zigbee_node_type_t zigbeeDeviceTypeToStackNodeType(ZigbeeDeviceType device_type)
 {
@@ -138,20 +159,6 @@ static void writeServerAttributeToEndpoint(uint8_t endpoint_id,
                                       attribute_type);
 }
 
-static void writeServerAttributeToApplicationEndpoints(sl_zigbee_af_cluster_id_t cluster_id,
-                                                       sl_zigbee_af_attribute_id_t attribute_id,
-                                                       uint8_t* value,
-                                                       uint8_t attribute_type)
-{
-  for (uint8_t endpoint_id = 1; endpoint_id <= ZigbeeClass::kApplicationEndpointCount; endpoint_id++) {
-    writeServerAttributeToEndpoint(endpoint_id,
-                                   cluster_id,
-                                   attribute_id,
-                                   value,
-                                   attribute_type);
-  }
-}
-
 static void writeServerAttributeToMetadataEndpoint(sl_zigbee_af_cluster_id_t cluster_id,
                                                    sl_zigbee_af_attribute_id_t attribute_id,
                                                    uint8_t* value,
@@ -164,19 +171,17 @@ static void writeServerAttributeToMetadataEndpoint(sl_zigbee_af_cluster_id_t clu
                                  attribute_type);
 }
 
-static void writeServerAttributeToApplicationAndMetadataEndpoints(sl_zigbee_af_cluster_id_t cluster_id,
-                                                                  sl_zigbee_af_attribute_id_t attribute_id,
-                                                                  uint8_t* value,
-                                                                  uint8_t attribute_type)
+// Basic cluster manufacturer/model/power-source attributes are singletons in the
+// ZAP config: one shared value for every endpoint. Writing them to all
+// kApplicationEndpointCount slots makes paired startup take multiple
+// seconds (tens of ms per write). One write through the metadata endpoint is
+// enough for the singleton store.
+static void writeServerAttributeSingleton(sl_zigbee_af_cluster_id_t cluster_id,
+                                          sl_zigbee_af_attribute_id_t attribute_id,
+                                          uint8_t* value,
+                                          uint8_t attribute_type)
 {
-  writeServerAttributeToApplicationEndpoints(cluster_id,
-                                             attribute_id,
-                                             value,
-                                             attribute_type);
-  writeServerAttributeToMetadataEndpoint(cluster_id,
-                                         attribute_id,
-                                         value,
-                                         attribute_type);
+  writeServerAttributeToMetadataEndpoint(cluster_id, attribute_id, value, attribute_type);
 }
 
 static void applyStackPowerSource(ZigbeePowerSourceType power_source)
@@ -390,10 +395,10 @@ void ZigbeeClass::setVendorName(const char* name)
   zcl_string[0] = len;
   memcpy(&zcl_string[1], name, len);
   ZigbeeAfLock lock;
-  writeServerAttributeToApplicationAndMetadataEndpoints(ZCL_BASIC_CLUSTER_ID,
-                                                        ZCL_MANUFACTURER_NAME_ATTRIBUTE_ID,
-                                                        zcl_string,
-                                                        ZCL_CHAR_STRING_ATTRIBUTE_TYPE);
+  writeServerAttributeSingleton(ZCL_BASIC_CLUSTER_ID,
+                                ZCL_MANUFACTURER_NAME_ATTRIBUTE_ID,
+                                zcl_string,
+                                ZCL_CHAR_STRING_ATTRIBUTE_TYPE);
   this->vendor_name_set = true;
 }
 
@@ -407,10 +412,10 @@ void ZigbeeClass::setProductName(const char* name)
   zcl_string[0] = len;
   memcpy(&zcl_string[1], name, len);
   ZigbeeAfLock lock;
-  writeServerAttributeToApplicationAndMetadataEndpoints(ZCL_BASIC_CLUSTER_ID,
-                                                        ZCL_MODEL_IDENTIFIER_ATTRIBUTE_ID,
-                                                        zcl_string,
-                                                        ZCL_CHAR_STRING_ATTRIBUTE_TYPE);
+  writeServerAttributeSingleton(ZCL_BASIC_CLUSTER_ID,
+                                ZCL_MODEL_IDENTIFIER_ATTRIBUTE_ID,
+                                zcl_string,
+                                ZCL_CHAR_STRING_ATTRIBUTE_TYPE);
   this->product_name_set = true;
 }
 
@@ -461,10 +466,10 @@ void ZigbeeClass::begin()
   ZigbeeAfLock lock;
   applyStackPowerSource(this->power_source);
   uint8_t basic_power_source = getBasicClusterPowerSourceValue(this->power_source);
-  writeServerAttributeToApplicationAndMetadataEndpoints(ZCL_BASIC_CLUSTER_ID,
-                                                        ZCL_POWER_SOURCE_ATTRIBUTE_ID,
-                                                        &basic_power_source,
-                                                        ZCL_ENUM8_ATTRIBUTE_TYPE);
+  writeServerAttributeSingleton(ZCL_BASIC_CLUSTER_ID,
+                                ZCL_POWER_SOURCE_ATTRIBUTE_ID,
+                                &basic_power_source,
+                                ZCL_ENUM8_ATTRIBUTE_TYPE);
 
   for (uint8_t i = 0; i < kApplicationEndpointCount; i++) {
     sl_zigbee_af_endpoint_enable_disable(i + 1, false);
@@ -539,10 +544,10 @@ bool ZigbeeClass::setPowerSource(ZigbeePowerSourceType power_source)
   this->power_source = power_source;
   uint8_t basic_power_source = getBasicClusterPowerSourceValue(power_source);
   ZigbeeAfLock lock;
-  writeServerAttributeToApplicationAndMetadataEndpoints(ZCL_BASIC_CLUSTER_ID,
-                                                        ZCL_POWER_SOURCE_ATTRIBUTE_ID,
-                                                        &basic_power_source,
-                                                        ZCL_ENUM8_ATTRIBUTE_TYPE);
+  writeServerAttributeSingleton(ZCL_BASIC_CLUSTER_ID,
+                                ZCL_POWER_SOURCE_ATTRIBUTE_ID,
+                                &basic_power_source,
+                                ZCL_ENUM8_ATTRIBUTE_TYPE);
   if (this->started) {
     applyStackPowerSource(power_source);
   }
